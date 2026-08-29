@@ -289,7 +289,7 @@ export function createMinecraftApp() {
 </html>`;
   }
 
-  function witherOverlayDocument() {
+  function witherOverlayDocument(previewBg) {
     const values = { skullCount: state.witherSkulls, overlayScale: 78 };
     const body = replaceVariables(witherWidget.bodyTag || "", values);
     const script = replaceVariables(witherWidget.scriptTag || "", values);
@@ -300,7 +300,10 @@ export function createMinecraftApp() {
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Wither Skull Overlay</title>
   ${witherWidget.headerTag || ""}
-  <style>${witherWidget.styleTag || ""}</style>
+  <style>
+    ${witherWidget.styleTag || ""}
+    ${previewBg === "black" ? "html, body { background: #000 !important; }" : ""}
+  </style>
 </head>
 <body>
   ${body}
@@ -334,9 +337,9 @@ export function createMinecraftApp() {
     response.sendFile(path.join(__dirname, "public", "control.html"));
   });
 
-  router.get("/wither-overlay", (_request, response) => {
+  router.get("/wither-overlay", (request, response) => {
     response.set("Cache-Control", "no-store");
-    response.type("html").send(witherOverlayDocument());
+    response.type("html").send(witherOverlayDocument(request.query.bg));
   });
 
   router.get("/api/state", (_request, response) => {
