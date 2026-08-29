@@ -86,6 +86,15 @@
           </div>
         </article>
 
+        <article class="panel">
+          <p class="section-title">Wither Skulls <a class="button" href="/minecraft/wither-overlay" target="_blank" rel="noreferrer" style="float:right;font-size:11px;padding:4px 8px;">Åbn overlay</a></p>
+          <div class="death-control">
+            <button class="round" id="wither-minus" aria-label="Fjern én wither skull">−</button>
+            <div class="death-number" id="wither-count">0</div>
+            <button class="round" id="wither-plus" aria-label="Tilføj én wither skull">+</button>
+          </div>
+        </article>
+
         <article class="panel settings">
           <p class="section-title">Overlay</p>
           <label class="field">Størrelse
@@ -141,6 +150,7 @@
     function render() {
       if (!state) return;
       document.getElementById("death-count").textContent = state.deaths;
+      document.getElementById("wither-count").textContent = state.witherSkulls;
       document.getElementById("scale").value = state.overlayScale;
       document.getElementById("scale-value").textContent = Number(state.overlayScale).toFixed(2) + "×";
       document.getElementById("show-cross").checked = state.showCross;
@@ -199,6 +209,8 @@
 
     document.getElementById("death-minus").addEventListener("click", () => patch({ deaths:Math.max(0, state.deaths - 1) }));
     document.getElementById("death-plus").addEventListener("click", () => patch({ deaths:state.deaths + 1 }));
+    document.getElementById("wither-minus").addEventListener("click", () => patch({ witherSkulls:Math.max(0, state.witherSkulls - 1) }));
+    document.getElementById("wither-plus").addEventListener("click", () => patch({ witherSkulls:Math.min(3, state.witherSkulls + 1) }));
     document.getElementById("scale").addEventListener("input", (event) => {
       document.getElementById("scale-value").textContent = Number(event.target.value).toFixed(2) + "×";
       queuePatch({ overlayScale:Number(event.target.value) });

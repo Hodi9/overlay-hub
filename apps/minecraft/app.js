@@ -7,6 +7,7 @@ import pg from "pg";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const widget = JSON.parse(fs.readFileSync(path.join(__dirname, "widget.json"), "utf8"));
+const witherWidget = JSON.parse(fs.readFileSync(path.join(__dirname, "wither-widget.json"), "utf8"));
 const bossKeys = ["warden", "guardian", "wither", "dragon"];
 
 function toBool(value, fallback = false) {
@@ -40,6 +41,7 @@ export function createMinecraftApp() {
   function initialState() {
     return {
       deaths: Math.max(0, Math.round(toNumber(variableDefaults.manualDeathCount, 0))),
+      witherSkulls: 0,
       overlayScale: clamp(toNumber(variableDefaults.overlayScale, 0.8), 0.45, 1.6),
       showCross: toBool(variableDefaults.showCross, true),
       channelName: String(variableDefaults.channelName || ""),
@@ -70,6 +72,7 @@ export function createMinecraftApp() {
       ...base,
       ...input,
       deaths: Math.max(0, Math.round(toNumber(input?.deaths, base.deaths))),
+      witherSkulls: clamp(Math.round(toNumber(input?.witherSkulls, base.witherSkulls)), 0, 3),
       overlayScale: clamp(toNumber(input?.overlayScale, base.overlayScale), 0.45, 1.6),
       showCross: toBool(input?.showCross, base.showCross),
       chatEnabled: toBool(input?.chatEnabled, base.chatEnabled),
@@ -187,6 +190,7 @@ export function createMinecraftApp() {
     const next = structuredClone(current);
     const scalarKeys = [
       "deaths",
+      "witherSkulls",
       "overlayScale",
       "showCross",
       "channelName",
@@ -228,7 +232,7 @@ export function createMinecraftApp() {
     }, source);
   }
 
-  function overlayDocument() {
+  function overlayDocument(previewBg) {
     const values = widgetVariables(state);
     const header = replaceVariables(widget.headerTag || "", values);
     const body = replaceVariables(widget.bodyTag || "", values);
@@ -245,6 +249,11 @@ export function createMinecraftApp() {
     ${style}
     /* Keep visible bosses at their normal width when siblings are hidden. */
     .boss-card { flex: 0 1 calc((100% - 30px) / 4); }
+    /* Cap the widget so it doesn't stretch full-bleed when opened outside a
+       sized OBS browser source (which defines its own pixel dimensions and
+       is unaffected by this). */
+    .mc-widget { max-width: 620px; margin: 0 auto; }
+    ${previewBg === "black" ? "html, body { background: #000 !important; }" : ""}
   </style>
 </head>
 <body>
@@ -280,16 +289,54 @@ export function createMinecraftApp() {
 </html>`;
   }
 
+  function witherOverlayDocument() {
+    const values = { skullCount: state.witherSkulls, overlayScale: 78 };
+    const body = replaceVariables(witherWidget.bodyTag || "", values);
+    const script = replaceVariables(witherWidget.scriptTag || "", values);
+    return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Wither Skull Overlay</title>
+  ${witherWidget.headerTag || ""}
+  <style>${witherWidget.styleTag || ""}</style>
+</head>
+<body>
+  ${body}
+  <script>${script}</script>
+  <script>
+    (() => {
+      function sync(next) {
+        if (!next || typeof window.onLiveVariableUpdate !== "function") return;
+        window.onLiveVariableUpdate("skullCount", next.witherSkulls);
+      }
+      fetch("/minecraft/api/state", { cache: "no-store" }).then((r) => r.json()).then(sync).catch(() => {});
+      const events = new EventSource("/minecraft/api/events");
+      events.onmessage = (event) => {
+        try { sync(JSON.parse(event.data)); } catch (_) {}
+      };
+    })();
+  </script>
+</body>
+</html>`;
+  }
+
   router.use(express.json({ limit: "64kb" }));
   router.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
-  router.get("/overlay", (_request, response) => {
+  router.get("/overlay", (request, response) => {
     response.set("Cache-Control", "no-store");
-    response.type("html").send(overlayDocument());
+    response.type("html").send(overlayDocument(request.query.bg));
   });
 
   router.get("/control", (_request, response) => {
     response.sendFile(path.join(__dirname, "public", "control.html"));
+  });
+
+  router.get("/wither-overlay", (_request, response) => {
+    response.set("Cache-Control", "no-store");
+    response.type("html").send(witherOverlayDocument());
   });
 
   router.get("/api/state", (_request, response) => {
