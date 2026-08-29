@@ -88,6 +88,17 @@
   }
   .links a:hover { background: rgba(255,255,255,.07); }
   .links a.control { border-color: rgba(255,61,110,.4); }
+  .card-hint {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .card-hint code {
+    color: var(--text);
+    background: rgba(255,255,255,.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
   .brovsbro-card .links a:not(.control):hover { border-color: var(--cyan); }
   .minecraft-card .links a:not(.control):hover { border-color: var(--lime); }
   .rdr2-card .links a:not(.control):hover { border-color: var(--amber); }
@@ -133,10 +144,11 @@
         </div>
       </div>
       <div class="links">
-        <a href="/minecraft/overlay">Overlay</a>
-        <a href="/minecraft/wither-overlay">Wither Skulls</a>
+        <a href="/minecraft/overlay?bg=black">Overlay</a>
+        <a href="/minecraft/wither-overlay?bg=black">Wither Skulls</a>
         <a class="control" href="/minecraft/control">Control panel</a>
       </div>
+      <p class="card-hint">These links show a black background for previewing. In OBS, use the URL without <code>?bg=black</code> so it stays transparent.</p>
     </section>
 
     <section class="card rdr2-card">
