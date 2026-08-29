@@ -198,6 +198,40 @@
     color: var(--coin);
     text-shadow: 3px 3px 0 var(--ink);
   }
+
+  #badges-view.active { display: flex; }
+  .duel-bar {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .6));
+  }
+  .duel-avatar {
+    width: 76px; height: 76px; border-radius: 50%; overflow: hidden;
+    border: 4px solid var(--coin); background: var(--cabinet);
+    box-shadow: 0 0 0 3px var(--ink); flex-shrink: 0; position: relative; z-index: 2;
+  }
+  .duel-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .duel-avatar.left { margin-right: -22px; }
+  .duel-avatar.right { margin-left: -22px; }
+  .duel-name {
+    height: 60px; display: flex; align-items: center; font-size: 28px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--ink); white-space: nowrap;
+    transition: box-shadow .2s ease;
+  }
+  .duel-name.left { background: var(--p1); padding: 0 30px 0 38px; }
+  .duel-name.right { background: var(--p2); padding: 0 38px 0 30px; }
+  .duel-score {
+    height: 60px; min-width: 60px; display: flex; align-items: center; justify-content: center;
+    background: var(--ink); color: var(--bone); font-size: 38px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .duel-sets { height: 60px; display: flex; align-items: center; gap: 5px; padding: 0 12px; background: var(--cabinet); }
+  .duel-sets .pip { width: 11px; height: 11px; border-radius: 50%; background: rgba(241, 237, 255, .22); }
+  .duel-sets .pip.on-left { background: var(--p1); }
+  .duel-sets .pip.on-right { background: var(--p2); }
+  .duel-bar.p1-winner .duel-name.left { box-shadow: inset 0 0 0 3px var(--coin); }
+  .duel-bar.p2-winner .duel-name.right { box-shadow: inset 0 0 0 3px var(--coin); }
 </style>
 </head>
 <body>
@@ -252,6 +286,19 @@
    </div>
   </div>
 
+  <div id="badges-view" data-view>
+    <div class="duel-bar" id="duel-bar">
+      <div class="duel-avatar left"><img src="/brovsbro/images/marcelo.png" alt="Marcelo" /></div>
+      <div class="duel-name left">Marcelo</div>
+      <div class="duel-sets" id="duel-sets-left"></div>
+      <div class="duel-score" id="duel-score-left">0</div>
+      <div class="duel-score" id="duel-score-right">0</div>
+      <div class="duel-sets" id="duel-sets-right"></div>
+      <div class="duel-name right">Aggo</div>
+      <div class="duel-avatar right"><img src="/brovsbro/images/aggo.png" alt="Aggo" /></div>
+    </div>
+  </div>
+
 <script src="/brovsbro/socket.io/socket.io.js"></script>
 <script>
   const params = new URLSearchParams(location.search);
@@ -293,7 +340,32 @@
     }
 
     lastScores = { ...state.scores };
+
+    const duel = state.duel || { points: { marcelo: 0, aggo: 0 }, sets: { marcelo: 0, aggo: 0 } };
+    const duelScoreLeft = document.getElementById("duel-score-left");
+    const duelScoreRight = document.getElementById("duel-score-right");
+    const duelSetsLeft = document.getElementById("duel-sets-left");
+    const duelSetsRight = document.getElementById("duel-sets-right");
+    const duelBarEl = document.getElementById("duel-bar");
+    if (duelScoreLeft) duelScoreLeft.textContent = duel.points.marcelo;
+    if (duelScoreRight) duelScoreRight.textContent = duel.points.aggo;
+    if (duelSetsLeft) renderDuelPips(duelSetsLeft, duel.sets.marcelo, "left");
+    if (duelSetsRight) renderDuelPips(duelSetsRight, duel.sets.aggo, "right");
+    if (duelBarEl) {
+      duelBarEl.classList.toggle("p1-winner", duel.sets.marcelo >= 3);
+      duelBarEl.classList.toggle("p2-winner", duel.sets.aggo >= 3);
+    }
   });
+
+  function renderDuelPips(container, count, side) {
+    const total = Math.max(count, 3);
+    container.innerHTML = "";
+    for (let i = 0; i < total; i++) {
+      const el = document.createElement("div");
+      el.className = "pip" + (i < count ? " on-" + side : "");
+      container.appendChild(el);
+    }
+  }
 </script>
 </body>
 </html>

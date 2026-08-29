@@ -70,8 +70,7 @@ function createBrovsbroApp() {
   });
 
   router.get("/duel", (req, res) => {
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.sendFile(path.join(__dirname, "public", "duel.html"));
+    res.redirect(301, "/brovsbro/overlay?view=badges");
   });
 
   router.get("/", (req, res) => {
