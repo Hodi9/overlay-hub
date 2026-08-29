@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8" />
+<title>Bro vs Bro — Duel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+  :root {
+    --ink: #0a0a16;
+    --cabinet: #1c1330;
+    --p1: #ff3864;
+    --p2: #1ee8ff;
+    --coin: #ffd23f;
+    --bone: #f1edff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: transparent;
+    font-family: 'VT323', monospace;
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .6));
+  }
+  .avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--coin);
+    background: var(--cabinet);
+    box-shadow: 0 0 0 3px var(--ink);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .avatar.left { margin-right: -22px; }
+  .avatar.right { margin-left: -22px; }
+
+  .name {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+    transition: box-shadow .2s ease;
+  }
+  .name.left { background: var(--p1); padding: 0 30px 0 38px; }
+  .name.right { background: var(--p2); padding: 0 38px 0 30px; }
+
+  .score {
+    height: 60px;
+    min-width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ink);
+    color: var(--bone);
+    font-size: 38px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sets {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 12px;
+    background: var(--cabinet);
+  }
+  .sets .pip {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: rgba(241, 237, 255, .22);
+  }
+  .sets .pip.on-left { background: var(--p1); }
+  .sets .pip.on-right { background: var(--p2); }
+
+  .bar.p1-winner .name.left { box-shadow: inset 0 0 0 3px var(--coin); }
+  .bar.p2-winner .name.right { box-shadow: inset 0 0 0 3px var(--coin); }
+</style>
+</head>
+<body>
+
+<div class="bar" id="bar">
+  <div class="avatar left"><img src="/brovsbro/images/marcelo.png" alt="Marcelo" /></div>
+  <div class="name left">Marcelo</div>
+  <div class="sets" id="sets-left"></div>
+  <div class="score" id="score-left">0</div>
+  <div class="score" id="score-right">0</div>
+  <div class="sets" id="sets-right"></div>
+  <div class="name right">Aggo</div>
+  <div class="avatar right"><img src="/brovsbro/images/aggo.png" alt="Aggo" /></div>
+</div>
+
+<script src="/brovsbro/socket.io/socket.io.js"></script>
+<script>
+  const socket = io({ path: "/brovsbro/socket.io" });
+  const scoreLeft = document.getElementById("score-left");
+  const scoreRight = document.getElementById("score-right");
+  const setsLeft = document.getElementById("sets-left");
+  const setsRight = document.getElementById("sets-right");
+  const bar = document.getElementById("bar");
+
+  function renderPips(container, count, side) {
+    const total = Math.max(count, 3);
+    container.innerHTML = "";
+    for (let i = 0; i < total; i++) {
+      const el = document.createElement("div");
+      el.className = "pip" + (i < count ? " on-" + side : "");
+      container.appendChild(el);
+    }
+  }
+
+  function render(state) {
+    const duel = state.duel || { points: { marcelo: 0, aggo: 0 }, sets: { marcelo: 0, aggo: 0 } };
+    scoreLeft.textContent = duel.points.marcelo;
+    scoreRight.textContent = duel.points.aggo;
+    renderPips(setsLeft, duel.sets.marcelo, "left");
+    renderPips(setsRight, duel.sets.aggo, "right");
+    bar.classList.toggle("p1-winner", duel.sets.marcelo >= 3);
+    bar.classList.toggle("p2-winner", duel.sets.aggo >= 3);
+  }
+
+  socket.on("state", render);
+</script>
+</body>
+</html>

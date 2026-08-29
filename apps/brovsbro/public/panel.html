@@ -65,6 +65,10 @@
   }
   .score-btn:hover { border-color: var(--accent); color: var(--accent); }
   .score-btn:active { transform: scale(0.94); }
+  .score-btn.small { width: 28px; height: 28px; font-size: 14px; }
+  .sets-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .sets-label { font-size: 14px; color: var(--bone-dim); }
+  .sets-label b { color: var(--accent); }
 
   .row { display: flex; gap: 10px; align-items: center; }
   .field {
@@ -145,6 +149,44 @@
           <button class="score-btn" data-action="score:inc" data-player="aggo">+</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Duel-bar</h2>
+    </div>
+    <div class="players">
+      <div class="player marcelo">
+        <span class="player-name">Marcelo</span>
+        <span class="player-score" id="duel-score-marcelo">0</span>
+        <div class="score-controls">
+          <button class="score-btn" data-action="duel:point:dec" data-player="marcelo">&minus;</button>
+          <button class="score-btn" data-action="duel:point:inc" data-player="marcelo">+</button>
+        </div>
+        <div class="sets-row">
+          <span class="sets-label">Sæt: <b id="duel-sets-marcelo">0</b></span>
+          <button class="score-btn small" data-action="duel:set:dec" data-player="marcelo">&minus;</button>
+          <button class="score-btn small" data-action="duel:set:inc" data-player="marcelo">+</button>
+        </div>
+      </div>
+      <div class="player aggo">
+        <span class="player-name">Aggo</span>
+        <span class="player-score" id="duel-score-aggo">0</span>
+        <div class="score-controls">
+          <button class="score-btn" data-action="duel:point:dec" data-player="aggo">&minus;</button>
+          <button class="score-btn" data-action="duel:point:inc" data-player="aggo">+</button>
+        </div>
+        <div class="sets-row">
+          <span class="sets-label">Sæt: <b id="duel-sets-aggo">0</b></span>
+          <button class="score-btn small" data-action="duel:set:dec" data-player="aggo">&minus;</button>
+          <button class="score-btn small" data-action="duel:set:inc" data-player="aggo">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="margin-top: 14px; flex-wrap: wrap;">
+      <button class="btn" id="duel-new-set-btn">Nyt sæt (nulstil point)</button>
+      <a class="btn" href="/brovsbro/duel" target="_blank" rel="noreferrer" style="display: inline-block; text-decoration: none;">Åbn duel-overlay</a>
     </div>
   </div>
 
@@ -266,6 +308,10 @@
     if (!state) return;
     document.getElementById("score-marcelo").textContent = state.scores.marcelo;
     document.getElementById("score-aggo").textContent = state.scores.aggo;
+    document.getElementById("duel-score-marcelo").textContent = state.duel.points.marcelo;
+    document.getElementById("duel-score-aggo").textContent = state.duel.points.aggo;
+    document.getElementById("duel-sets-marcelo").textContent = state.duel.sets.marcelo;
+    document.getElementById("duel-sets-aggo").textContent = state.duel.sets.aggo;
     document.getElementById("current-name").textContent = state.current?.name || "—";
     document.getElementById("round-pill").textContent = "Runde " + state.round;
 
@@ -319,6 +365,8 @@
   document.querySelectorAll(".score-btn[data-action]").forEach((btn) => {
     btn.addEventListener("click", () => send(btn.dataset.action, { player: btn.dataset.player }));
   });
+
+  document.getElementById("duel-new-set-btn").addEventListener("click", () => send("duel:points:reset"));
 
   document.getElementById("set-dyst-btn").addEventListener("click", () => {
     const input = document.getElementById("dyst-input");

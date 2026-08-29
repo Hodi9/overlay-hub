@@ -6,6 +6,10 @@ const { Server } = require("socket.io");
 
 const DEFAULT_DYSTER = ["Dart", "Bowling", "Minigolf", "Brætspil", "Bordfodbold", "Wildcard"];
 
+function defaultDuel() {
+  return { points: { marcelo: 0, aggo: 0 }, sets: { marcelo: 0, aggo: 0 } };
+}
+
 function createBrovsbroApp() {
   const router = express.Router();
   const PANEL_KEY = process.env.BROVSBRO_PANEL_KEY || "";
@@ -13,7 +17,9 @@ function createBrovsbroApp() {
 
   function loadState() {
     try {
-      return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+      const loaded = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+      if (!loaded.duel) loaded.duel = defaultDuel();
+      return loaded;
     } catch {
       return {
         scores: { marcelo: 0, aggo: 0 },
@@ -21,6 +27,7 @@ function createBrovsbroApp() {
         current: null,
         queue: DEFAULT_DYSTER.map((name) => ({ id: crypto.randomUUID(), name })),
         log: [],
+        duel: defaultDuel(),
       };
     }
   }
@@ -60,6 +67,11 @@ function createBrovsbroApp() {
   router.get("/panel", (req, res) => {
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.sendFile(path.join(__dirname, "public", "panel.html"));
+  });
+
+  router.get("/duel", (req, res) => {
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.sendFile(path.join(__dirname, "public", "duel.html"));
   });
 
   router.get("/", (req, res) => {
@@ -161,6 +173,40 @@ function createBrovsbroApp() {
             pushLog("Scores nulstillet");
             break;
           }
+          case "duel:point:inc": {
+            const p = payload.player;
+            if (p === "marcelo" || p === "aggo") {
+              state.duel.points[p] = Math.min(11, state.duel.points[p] + 1);
+            }
+            break;
+          }
+          case "duel:point:dec": {
+            const p = payload.player;
+            if (p === "marcelo" || p === "aggo") {
+              state.duel.points[p] = Math.max(0, state.duel.points[p] - 1);
+            }
+            break;
+          }
+          case "duel:set:inc": {
+            const p = payload.player;
+            if (p === "marcelo" || p === "aggo") {
+              state.duel.sets[p] += 1;
+              pushLog(`${p === "marcelo" ? "Marcelo" : "Aggo"} vandt sæt ${state.duel.sets[p]}`);
+            }
+            break;
+          }
+          case "duel:set:dec": {
+            const p = payload.player;
+            if (p === "marcelo" || p === "aggo") {
+              state.duel.sets[p] = Math.max(0, state.duel.sets[p] - 1);
+            }
+            break;
+          }
+          case "duel:points:reset": {
+            state.duel.points = { marcelo: 0, aggo: 0 };
+            pushLog("Duel-point nulstillet (nyt sæt)");
+            break;
+          }
           case "reset:all": {
             state = {
               scores: { marcelo: 0, aggo: 0 },
@@ -168,6 +214,7 @@ function createBrovsbroApp() {
               current: null,
               queue: DEFAULT_DYSTER.map((name) => ({ id: crypto.randomUUID(), name })),
               log: [],
+              duel: defaultDuel(),
             };
             pushLog("Alt nulstillet");
             break;
