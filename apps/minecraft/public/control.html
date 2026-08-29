@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1210">
+  <title>Kontrolpanel · Minecraft Boss Tracker</title>
+  <style>
+    :root { color-scheme:dark; --bg:#08100d; --panel:#101b16; --panel2:#13221a; --line:#48632c; --lime:#a2d344; --text:#f2f2ed; --muted:#9eaba1; --danger:#d56868; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at 50% -20%,#1c3324 0,#08100d 44%,#050907 100%); color:var(--text); font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
+    button,input { font:inherit; }
+    button { cursor:pointer; }
+    header { position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px clamp(18px,4vw,42px); border-bottom:1px solid rgba(111,143,62,.34); background:rgba(8,16,13,.88); backdrop-filter:blur(18px); }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .dot { width:11px; height:11px; border-radius:50%; background:var(--lime); box-shadow:0 0 16px rgba(162,211,68,.8); }
+    h1 { margin:0; font-size:17px; letter-spacing:-.02em; }
+    .status { color:var(--muted); font-size:12px; }
+    main { width:min(980px,100%); margin:auto; padding:clamp(20px,4vw,44px); }
+    .panel { padding:22px; border:1px solid rgba(111,143,62,.43); background:rgba(16,27,22,.92); clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px); }
+    .login { width:min(430px,100%); margin:9vh auto 0; }
+    .login h2 { margin:0 0 8px; }
+    .login p { margin:0 0 18px; color:var(--muted); line-height:1.5; }
+    .login-row { display:flex; gap:10px; }
+    input[type=password],input[type=text],input[type=number] { min-width:0; width:100%; min-height:44px; padding:0 13px; border:1px solid #3b5130; border-radius:8px; outline:none; color:var(--text); background:#09110d; }
+    input:focus { border-color:var(--lime); box-shadow:0 0 0 3px rgba(162,211,68,.12); }
+    .button { min-height:44px; padding:0 16px; border:1px solid var(--line); border-radius:8px; color:var(--text); background:#17261d; font-weight:820; }
+    .button.primary { color:#0a110c; background:var(--lime); border-color:var(--lime); }
+    .button.danger { color:#ffdede; border-color:#693d3d; background:#2a1717; }
+    .button:disabled { cursor:wait; opacity:.52; }
+    .error { min-height:20px; margin:12px 0 0; color:#ff9d9d; font-size:13px; }
+    #app[hidden],#login[hidden] { display:none; }
+    .top-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr); gap:18px; }
+    .section-title { margin:0 0 16px; color:var(--muted); font-size:12px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+    .death-control { display:flex; align-items:center; gap:12px; }
+    .death-number { flex:1; text-align:center; font-size:clamp(54px,9vw,92px); font-weight:950; line-height:1; letter-spacing:-.06em; }
+    .round { width:52px; height:52px; border-radius:50%; border:1px solid var(--line); color:var(--text); background:#14231a; font-size:26px; }
+    .boss-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:18px; }
+    .boss { position:relative; padding:18px; border:1px solid rgba(111,143,62,.36); border-radius:12px; background:linear-gradient(150deg,rgba(25,43,32,.95),rgba(12,21,16,.95)); overflow:hidden; }
+    .boss.defeated { border-color:rgba(213,104,104,.48); }
+    .boss-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    .boss h3 { margin:0; font-size:16px; }
+    .boss small { color:var(--muted); }
+    .boss-actions { display:grid; grid-template-columns:1.4fr .8fr; gap:9px; }
+    .boss .defeat { border-color:#577534; }
+    .boss.defeated .defeat { border-color:#7d4242; background:#351b1b; color:#ffc3c3; }
+    .switch { display:inline-flex; align-items:center; gap:8px; color:var(--muted); font-size:13px; }
+    .switch input { accent-color:var(--lime); }
+    .settings { display:grid; gap:14px; }
+    label.field { display:grid; gap:7px; color:var(--muted); font-size:13px; }
+    .range-line { display:grid; grid-template-columns:1fr 58px; gap:10px; align-items:center; }
+    input[type=range] { accent-color:var(--lime); }
+    .footer-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+    .saved { margin-left:auto; align-self:center; color:var(--muted); font-size:12px; }
+    @media (max-width:760px) { .top-grid,.boss-grid { grid-template-columns:1fr; } header { align-items:flex-start; } .status { text-align:right; } }
+    @media (max-width:470px) { .login-row,.boss-actions { grid-template-columns:1fr; display:grid; } .death-control { gap:7px; } .round { width:46px; height:46px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><span class="dot"></span><h1>Minecraft Boss Tracker</h1></div>
+    <div class="status" id="connection-status">Forbinder…</div>
+  </header>
+
+  <main>
+    <section class="panel login" id="login" hidden>
+      <h2>Kontrolpanelet er låst</h2>
+      <p>Indtast trackerens adgangskode. OBS-overlayet kræver ikke login.</p>
+      <form id="login-form">
+        <div class="login-row">
+          <input id="password" type="password" autocomplete="current-password" placeholder="Adgangskode" required>
+          <button class="button primary" type="submit">Lås op</button>
+        </div>
+        <p class="error" id="login-error" role="alert"></p>
+      </form>
+    </section>
+
+    <section id="app" hidden>
+      <div class="top-grid">
+        <article class="panel">
+          <p class="section-title">Dødsfald</p>
+          <div class="death-control">
+            <button class="round" id="death-minus" aria-label="Fjern ét dødsfald">−</button>
+            <div class="death-number" id="death-count">0</div>
+            <button class="round" id="death-plus" aria-label="Tilføj ét dødsfald">+</button>
+          </div>
+        </article>
+
+        <article class="panel settings">
+          <p class="section-title">Overlay</p>
+          <label class="field">Størrelse
+            <span class="range-line"><input id="scale" type="range" min="0.45" max="1.6" step="0.05"><output id="scale-value">0.80×</output></span>
+          </label>
+          <label class="switch"><input id="show-cross" type="checkbox"> Vis stort kryds over besejrede bosser</label>
+          <label class="field">Twitch-kanal<input id="channel" type="text" maxlength="40" placeholder="kanalnavn"></label>
+          <label class="field">Dødskommando<input id="command" type="text" maxlength="40" placeholder="!death"></label>
+          <label class="switch"><input id="chat-enabled" type="checkbox"> Lyt til Twitch-chat</label>
+          <label class="switch"><input id="mod-only" type="checkbox"> Kun broadcaster/mods må bruge kommandoen</label>
+        </article>
+      </div>
+
+      <div class="boss-grid" id="boss-grid"></div>
+
+      <div class="footer-actions">
+        <button class="button danger" id="reset">Nulstil hele trackeren</button>
+        <a class="button" href="/minecraft/overlay" target="_blank" rel="noreferrer">Åbn overlay</a>
+        <span class="saved" id="saved">Live</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const bossNames = { warden:"Warden", guardian:"Elder Guardian", wither:"Wither", dragon:"Ender Dragon" };
+    let state = null;
+    let saveTimer = null;
+    const login = document.getElementById("login");
+    const app = document.getElementById("app");
+    const statusEl = document.getElementById("connection-status");
+    const savedEl = document.getElementById("saved");
+
+    const PREFIX = "/minecraft";
+
+    async function request(url, options = {}) {
+      const response = await fetch(PREFIX + url, {
+        ...options,
+        headers: { "Content-Type":"application/json", ...(options.headers || {}) }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Der opstod en fejl.");
+      return data;
+    }
+
+    function bossCard(key) {
+      const boss = state.bosses[key];
+      return `<article class="boss ${boss.defeated ? "defeated" : ""}" data-boss="${key}">
+        <div class="boss-head"><div><h3>${bossNames[key]}</h3><small>${boss.defeated ? "Besejret" : "Ikke besejret"}</small></div><label class="switch"><input class="boss-show" type="checkbox" ${boss.show ? "checked" : ""}> Vis</label></div>
+        <div class="boss-actions"><button class="button defeat">${boss.defeated ? "Markér som aktiv" : "Markér besejret"}</button><button class="button boss-reset">Nulstil</button></div>
+      </article>`;
+    }
+
+    function render() {
+      if (!state) return;
+      document.getElementById("death-count").textContent = state.deaths;
+      document.getElementById("scale").value = state.overlayScale;
+      document.getElementById("scale-value").textContent = Number(state.overlayScale).toFixed(2) + "×";
+      document.getElementById("show-cross").checked = state.showCross;
+      document.getElementById("channel").value = state.channelName;
+      document.getElementById("command").value = state.deathCommand;
+      document.getElementById("chat-enabled").checked = state.chatEnabled;
+      document.getElementById("mod-only").checked = state.modOnly;
+      document.getElementById("boss-grid").innerHTML = Object.keys(bossNames).map(bossCard).join("");
+    }
+
+    async function patch(update, quiet = false) {
+      if (!quiet) savedEl.textContent = "Gemmer…";
+      state = await request("/api/state", { method:"PATCH", body:JSON.stringify(update) });
+      render();
+      savedEl.textContent = "Gemt live";
+    }
+
+    function queuePatch(update) {
+      clearTimeout(saveTimer);
+      savedEl.textContent = "Gemmer…";
+      saveTimer = setTimeout(() => patch(update), 220);
+    }
+
+    async function boot() {
+      const session = await request("/api/session");
+      if (!session.authenticated) {
+        login.hidden = false;
+        statusEl.textContent = "Låst";
+        return;
+      }
+      state = await request("/api/state");
+      login.hidden = true;
+      app.hidden = false;
+      render();
+      connectEvents();
+    }
+
+    function connectEvents() {
+      const events = new EventSource(PREFIX + "/api/events");
+      events.onopen = () => { statusEl.textContent = "● Live-forbindelse"; };
+      events.onerror = () => { statusEl.textContent = "Forbinder igen…"; };
+      events.onmessage = (event) => {
+        try { state = JSON.parse(event.data); render(); } catch (_) {}
+      };
+    }
+
+    document.getElementById("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const error = document.getElementById("login-error");
+      error.textContent = "";
+      try {
+        await request("/api/login", { method:"POST", body:JSON.stringify({ password:document.getElementById("password").value }) });
+        await boot();
+      } catch (failure) { error.textContent = failure.message; }
+    });
+
+    document.getElementById("death-minus").addEventListener("click", () => patch({ deaths:Math.max(0, state.deaths - 1) }));
+    document.getElementById("death-plus").addEventListener("click", () => patch({ deaths:state.deaths + 1 }));
+    document.getElementById("scale").addEventListener("input", (event) => {
+      document.getElementById("scale-value").textContent = Number(event.target.value).toFixed(2) + "×";
+      queuePatch({ overlayScale:Number(event.target.value) });
+    });
+    document.getElementById("show-cross").addEventListener("change", (event) => patch({ showCross:event.target.checked }));
+    document.getElementById("channel").addEventListener("change", (event) => patch({ channelName:event.target.value }));
+    document.getElementById("command").addEventListener("change", (event) => patch({ deathCommand:event.target.value }));
+    document.getElementById("chat-enabled").addEventListener("change", (event) => patch({ chatEnabled:event.target.checked }));
+    document.getElementById("mod-only").addEventListener("change", (event) => patch({ modOnly:event.target.checked }));
+
+    document.getElementById("boss-grid").addEventListener("click", (event) => {
+      const card = event.target.closest("[data-boss]");
+      if (!card) return;
+      const key = card.dataset.boss;
+      if (event.target.closest(".defeat")) patch({ bosses:{ [key]:{ defeated:!state.bosses[key].defeated } } });
+      if (event.target.closest(".boss-reset")) patch({ bosses:{ [key]:{ defeated:false, show:true } } });
+    });
+    document.getElementById("boss-grid").addEventListener("change", (event) => {
+      if (!event.target.matches(".boss-show")) return;
+      const key = event.target.closest("[data-boss]").dataset.boss;
+      patch({ bosses:{ [key]:{ show:event.target.checked } } });
+    });
+    document.getElementById("reset").addEventListener("click", async () => {
+      if (!confirm("Vil du nulstille dødsfald og alle bosser?")) return;
+      state = await request("/api/event", { method:"POST", body:JSON.stringify({ type:"reset" }) });
+      render();
+    });
+
+    boot().catch((error) => { statusEl.textContent = error.message; });
+  </script>
+</body>
+</html>

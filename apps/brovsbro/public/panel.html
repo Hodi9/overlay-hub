@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bro vs Bro — Panel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+  :root {
+    --ink: #0a0a16;
+    --panel: #150e26;
+    --panel-2: #1c1330;
+    --bone: #f1edff;
+    --bone-dim: #8f87ac;
+    --p1: #ff3864;
+    --p2: #1ee8ff;
+    --coin: #ffd23f;
+    --line: rgba(241, 237, 255, 0.14);
+    --danger: #ff6b3d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--bone);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    min-height: 100vh;
+    position: relative;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 2px, transparent 3px);
+  }
+  .wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; display: flex; flex-direction: column; gap: 24px; }
+  h1 { font-family: 'Press Start 2P', monospace; font-size: 20px; text-transform: uppercase; margin: 0; line-height: 1.4; text-shadow: 3px 3px 0 var(--p1), 6px 6px 0 var(--p2); }
+  .sub { color: var(--bone-dim); font-size: 15px; margin: 8px 0 0; }
+  .sub code { color: var(--coin); }
+
+  .card { background: var(--panel); border: 2px solid var(--panel-2); box-shadow: 0 0 0 2px var(--cabinet-edge, #0d0819); padding: 20px; }
+  .card h2 { font-family: 'Press Start 2P', monospace; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; color: var(--coin); margin: 0; }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .clear-btn {
+    appearance: none; border: 2px solid var(--line); background: transparent; color: var(--bone-dim);
+    width: 28px; height: 28px; font-size: 14px; cursor: pointer; font-family: 'VT323', monospace; line-height: 1;
+    flex-shrink: 0;
+  }
+  .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .player { background: var(--panel-2); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 4px solid var(--accent); }
+  .player.marcelo { --accent: var(--p1); }
+  .player.aggo { --accent: var(--p2); }
+  .player-name { font-family: 'VT323', monospace; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; font-size: 20px; }
+  .player-score { font-family: 'Press Start 2P', monospace; font-size: 34px; color: var(--accent); text-shadow: 0 0 12px var(--accent); font-variant-numeric: tabular-nums; }
+  .score-controls { display: flex; gap: 10px; }
+  .score-btn {
+    appearance: none; border: 2px solid var(--line); background: var(--panel); color: var(--bone);
+    width: 44px; height: 44px; font-size: 20px; cursor: pointer; font-family: 'VT323', monospace;
+  }
+  .score-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .score-btn:active { transform: scale(0.94); }
+
+  .row { display: flex; gap: 10px; align-items: center; }
+  .field {
+    flex: 1; background: var(--panel-2); border: 2px solid var(--line); color: var(--bone);
+    padding: 10px 12px; font-family: 'VT323', monospace; font-size: 17px;
+  }
+  .field:focus { outline: 2px solid var(--coin); outline-offset: 1px; }
+  .btn {
+    appearance: none; border: 2px solid var(--line); background: var(--panel-2); color: var(--bone);
+    padding: 10px 16px; font-family: 'VT323', monospace; font-weight: 400;
+    letter-spacing: 0.04em; text-transform: uppercase; font-size: 16px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--coin); color: var(--coin); }
+  .btn.primary { background: var(--coin); border-color: var(--coin); color: var(--ink); font-weight: 700; }
+  .btn.primary:hover { opacity: 0.9; color: var(--ink); }
+  .btn.danger { color: var(--danger); }
+  .btn.danger:hover { border-color: var(--danger); }
+
+  .current-dyst { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .current-dyst .name { font-family: 'Press Start 2P', monospace; font-size: 18px; text-transform: uppercase; color: var(--bone); }
+  .round-pill { font-family: 'VT323', monospace; letter-spacing: 0.04em; text-transform: uppercase; font-size: 15px; color: var(--coin); }
+
+  .queue-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .queue-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--panel-2); padding: 8px 12px; font-size: 17px; }
+  .queue-item .pos { color: var(--coin); font-family: 'VT323', monospace; font-size: 15px; }
+  .queue-item button { appearance: none; border: none; background: transparent; color: var(--bone-dim); cursor: pointer; font-size: 16px; }
+  .queue-item button:hover { color: var(--danger); }
+  .empty { color: var(--bone-dim); font-size: 15px; font-style: italic; }
+
+  .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .preset-btn {
+    appearance: none; border: 2px solid var(--line); background: transparent; color: var(--bone-dim);
+    padding: 6px 12px; font-size: 14px; cursor: pointer; font-family: 'VT323', monospace;
+  }
+  .preset-btn:hover { border-color: var(--coin); color: var(--coin); }
+  .preset-btn.active { border-color: var(--coin); color: var(--coin); background: rgba(255, 210, 63, 0.12); }
+
+  .log { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+  .log-item { font-size: 16px; color: var(--bone-dim); display: flex; gap: 8px; }
+  .log-item time { font-variant-numeric: tabular-nums; opacity: 0.7; }
+
+  .lock { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
+  .lock input { width: 240px; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--p1); color: var(--bone); padding: 10px 18px; font-size: 15px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease; font-family: 'VT323', monospace;
+    border: 2px solid var(--ink);
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #2fb86b; }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="app" hidden>
+  <div>
+    <h1>Bro vs Bro — Kontrolpanel</h1>
+    <p class="sub">Overlay-url til OBS/Pogly: <code id="overlay-url"></code></p>
+  </div>
+
+  <div class="card">
+    <h2>Point</h2>
+    <div class="players">
+      <div class="player marcelo">
+        <span class="player-name">Marcelo</span>
+        <span class="player-score" id="score-marcelo">0</span>
+        <div class="score-controls">
+          <button class="score-btn" data-action="score:dec" data-player="marcelo">&minus;</button>
+          <button class="score-btn" data-action="score:inc" data-player="marcelo">+</button>
+        </div>
+      </div>
+      <div class="player aggo">
+        <span class="player-name">Aggo</span>
+        <span class="player-score" id="score-aggo">0</span>
+        <div class="score-controls">
+          <button class="score-btn" data-action="score:dec" data-player="aggo">&minus;</button>
+          <button class="score-btn" data-action="score:inc" data-player="aggo">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Nuværende dyst</h2>
+      <button class="clear-btn" id="clear-current-btn" title="Ryd nuværende dyst" aria-label="Ryd nuværende dyst">✕</button>
+    </div>
+    <div class="current-dyst">
+      <span class="name" id="current-name">—</span>
+      <span class="round-pill" id="round-pill">Runde 1</span>
+    </div>
+    <div class="row" style="margin-top: 14px;">
+      <input class="field" id="dyst-input" placeholder="Sæt dyst manuelt, fx Bowling" />
+      <button class="btn" id="set-dyst-btn">Sæt</button>
+    </div>
+    <div class="preset-row" id="preset-row"></div>
+  </div>
+
+  <div class="card">
+    <h2>Næste dyster</h2>
+    <ul class="queue-list" id="queue-list"></ul>
+    <div class="row" style="margin-top: 14px;">
+      <input class="field" id="queue-input" placeholder="Tilføj dyst til køen" />
+      <button class="btn" id="queue-add-btn">Tilføj</button>
+    </div>
+    <button class="btn primary" id="next-btn" style="margin-top: 14px; width: 100%;">Start næste dyst i køen →</button>
+  </div>
+
+  <div class="card">
+    <h2>Log</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2>Nulstil</h2>
+    <div class="row">
+      <button class="btn" id="reset-scores-btn">Nulstil kun point</button>
+      <button class="btn danger" id="reset-all-btn">Nulstil alt</button>
+    </div>
+  </div>
+</div>
+
+<div class="lock" id="lock">
+  <h1>Bro vs Bro</h1>
+  <p class="sub">Indtast panel-kode</p>
+  <input class="field" id="key-input" type="password" placeholder="Panel-kode" />
+  <button class="btn primary" id="unlock-btn">Lås op</button>
+</div>
+
+<div class="toast" id="toast">Forkert kode</div>
+
+<script src="/brovsbro/socket.io/socket.io.js"></script>
+<script>
+  const socket = io({ path: "/brovsbro/socket.io" });
+  let token = localStorage.getItem("bvb-panel-key") || "";
+  let requiresKey = false;
+  let state = null;
+
+  const app = document.getElementById("app");
+  const lock = document.getElementById("lock");
+  const toast = document.getElementById("toast");
+
+  document.getElementById("overlay-url").textContent = location.origin + "/brovsbro/overlay";
+
+  function showToast(msg, success) {
+    toast.textContent = msg;
+    toast.classList.toggle("success", Boolean(success));
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  function send(type, extra = {}) {
+    socket.emit("panel:action", { type, token, ...extra });
+  }
+
+  function tryUnlock() {
+    app.hidden = false;
+    lock.hidden = true;
+  }
+
+  function verify(candidateToken) {
+    token = candidateToken;
+    socket.emit("panel:action", { type: "ping", token });
+  }
+
+  document.getElementById("unlock-btn").addEventListener("click", () => {
+    verify(document.getElementById("key-input").value);
+  });
+  document.getElementById("key-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("unlock-btn").click();
+  });
+
+  socket.on("config", (cfg) => {
+    requiresKey = cfg.requiresKey;
+    if (!requiresKey) { tryUnlock(); }
+    else if (token) { verify(token); }
+  });
+
+  socket.on("panel:denied", () => {
+    showToast("Forkert panel-kode");
+    app.hidden = true;
+    lock.hidden = false;
+    localStorage.removeItem("bvb-panel-key");
+  });
+
+  socket.on("panel:ok", () => {
+    localStorage.setItem("bvb-panel-key", token);
+    if (app.hidden) showToast("Adgang godkendt ✓", true);
+    tryUnlock();
+  });
+
+  socket.on("state", (s) => {
+    state = s;
+    render();
+  });
+
+  function render() {
+    if (!state) return;
+    document.getElementById("score-marcelo").textContent = state.scores.marcelo;
+    document.getElementById("score-aggo").textContent = state.scores.aggo;
+    document.getElementById("current-name").textContent = state.current?.name || "—";
+    document.getElementById("round-pill").textContent = "Runde " + state.round;
+
+    const presetRow = document.getElementById("preset-row");
+    presetRow.innerHTML = "";
+    const presetNames = [...new Set(state.queue.map((d) => d.name))];
+    presetNames.forEach((name) => {
+      const b = document.createElement("button");
+      b.className = "preset-btn";
+      if (state.current?.name === name) b.classList.add("active");
+      b.textContent = name;
+      b.addEventListener("click", () => send("dyst:setCurrent", { name }));
+      presetRow.appendChild(b);
+    });
+
+    const list = document.getElementById("queue-list");
+    list.innerHTML = "";
+    if (state.queue.length === 0) {
+      const li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "Køen er tom";
+      list.appendChild(li);
+    } else {
+      state.queue.forEach((d, i) => {
+        const li = document.createElement("li");
+        li.className = "queue-item";
+        li.innerHTML = '<span><span class="pos">' + (i + 1) + '.</span> ' + d.name + "</span>";
+        const btn = document.createElement("button");
+        btn.textContent = "✕";
+        btn.addEventListener("click", () => send("queue:remove", { id: d.id }));
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    const log = document.getElementById("log");
+    log.innerHTML = "";
+    state.log.forEach((entry) => {
+      const div = document.createElement("div");
+      div.className = "log-item";
+      const t = document.createElement("time");
+      t.textContent = new Date(entry.at).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+      div.appendChild(t);
+      const span = document.createElement("span");
+      span.textContent = entry.entry;
+      div.appendChild(span);
+      log.appendChild(div);
+    });
+  }
+
+  document.querySelectorAll(".score-btn[data-action]").forEach((btn) => {
+    btn.addEventListener("click", () => send(btn.dataset.action, { player: btn.dataset.player }));
+  });
+
+  document.getElementById("set-dyst-btn").addEventListener("click", () => {
+    const input = document.getElementById("dyst-input");
+    if (input.value.trim()) { send("dyst:setCurrent", { name: input.value.trim() }); input.value = ""; }
+  });
+  document.getElementById("dyst-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("set-dyst-btn").click();
+  });
+
+  document.getElementById("queue-add-btn").addEventListener("click", () => {
+    const input = document.getElementById("queue-input");
+    if (input.value.trim()) { send("queue:add", { name: input.value.trim() }); input.value = ""; }
+  });
+  document.getElementById("queue-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("queue-add-btn").click();
+  });
+
+  document.getElementById("clear-current-btn").addEventListener("click", () => send("dyst:clear"));
+  document.getElementById("next-btn").addEventListener("click", () => send("dyst:next"));
+  document.getElementById("reset-scores-btn").addEventListener("click", () => {
+    if (confirm("Nulstil point for begge spillere?")) send("reset:scores");
+  });
+  document.getElementById("reset-all-btn").addEventListener("click", () => {
+    if (confirm("Nulstil ALT — point, runde og kø?")) send("reset:all");
+  });
+</script>
+</body>
+</html>

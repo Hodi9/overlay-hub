@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: overlay-hub
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: BROVSBRO_PANEL_KEY
+        sync: false
+      - key: MINECRAFT_CONTROL_PANEL_PASSWORD
+        sync: false
+      - key: MINECRAFT_AUTH_SECRET
+        generateValue: true
+      - key: NODE_VERSION
+        value: 22
+
+# After upgrading this service to a paid plan in the Render dashboard, add a
+# persistent disk so bro-vs-bro-overlay's state.json survives restarts/redeploys:
+#   disk:
+#     name: overlay-data
+#     mountPath: /var/data
+#   and set env var DATA_DIR=/var/data
+# Free-plan instances can't attach disks, so this is left out until upgraded.
