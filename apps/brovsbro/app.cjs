@@ -70,7 +70,7 @@ function createBrovsbroApp() {
   });
 
   router.get("/duel", (req, res) => {
-    res.redirect(301, "/brovsbro/overlay?view=badges");
+    res.redirect(301, "/brovsbro/overlay?view=duel");
   });
 
   router.get("/", (req, res) => {
