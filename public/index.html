@@ -37,6 +37,8 @@
     letter-spacing: -.02em;
   }
   header p { margin: 0; color: var(--muted); font-size: 15px; }
+  header p.contact { margin-top: 10px; color: var(--text); }
+  header p.contact::before { content: "💬 "; }
 
   main {
     max-width: 900px;
@@ -119,6 +121,7 @@
   <header>
     <h1>Overlay Hub</h1>
     <p>OBS / Pogly browser sources and control panels for every overlay running on this service.</p>
+    <p class="contact">These overlays are made by dreamglow. To gain access, message me on Discord (dreamglow#8451) or Twitch (@dreamglowxd).</p>
   </header>
 
   <main>
