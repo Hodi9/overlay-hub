@@ -74,6 +74,7 @@
   .icon.minecraft { background: linear-gradient(135deg, #2f4a1e, var(--lime)); }
   .icon.rdr2 { background: linear-gradient(135deg, #5c2a1a, var(--amber)); }
   .icon.ascended { background: linear-gradient(135deg, #3a1f5c, var(--gold)); }
+  .icon.gear { background: linear-gradient(135deg, #8a3511, #ff7417); }
 
   .card-head h2 { margin: 0; font-size: 18px; }
   .card-head span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -107,6 +108,7 @@
   .minecraft-card .links a:not(.control):hover { border-color: var(--lime); }
   .rdr2-card .links a:not(.control):hover { border-color: var(--amber); }
   .ascended-card .links a:not(.control):hover { border-color: var(--gold); }
+  .gear-card .links a:hover { border-color: #ff7417; }
 
   footer {
     max-width: 900px;
@@ -185,6 +187,20 @@
         <a href="https://pulldex.onrender.com/">Pulldex</a>
       </div>
       <p class="card-hint">Pulldex is password protected — you'll need its access code the first time.</p>
+    </section>
+
+    <section class="card gear-card">
+      <div class="card-head">
+        <div class="icon gear">🖥️</div>
+        <div>
+          <h2>Mit stream-gear</h2>
+          <span>Automatisk produktrotation med chatkommandoer</span>
+        </div>
+      </div>
+      <div class="links">
+        <a href="/gear/">Overlay</a>
+      </div>
+      <p class="card-hint">Viser ét produkt i 7 sekunder ad gangen. Sekvensen gentages automatisk hvert 15. minut.</p>
     </section>
   </main>
 
