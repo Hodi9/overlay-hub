@@ -10,12 +10,12 @@ body { color:var(--cream); font-family:"Barlow Semi Condensed",system-ui,sans-se
 .product-card.is-leaving { animation:swing-away 620ms cubic-bezier(.55,0,.85,.3) forwards; }
 .portrait { align-self:end; height:210px; overflow:hidden; }
 .portrait img { width:100%; height:100%; object-fit:cover; object-position:50% 0%; -webkit-mask-image:linear-gradient(90deg,#000 70%,transparent 100%); mask-image:linear-gradient(90deg,#000 70%,transparent 100%); }
-.product-card__image { display:grid; place-items:center; width:100px; height:100px; }
+.product-card__image { display:grid; place-items:center; width:110px; height:110px; }
 .product-card__image img { width:88%; height:88%; object-fit:contain; filter:drop-shadow(0 6px 10px rgba(0,0,0,.45)); }
-.product-card__copy { min-width:0; padding:20px 78px 18px 2px; }
+.product-card__copy { min-width:0; padding:20px 18px 18px 2px; }
 .eyebrow { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
 .eyebrow b { color:var(--orange); }
-h1 { margin:4px 0 8px; font-family:"Rajdhani",sans-serif; font-size:21px; line-height:1.05; }
+h1 { margin:4px 108px 8px 0; font-family:"Rajdhani",sans-serif; font-size:21px; line-height:1.05; }
 .details { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .price { color:var(--orange-soft); font-family:"Rajdhani",sans-serif; font-size:21px; font-weight:700; }
 .before-price { color:var(--muted); font-size:11px; text-decoration:line-through; }
@@ -28,10 +28,9 @@ h1 { margin:4px 0 8px; font-family:"Rajdhani",sans-serif; font-size:21px; line-h
 .product-card.is-outro .outro-copy { display:flex; align-items:center; height:100%; }
 .outro-copy h1 { margin:0; font-family:"Rajdhani",sans-serif; font-size:22px; line-height:1.22; color:var(--cream); }
 .outro-copy h1 b { color:var(--orange); }
-.power-mark { position:absolute; top:12px; right:14px; display:flex; align-items:center; gap:5px; opacity:.75; }
-.power-mark svg { width:11px; height:11px; flex:none; }
-.power-mark span { font-family:"Rajdhani",sans-serif; font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--muted); }
-.power-mark span b { color:var(--orange); font-weight:700; }
+.power-mark { position:absolute; top:16px; right:16px; display:flex; align-items:baseline; gap:2px; }
+.power-mark img { height:15px; width:auto; display:block; }
+.power-mark span { font-family:"Rajdhani",sans-serif; font-size:14px; font-weight:700; color:var(--cream); }
 @keyframes swing-up { 0%{opacity:0;transform:translateY(145%) rotate(-4deg) scale(.88)} 58%{opacity:1;transform:translateY(-7%) rotate(1.7deg) scale(1.015)} 78%{transform:translateY(2%) rotate(-.7deg) scale(.995)} 100%{opacity:1;transform:translateY(0) rotate(0) scale(1)} }
 @keyframes swing-away { 0%{opacity:1;transform:translateY(0) rotate(0) scale(1)} 100%{opacity:0;transform:translateY(125%) rotate(3.5deg) scale(.9)} }
 @media (prefers-reduced-motion:reduce) { .product-card.is-entering{animation:fade-in 250ms ease-out forwards}.product-card.is-leaving{animation:fade-out 250ms ease-in forwards} }
