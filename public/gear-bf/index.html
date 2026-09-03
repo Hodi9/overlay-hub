@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mit stream-gear — Black Friday</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700;800&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="overlay" aria-live="polite">
+     <div class="scale-wrap" id="scale-wrap">
+      <article class="product-card" id="product-card" aria-hidden="true">
+        <div class="ribbon" id="ribbon"><span>Black Friday</span></div>
+        <div class="portrait"><img src="assets/profile.png" alt="" /></div>
+        <div class="product-card__image" id="product-image-wrap"><img id="product-image" src="assets/keyboard.png" alt="" /></div>
+        <div class="product-card__copy" id="product-copy">
+          <div class="eyebrow"><span>Jeg bruger</span><b id="product-brand">CEPTER</b></div>
+          <h1 id="product-name">Cepter Titan Pro gaming tastatur</h1>
+          <div class="details">
+            <span class="price" id="product-price">1.298 kr.</span>
+            <span class="before-price" id="product-before"></span>
+            <span class="discount-pill" id="discount-pill" hidden></span>
+            <span class="command" id="product-command">!keyboard</span>
+          </div>
+          <p>Skriv kommandoen i chatten for mere info</p>
+        </div>
+        <div class="outro-copy" id="outro-copy" hidden>
+          <h1 id="outro-text">Få mit gear og en masse andet lækkert inde på Power.dk</h1>
+        </div>
+        <div class="power-mark">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M3 12 L15 12 M15 12 L10 6 M15 12 L10 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span><b>POWER</b>.DK</span>
+        </div>
+      </article>
+     </div>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
