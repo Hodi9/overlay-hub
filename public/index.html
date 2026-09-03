@@ -17,6 +17,7 @@
     --lime: #a2d344;
     --amber: #e8a33d;
     --gold: #f5c542;
+    --violet: #8b6cf5;
   }
   * { box-sizing: border-box; }
   body {
@@ -75,6 +76,7 @@
   .icon.rdr2 { background: linear-gradient(135deg, #5c2a1a, var(--amber)); }
   .icon.ascended { background: linear-gradient(135deg, #3a1f5c, var(--gold)); }
   .icon.gear { background: linear-gradient(135deg, #8a3511, #ff7417); }
+  .icon.gauntlet { background: linear-gradient(135deg, #3a2f6e, var(--violet)); }
 
   .card-head h2 { margin: 0; font-size: 18px; }
   .card-head span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -109,6 +111,7 @@
   .rdr2-card .links a:not(.control):hover { border-color: var(--amber); }
   .ascended-card .links a:not(.control):hover { border-color: var(--gold); }
   .gear-card .links a:hover { border-color: #ff7417; }
+  .gauntlet-card .links a:not(.control):hover { border-color: var(--violet); }
 
   footer {
     max-width: 900px;
@@ -202,6 +205,19 @@
         <a class="control" href="/gear/control.html">Control panel</a>
       </div>
       <p class="card-hint">Viser ét produkt i 7 sekunder ad gangen. Sekvensen gentages automatisk hvert 15. minut.</p>
+    </section>
+    <section class="card gauntlet-card">
+      <div class="card-head">
+        <div class="icon gauntlet">🎮</div>
+        <div>
+          <h2>Gaming Gauntlet</h2>
+          <span>Multi-game challenge badges + death counter</span>
+        </div>
+      </div>
+      <div class="links">
+        <a href="/gauntlet/">Overlay</a>
+        <a class="control" href="/gauntlet/control.html">Control panel</a>
+      </div>
     </section>
   </main>
 
