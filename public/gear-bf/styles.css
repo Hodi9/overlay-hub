@@ -1,4 +1,4 @@
-:root { color-scheme: dark; --panel:#141414; --panel-deep:#000000; --orange:#ffd400; --orange-soft:#ffe680; --cream:#ffffff; --muted:#9a9a9a; --discount:#ff2d2d; --discount-text:#fff; }
+:root { color-scheme: dark; --panel:#3a1400; --panel-deep:#160700; --orange:#ffd400; --orange-soft:#ffe680; --cream:#ffffff; --muted:#d8ac8c; --discount:#ff2d2d; --discount-text:#fff; }
 * { box-sizing:border-box; }
 html,body { width:100%; height:100%; margin:0; overflow:hidden; background:transparent; }
 body { color:var(--cream); font-family:"Barlow Semi Condensed",system-ui,sans-serif; }
@@ -14,10 +14,10 @@ body { color:var(--cream); font-family:"Barlow Semi Condensed",system-ui,sans-se
   width:min(650px,calc(100vw - 52px));
   min-height:236px;
   overflow:hidden;
-  border:1px solid rgba(255,212,0,.55);
+  border:1px solid rgba(255,148,0,.65);
   border-radius:16px;
   background:linear-gradient(145deg,var(--panel),var(--panel-deep) 78%);
-  box-shadow:0 22px 46px rgba(0,0,0,.7),inset 0 0 38px rgba(255,212,0,.05);
+  box-shadow:0 22px 46px rgba(0,0,0,.7),inset 0 0 44px rgba(255,148,0,.1);
   opacity:0;
   transform:translateY(145%) rotate(-4deg) scale(.88);
   transform-origin:50% 120%;
@@ -39,10 +39,10 @@ body { color:var(--cream); font-family:"Barlow Semi Condensed",system-ui,sans-se
   color:#000;
   font-family:"Rajdhani",sans-serif;
   font-weight:800;
-  font-size:13px;
-  letter-spacing:.16em;
+  font-size:17px;
+  letter-spacing:.14em;
   text-transform:uppercase;
-  padding:6px 0;
+  padding:8px 0;
 }
 
 .portrait { grid-row:2; align-self:end; height:190px; overflow:hidden; }
@@ -66,10 +66,8 @@ h1 { margin:4px 0 8px; font-family:"Rajdhani",sans-serif; font-size:21px; line-h
 .product-card.is-outro .outro-copy { display:flex; align-items:center; height:100%; }
 .outro-copy h1 { margin:0; font-family:"Rajdhani",sans-serif; font-size:22px; line-height:1.22; color:var(--cream); }
 .outro-copy h1 b { color:var(--orange); }
-.power-mark { position:absolute; top:12px; right:14px; display:flex; align-items:center; gap:5px; opacity:.85; color:#000; z-index:2; }
-.power-mark svg { width:11px; height:11px; flex:none; }
-.power-mark span { font-family:"Rajdhani",sans-serif; font-size:12px; font-weight:700; letter-spacing:.04em; color:#000; }
-.power-mark span b { color:#000; font-weight:800; }
+.power-mark { position:absolute; top:14px; right:16px; z-index:2; }
+.power-mark img { height:13px; width:auto; display:block; filter:brightness(0); opacity:.88; }
 @keyframes swing-up { 0%{opacity:0;transform:translateY(145%) rotate(-4deg) scale(.88)} 58%{opacity:1;transform:translateY(-7%) rotate(1.7deg) scale(1.015)} 78%{transform:translateY(2%) rotate(-.7deg) scale(.995)} 100%{opacity:1;transform:translateY(0) rotate(0) scale(1)} }
 @keyframes swing-away { 0%{opacity:1;transform:translateY(0) rotate(0) scale(1)} 100%{opacity:0;transform:translateY(125%) rotate(3.5deg) scale(.9)} }
 @media (prefers-reduced-motion:reduce) { .product-card.is-entering{animation:fade-in 250ms ease-out forwards}.product-card.is-leaving{animation:fade-out 250ms ease-in forwards} }
