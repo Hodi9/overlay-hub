@@ -45,25 +45,21 @@
 (function(){
   var checkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function isDoneOf(g){ return g.type === 'count' ? g.count > 0 : g.done; }
-
   function render(games){
     var visible = games.filter(function(g){ return g.visible !== false; });
-    var sorted = visible.slice().sort(function(a,b){ return Number(isDoneOf(a)) - Number(isDoneOf(b)); });
+    var sorted = visible.slice().sort(function(a,b){ return Number(a.done) - Number(b.done); });
 
     var badgesEl = document.getElementById('badges');
     badgesEl.innerHTML = '';
 
     sorted.forEach(function(g){
-      var isDone = isDoneOf(g);
-
       var badge = document.createElement('div');
-      badge.className = 'badge' + (isDone ? '' : ' pending');
+      badge.className = 'badge' + (g.done ? '' : ' pending');
       badge.style.background = g.color;
       badge.style.borderColor = 'color-mix(in srgb, ' + g.color + ' 65%, black)';
-      var icon = g.type === 'check'
+      var icon = g.done
         ? '<span class="badge-icon">' + checkIcon + '</span>'
-        : '<span class="badge-icon count">' + g.count + '</span>';
+        : '<span class="badge-icon count">' + (g.count || 0) + '</span>';
       badge.innerHTML = icon + '<span>' + g.name + '</span>';
       badgesEl.appendChild(badge);
     });
