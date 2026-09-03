@@ -38,7 +38,7 @@
   .status-msg.ok{color:var(--check);}
 
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
-  .row{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);border-left:3px solid transparent;}
+  .row{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);border-left:3px solid transparent;flex-wrap:wrap;}
   .row:last-child{border-bottom:none;}
   .row.done{background:rgba(63,214,122,0.06);border-left-color:var(--check);}
   .group-divider{padding:8px 18px 6px;font-family:'Rajdhani',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;font-size:0.7rem;color:var(--check);background:var(--panel-2);border-bottom:1px solid var(--line);}
@@ -99,7 +99,7 @@
 
   <section>
     <p class="section-label">Control panel</p>
-    <p class="hint" style="margin:-4px 0 10px;">👁 viser/skjuler spillet på begge overlays — praktisk hvis et spil ikke er en del af den aktuelle gauntlet.</p>
+    <p class="hint" style="margin:-4px 0 10px;">Tallet (−/+) viser på overlayet, indtil du klikker Pending → Cleared, hvor det skifter til et flueben. 👁 viser/skjuler spillet på begge overlays.</p>
     <div class="panel" id="panel"></div>
   </section>
 
@@ -151,7 +151,7 @@
 
   var checkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function isDoneOf(g){ return g.type === 'count' ? g.count > 0 : g.done; }
+  function isDoneOf(g){ return g.done; }
 
   var latestGames = [];
 
@@ -221,27 +221,27 @@
       label.textContent = g.name;
       row.appendChild(label);
 
-      if (g.type === 'check'){
-        var statusBtn = document.createElement('button');
-        statusBtn.className = 'status-btn' + (g.done ? ' on' : '');
-        statusBtn.innerHTML = '<span class="dot"></span><span>' + (g.done ? 'Cleared' : 'Pending') + '</span>';
-        statusBtn.addEventListener('click', function(){ patchGame(g.id, { done: !g.done }); });
-        row.appendChild(statusBtn);
-      } else {
-        var stepper = document.createElement('div');
-        stepper.className = 'stepper';
-        var minus = document.createElement('button');
-        minus.textContent = '−';
-        minus.addEventListener('click', function(){ patchGame(g.id, { count: Math.max(0, g.count - 1) }); });
-        var countEl = document.createElement('span');
-        countEl.className = 'count';
-        countEl.textContent = g.count;
-        var plus = document.createElement('button');
-        plus.textContent = '+';
-        plus.addEventListener('click', function(){ patchGame(g.id, { count: g.count + 1 }); });
-        stepper.appendChild(minus); stepper.appendChild(countEl); stepper.appendChild(plus);
-        row.appendChild(stepper);
-      }
+      var stepper = document.createElement('div');
+      stepper.className = 'stepper';
+      var minus = document.createElement('button');
+      minus.textContent = '−';
+      minus.setAttribute('aria-label', 'Sænk tal for ' + g.name);
+      minus.addEventListener('click', function(){ patchGame(g.id, { count: Math.max(0, (g.count || 0) - 1) }); });
+      var countEl = document.createElement('span');
+      countEl.className = 'count';
+      countEl.textContent = g.count || 0;
+      var plus = document.createElement('button');
+      plus.textContent = '+';
+      plus.setAttribute('aria-label', 'Hæv tal for ' + g.name);
+      plus.addEventListener('click', function(){ patchGame(g.id, { count: (g.count || 0) + 1 }); });
+      stepper.appendChild(minus); stepper.appendChild(countEl); stepper.appendChild(plus);
+      row.appendChild(stepper);
+
+      var statusBtn = document.createElement('button');
+      statusBtn.className = 'status-btn' + (g.done ? ' on' : '');
+      statusBtn.innerHTML = '<span class="dot"></span><span>' + (g.done ? 'Cleared' : 'Pending') + '</span>';
+      statusBtn.addEventListener('click', function(){ patchGame(g.id, { done: !g.done }); });
+      row.appendChild(statusBtn);
 
       var visBtn = document.createElement('button');
       visBtn.className = 'row-visibility' + (g.visible === false ? ' hidden-state' : '');
@@ -288,6 +288,15 @@
       dPlus.addEventListener('click', function(){ patchGame(g.id, { deaths: (g.deaths||0) + 1 }); });
       dStepper.appendChild(dMinus); dStepper.appendChild(dCount); dStepper.appendChild(dPlus);
       dRow.appendChild(dStepper);
+
+      var dVisBtn = document.createElement('button');
+      dVisBtn.className = 'row-visibility' + (g.visible === false ? ' hidden-state' : '');
+      dVisBtn.textContent = g.visible === false ? '🙈' : '👁';
+      dVisBtn.title = g.visible === false ? 'Skjult på overlay — klik for at vise' : 'Vist på overlay — klik for at skjule';
+      dVisBtn.setAttribute('aria-label', (g.visible === false ? 'Vis ' : 'Skjul ') + g.name + ' på overlayet');
+      dVisBtn.addEventListener('click', function(){ patchGame(g.id, { visible: g.visible === false }); });
+      dRow.appendChild(dVisBtn);
+
       deathsPanel.appendChild(dRow);
     });
 
@@ -296,7 +305,6 @@
     addRow.innerHTML =
       '<input type="text" id="new-name" placeholder="Spilnavn">' +
       '<input type="color" id="new-color" value="#5a6270">' +
-      '<select id="new-type"><option value="check">Check</option><option value="count">Count</option></select>' +
       '<button class="btn" id="add-btn">Tilføj</button>';
     panel.appendChild(addRow);
 
@@ -304,8 +312,7 @@
       var name = document.getElementById('new-name').value.trim();
       if (!name) return;
       var color = document.getElementById('new-color').value;
-      var type = document.getElementById('new-type').value;
-      apiCall('/gauntlet/api/games', { method:'POST', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ name: name, color: color, type: type }) })
+      apiCall('/gauntlet/api/games', { method:'POST', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ name: name, color: color }) })
         .then(function(s){ render(s.games || []); });
     });
   }
