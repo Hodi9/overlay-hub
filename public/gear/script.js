@@ -1,8 +1,8 @@
 const products = [
-  { brand:"CEPTER", name:"Cepter Titan Pro gaming tastatur", price:"1.298 kr.", before:"", command:"!keyboard", image:"assets/keyboard.jpg" },
-  { brand:"LOGITECH", name:"Logitech G PRO X2 SUPERSTRIKE gaming mus", price:"1.399 kr.", before:"", command:"!mus", image:"assets/mouse.jpg" },
-  { brand:"DJI", name:"DJI Osmo Pocket 3 Creator combo", price:"4.299 kr.", before:"", command:"!kamera", image:"assets/camera.jpg" },
-  { brand:"SAMSUNG", name:"Samsung Odyssey OLED G6 27” QHD gamingskærm", price:"3.999 kr.", before:"6.999 kr.", command:"!skærm", image:"assets/monitor.jpg" },
+  { brand:"CEPTER", name:"Cepter Titan Pro gaming tastatur", price:"1.298 kr.", before:"", command:"!keyboard", image:"assets/keyboard.png" },
+  { brand:"LOGITECH", name:"Logitech G PRO X2 SUPERSTRIKE gaming mus", price:"1.399 kr.", before:"", command:"!mus", image:"assets/mouse.png" },
+  { brand:"DJI", name:"DJI Osmo Pocket 3 Creator combo", price:"4.299 kr.", before:"", command:"!kamera", image:"assets/camera.png" },
+  { brand:"SAMSUNG", name:"Samsung Odyssey OLED G6 27” QHD gamingskærm", price:"3.999 kr.", before:"6.999 kr.", command:"!skærm", image:"assets/monitor.png" },
 ];
 const DISPLAY_TIME=7000, TRANSITION_TIME=650, BETWEEN_PRODUCTS=450, CYCLE_INTERVAL=15*60*1000;
 const card=document.querySelector("#product-card"), image=document.querySelector("#product-image"), brand=document.querySelector("#product-brand"), name=document.querySelector("#product-name"), price=document.querySelector("#product-price"), before=document.querySelector("#product-before"), command=document.querySelector("#product-command");
