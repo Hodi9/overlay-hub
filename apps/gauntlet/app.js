@@ -8,11 +8,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 const defaultGames = () => [
-  { id: "fortnite", name: "Fortnite", color: "#2f7fe0", icon: "F", type: "check", done: false, count: 0, deaths: 47 },
-  { id: "warzone", name: "Warzone", color: "#6f7a3f", icon: "WZ", type: "check", done: false, count: 0, deaths: 34 },
-  { id: "minecraft", name: "Minecraft", color: "#96622f", icon: "creeper", type: "count", done: false, count: 3, deaths: 1 },
-  { id: "lol", name: "League of Legends", color: "#0aa8a0", icon: "LoL", type: "check", done: false, count: 0, deaths: 0 },
-  { id: "rocketleague", name: "Rocket League", color: "#e8631f", icon: "RL", type: "check", done: false, count: 0, deaths: 0 }
+  { id: "fortnite", name: "Fortnite", color: "#2f7fe0", icon: "F", type: "check", done: false, count: 0, deaths: 47, visible: true },
+  { id: "warzone", name: "Warzone", color: "#6f7a3f", icon: "WZ", type: "check", done: false, count: 0, deaths: 34, visible: true },
+  { id: "minecraft", name: "Minecraft", color: "#96622f", icon: "creeper", type: "count", done: false, count: 3, deaths: 1, visible: true },
+  { id: "lol", name: "League of Legends", color: "#0aa8a0", icon: "LoL", type: "check", done: false, count: 0, deaths: 0, visible: true },
+  { id: "rocketleague", name: "Rocket League", color: "#e8631f", icon: "RL", type: "check", done: false, count: 0, deaths: 0, visible: true }
 ];
 
 function safeEqual(a, b) {
@@ -51,7 +51,8 @@ function cleanGame(input, existing) {
     type: input?.type === "count" ? "count" : (input?.type === "check" ? "check" : (base.type || "check")),
     done: typeof input?.done === "boolean" ? input.done : Boolean(base.done),
     count: Math.max(0, Math.round(toNumber(input?.count, base.count || 0))),
-    deaths: Math.max(0, Math.round(toNumber(input?.deaths, base.deaths || 0)))
+    deaths: Math.max(0, Math.round(toNumber(input?.deaths, base.deaths || 0))),
+    visible: typeof input?.visible === "boolean" ? input.visible : (base.visible !== undefined ? base.visible : true)
   };
 }
 
