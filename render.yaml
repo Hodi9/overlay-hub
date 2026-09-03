@@ -14,6 +14,8 @@ services:
         sync: false
       - key: MINECRAFT_AUTH_SECRET
         generateValue: true
+      - key: GEAR_CONTROL_PASSWORD
+        sync: false
       - key: NODE_VERSION
         value: 22
 

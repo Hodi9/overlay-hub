@@ -1,14 +1,102 @@
-const products = [
-  { brand:"CEPTER", name:"Cepter Titan Pro gaming tastatur", price:"1.298 kr.", before:"", command:"!keyboard", image:"assets/keyboard.png" },
-  { brand:"LOGITECH", name:"Logitech G PRO X2 SUPERSTRIKE gaming mus", price:"1.399 kr.", before:"", command:"!mus", image:"assets/mouse.png" },
-  { brand:"DJI", name:"DJI Osmo Pocket 3 Creator combo", price:"4.299 kr.", before:"", command:"!kamera", image:"assets/camera.png" },
-  { brand:"SAMSUNG", name:"Samsung Odyssey OLED G6 27” QHD gamingskærm", price:"3.999 kr.", before:"6.999 kr.", command:"!skærm", image:"assets/monitor.png" },
-];
-const DISPLAY_TIME=7000, TRANSITION_TIME=650, BETWEEN_PRODUCTS=450, CYCLE_INTERVAL=15*60*1000;
-const card=document.querySelector("#product-card"), image=document.querySelector("#product-image"), brand=document.querySelector("#product-brand"), name=document.querySelector("#product-name"), price=document.querySelector("#product-price"), before=document.querySelector("#product-before"), command=document.querySelector("#product-command");
-const wait=(milliseconds)=>new Promise((resolve)=>setTimeout(resolve,milliseconds));
-function setProduct(product){ image.src=product.image; image.alt=product.name; brand.textContent=product.brand; name.textContent=product.name; price.textContent=product.price; before.textContent=product.before; command.textContent=product.command; }
-async function showProduct(product){ setProduct(product); card.className="product-card is-entering"; card.setAttribute("aria-hidden","false"); await wait(TRANSITION_TIME); card.className="product-card is-visible"; await wait(DISPLAY_TIME); card.className="product-card is-leaving"; await wait(TRANSITION_TIME); card.className="product-card"; card.setAttribute("aria-hidden","true"); await wait(BETWEEN_PRODUCTS); }
-async function playSequence(){ for(const product of products) await showProduct(product); }
-async function runOverlay(){ while(true){ const cycleStarted=Date.now(); await playSequence(); await wait(Math.max(0,CYCLE_INTERVAL-(Date.now()-cycleStarted))); } }
+const DISPLAY_TIME = 7000, TRANSITION_TIME = 650, BETWEEN_PRODUCTS = 450, CYCLE_INTERVAL = 15 * 60 * 1000;
+
+const scaleWrap = document.querySelector("#scale-wrap");
+const card = document.querySelector("#product-card");
+const image = document.querySelector("#product-image");
+const brand = document.querySelector("#product-brand");
+const name = document.querySelector("#product-name");
+const price = document.querySelector("#product-price");
+const before = document.querySelector("#product-before");
+const command = document.querySelector("#product-command");
+const outroText = document.querySelector("#outro-text");
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchProducts() {
+  try {
+    const res = await fetch("/gear/api/products");
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+async function fetchConfig() {
+  try {
+    const res = await fetch("/gear/api/config");
+    if (!res.ok) return { outroEnabled: false, outroText: "" };
+    return await res.json();
+  } catch {
+    return { outroEnabled: false, outroText: "" };
+  }
+}
+
+function setProduct(product) {
+  image.src = product.image;
+  image.alt = product.name;
+  brand.textContent = product.brand;
+  name.textContent = product.name;
+  price.textContent = product.price;
+  before.textContent = product.before || "";
+  command.textContent = product.command;
+}
+
+function setOutro(text) {
+  outroText.textContent = text;
+}
+
+function setPhase(phase) {
+  const outroClass = card.dataset.outro === "1" ? " is-outro" : "";
+  card.className = phase ? `product-card ${phase}${outroClass}` : `product-card${outroClass}`;
+}
+
+async function showCard() {
+  setPhase("is-entering");
+  card.setAttribute("aria-hidden", "false");
+  await wait(TRANSITION_TIME);
+  setPhase("is-visible");
+  await wait(DISPLAY_TIME);
+  setPhase("is-leaving");
+  await wait(TRANSITION_TIME);
+  setPhase("");
+  card.setAttribute("aria-hidden", "true");
+  await wait(BETWEEN_PRODUCTS);
+}
+
+async function showProduct(product) {
+  card.dataset.outro = "0";
+  setProduct(product);
+  await showCard();
+}
+
+async function showOutro(text) {
+  card.dataset.outro = "1";
+  setOutro(text);
+  await showCard();
+}
+
+async function playSequence() {
+  const [products, config] = await Promise.all([fetchProducts(), fetchConfig()]);
+  for (const product of products) await showProduct(product);
+  if (config.outroEnabled && config.outroText) await showOutro(config.outroText);
+}
+
+async function applyScale() {
+  const config = await fetchConfig();
+  if (config.overlayScale) {
+    scaleWrap.style.setProperty("--scale", config.overlayScale);
+  }
+}
+
+async function runOverlay() {
+  while (true) {
+    const cycleStarted = Date.now();
+    await playSequence();
+    await wait(Math.max(0, CYCLE_INTERVAL - (Date.now() - cycleStarted)));
+  }
+}
+
+applyScale();
+setInterval(applyScale, 4000);
 runOverlay();

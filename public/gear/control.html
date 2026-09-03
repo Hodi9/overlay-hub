@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mit stream-gear — Control Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow+Semi+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#0e0b08; --panel:#1b1510; --orange:#ff7417; --orange-soft:#ffb164;
+    --cream:#fff8ec; --muted:#b9aa99; --danger:#ff6b6b;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--ink); color:var(--cream); font-family:"Barlow Semi Condensed",system-ui,sans-serif; }
+  body { min-height:100vh; padding:32px 20px 80px; display:flex; justify-content:center; }
+  main { width:100%; max-width:640px; }
+  header { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  h1 { margin:0; font-family:"Rajdhani",sans-serif; font-weight:700; font-size:1.7rem; color:var(--cream); }
+  .sub { margin:0 0 26px; color:var(--muted); font-size:.95rem; }
+  .sub a { color:var(--orange-soft); }
+
+  .box { background:var(--panel); border:1px solid rgba(255,116,23,.3); border-radius:14px; padding:18px 20px; margin-bottom:24px; }
+  .box h2 { margin:0 0 4px; font-size:.78rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--orange-soft); }
+  .box p.hint { margin:0 0 14px; font-size:.82rem; color:var(--muted); line-height:1.5; }
+
+  .field-row { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+  .field-row input[type="text"], .field-row input[type="url"], .field-row input[type="password"] { flex:1; min-width:0; }
+
+  input[type="text"], input[type="url"], input[type="password"] {
+    width:100%; background:rgba(255,255,255,.05); border:1px solid rgba(255,116,23,.3); border-radius:8px;
+    color:var(--cream); font-family:"Barlow Semi Condensed",sans-serif; font-size:.95rem; padding:9px 11px;
+  }
+  input:focus { outline:2px solid var(--orange-soft); outline-offset:1px; }
+  input::placeholder { color:var(--muted); opacity:.7; }
+  input[type="range"] { flex:1; accent-color:var(--orange); height:20px; padding:0; background:none; border:none; }
+
+  .btn {
+    all:unset; display:inline-flex; align-items:center; justify-content:center; padding:9px 18px; border-radius:8px;
+    cursor:pointer; font-weight:700; font-size:.85rem; letter-spacing:.03em; box-sizing:border-box;
+    transition:background .15s ease, opacity .15s ease;
+  }
+  .btn--primary { border:1px solid var(--orange); color:var(--ink); background:var(--orange); }
+  .btn--primary:hover { filter:brightness(1.08); }
+  .btn--primary:disabled { opacity:.5; cursor:default; filter:none; }
+  .btn--primary:focus-visible { outline:2px solid var(--orange-soft); outline-offset:2px; }
+
+  .status-msg { margin-top:10px; font-size:.82rem; min-height:1.2em; }
+  .status-msg.error { color:var(--danger); }
+  .status-msg.ok { color:#6fe3a8; }
+
+  .toggle-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .toggle-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--orange); }
+  .toggle-row label { font-weight:700; font-size:.9rem; }
+
+  .list-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+  .list-head h2 { margin:0; }
+  .list-head span { font-size:.8rem; color:var(--muted); }
+
+  .rows { display:flex; flex-direction:column; gap:8px; }
+  .row { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:8px 10px; }
+  .row__thumb { width:52px; height:52px; flex:none; border-radius:6px; object-fit:contain; background:#141014; border:1px solid rgba(255,255,255,.1); padding:4px; }
+  .row__info { flex:1; min-width:0; }
+  .row__name { font-weight:700; font-size:.9rem; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row__meta { font-size:.76rem; color:var(--muted); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .row__meta .now { color:var(--orange-soft); font-weight:700; }
+  .row__meta .was { text-decoration:line-through; }
+  .row__meta .cmd { border:1px solid rgba(255,116,23,.4); border-radius:4px; padding:0 5px; }
+
+  .row__before { width:96px; flex:none; }
+  .row__before input { padding:6px 8px; font-size:.78rem; }
+
+  .icon-btn { all:unset; flex:none; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:800; transition:background .15s ease; }
+  .icon-btn:disabled { opacity:.4; cursor:default; }
+  .icon-btn--sync { color:var(--orange-soft); border:1px solid rgba(255,116,23,.4); }
+  .icon-btn--sync:hover { background:rgba(255,116,23,.15); }
+  .icon-btn--del { color:var(--danger); border:1px solid rgba(255,107,107,.4); }
+  .icon-btn--del:hover { background:rgba(255,107,107,.15); }
+
+  .empty-msg { color:var(--muted); font-size:.9rem; padding:20px 0; text-align:center; }
+</style>
+</head>
+<body>
+
+<main>
+  <header><h1>Mit stream-gear</h1></header>
+  <p class="sub">Styr produkterne og slut-kortet på <a href="index.html">overlayet</a>. Ændringer slår igennem ved næste rotation.</p>
+
+  <section class="box">
+    <h2>Adgangskode</h2>
+    <p class="hint">Kræves for at ændre noget. Gemmes på denne enhed.</p>
+    <div class="field-row">
+      <input type="password" id="f-token" placeholder="Adgangskode" autocomplete="off">
+      <button class="btn btn--primary" id="save-token-btn">Gem</button>
+    </div>
+    <div class="status-msg" id="token-status"></div>
+  </section>
+
+  <section class="box">
+    <h2>Slut-kort</h2>
+    <p class="hint">Vises til sidst i rotationen, hvis slået til.</p>
+    <div class="toggle-row">
+      <input type="checkbox" id="f-outro-enabled">
+      <label for="f-outro-enabled">Vis slut-kort</label>
+    </div>
+    <div class="field-row">
+      <input type="text" id="f-outro-text" placeholder="Få mit gear og en masse andet lækkert inde på Power.dk">
+    </div>
+    <button class="btn btn--primary" id="save-outro-btn">Gem slut-kort</button>
+    <div class="status-msg" id="outro-status"></div>
+  </section>
+
+  <section class="box">
+    <h2>Overlay-størrelse</h2>
+    <p class="hint">Skalerer hele kortet op eller ned — praktisk hvis boksen i OBS/Pogly er en anden størrelse end forventet. Udseendet ændres ikke, kun størrelsen.</p>
+    <div class="field-row">
+      <input type="range" id="f-scale" min="0.5" max="1.6" step="0.05" value="1">
+      <span id="scale-value" style="min-width:48px;text-align:right;font-weight:700;color:var(--orange-soft);">100%</span>
+    </div>
+    <button class="btn btn--primary" id="save-scale-btn">Gem størrelse</button>
+    <div class="status-msg" id="scale-status"></div>
+  </section>
+
+  <section class="box">
+    <h2>Tilføj produkt</h2>
+    <p class="hint">Indsæt et link til et produkt på Power.dk — navn, billede og pris hentes automatisk.</p>
+    <div class="field-row">
+      <input type="url" id="f-url" placeholder="https://www.power.dk/.../p-1234567/">
+    </div>
+    <div class="field-row">
+      <input type="text" id="f-command" placeholder="Kommando (valgfri), fx !keyboard">
+      <input type="text" id="f-before" placeholder="Førpris (valgfri), fx 1499">
+    </div>
+    <button class="btn btn--primary" id="add-btn">Tilføj</button>
+    <div class="status-msg" id="add-status"></div>
+  </section>
+
+  <section>
+    <div class="list-head">
+      <h2>Produktliste</h2>
+      <span id="count">0 produkter</span>
+    </div>
+    <div class="rows" id="rows"></div>
+    <div class="empty-msg" id="empty-msg" hidden>Ingen produkter endnu — tilføj et link ovenfor.</div>
+  </section>
+</main>
+
+<script>
+(function(){
+  var TOKEN_KEY = 'gear-control-token';
+
+  var tokenInput = document.getElementById('f-token');
+  var saveTokenBtn = document.getElementById('save-token-btn');
+  var tokenStatus = document.getElementById('token-status');
+
+  var outroEnabledInput = document.getElementById('f-outro-enabled');
+  var outroTextInput = document.getElementById('f-outro-text');
+  var saveOutroBtn = document.getElementById('save-outro-btn');
+  var outroStatus = document.getElementById('outro-status');
+
+  var scaleInput = document.getElementById('f-scale');
+  var scaleValue = document.getElementById('scale-value');
+  var saveScaleBtn = document.getElementById('save-scale-btn');
+  var scaleStatus = document.getElementById('scale-status');
+
+  var urlInput = document.getElementById('f-url');
+  var commandInput = document.getElementById('f-command');
+  var beforeInput = document.getElementById('f-before');
+  var addBtn = document.getElementById('add-btn');
+  var addStatus = document.getElementById('add-status');
+
+  var rowsEl = document.getElementById('rows');
+  var emptyMsg = document.getElementById('empty-msg');
+  var countEl = document.getElementById('count');
+
+  function getToken(){
+    try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; }
+  }
+  function setToken(v){
+    try{ localStorage.setItem(TOKEN_KEY, v); }catch(e){}
+  }
+
+  tokenInput.value = getToken();
+  if(getToken()){
+    tokenStatus.textContent = 'Kode gemt på denne enhed.';
+    tokenStatus.className = 'status-msg ok';
+  }
+  saveTokenBtn.addEventListener('click', function(){
+    setToken(tokenInput.value.trim());
+    tokenStatus.textContent = 'Kode gemt på denne enhed.';
+    tokenStatus.className = 'status-msg ok';
+  });
+  tokenInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ saveTokenBtn.click(); } });
+
+  function authHeaders(extra){
+    var h = Object.assign({ 'x-gear-key': getToken() }, extra || {});
+    return h;
+  }
+
+  function setStatus(el, msg, kind){
+    el.textContent = msg;
+    el.className = 'status-msg' + (kind ? ' ' + kind : '');
+  }
+
+  function unauthorizedMsg(el){
+    setStatus(el, 'Forkert eller manglende adgangskode. Indtast den ovenfor og gem.', 'error');
+  }
+
+  function updateScaleLabel(){
+    scaleValue.textContent = Math.round(parseFloat(scaleInput.value) * 100) + '%';
+  }
+  scaleInput.addEventListener('input', updateScaleLabel);
+
+  function loadConfig(){
+    fetch('/gear/api/config')
+      .then(function(r){ return r.json(); })
+      .then(function(cfg){
+        outroEnabledInput.checked = !!cfg.outroEnabled;
+        if (cfg.outroText) outroTextInput.value = cfg.outroText;
+        if (cfg.overlayScale) scaleInput.value = cfg.overlayScale;
+        updateScaleLabel();
+      })
+      .catch(function(){});
+  }
+
+  saveScaleBtn.addEventListener('click', function(){
+    saveScaleBtn.disabled = true;
+    setStatus(scaleStatus, 'Gemmer…');
+    fetch('/gear/api/config', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ overlayScale: parseFloat(scaleInput.value) })
+    })
+      .then(function(r){
+        if(r.status === 401) throw new Error('unauthorized');
+        if(!r.ok) throw new Error('failed');
+        return r.json();
+      })
+      .then(function(){ setStatus(scaleStatus, 'Gemt. Overlayet opdaterer inden for et par sekunder.', 'ok'); })
+      .catch(function(err){
+        if(err.message === 'unauthorized') unauthorizedMsg(scaleStatus);
+        else setStatus(scaleStatus, 'Kunne ikke gemme.', 'error');
+      })
+      .finally(function(){ saveScaleBtn.disabled = false; });
+  });
+
+  saveOutroBtn.addEventListener('click', function(){
+    saveOutroBtn.disabled = true;
+    setStatus(outroStatus, 'Gemmer…');
+    fetch('/gear/api/config', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ outroEnabled: outroEnabledInput.checked, outroText: outroTextInput.value.trim() })
+    })
+      .then(function(r){
+        if(r.status === 401) throw new Error('unauthorized');
+        if(!r.ok) throw new Error('failed');
+        return r.json();
+      })
+      .then(function(){ setStatus(outroStatus, 'Gemt.', 'ok'); })
+      .catch(function(err){
+        if(err.message === 'unauthorized') unauthorizedMsg(outroStatus);
+        else setStatus(outroStatus, 'Kunne ikke gemme.', 'error');
+      })
+      .finally(function(){ saveOutroBtn.disabled = false; });
+  });
+
+  function renderRows(products){
+    countEl.textContent = products.length + (products.length === 1 ? ' produkt' : ' produkter');
+    rowsEl.innerHTML = '';
+    emptyMsg.hidden = products.length > 0;
+
+    products.forEach(function(p){
+      var row = document.createElement('div');
+      row.className = 'row';
+
+      var thumb = document.createElement('img');
+      thumb.className = 'row__thumb';
+      thumb.src = p.image || '';
+      thumb.alt = '';
+      row.appendChild(thumb);
+
+      var info = document.createElement('div');
+      info.className = 'row__info';
+      var nameDiv = document.createElement('div');
+      nameDiv.className = 'row__name';
+      nameDiv.textContent = p.name || p.url;
+      var metaDiv = document.createElement('div');
+      metaDiv.className = 'row__meta';
+
+      var nowSpan = document.createElement('span');
+      nowSpan.className = 'now';
+      nowSpan.textContent = p.price || '';
+      metaDiv.appendChild(nowSpan);
+
+      if(p.before){
+        var wasSpan = document.createElement('span');
+        wasSpan.className = 'was';
+        wasSpan.textContent = p.before;
+        metaDiv.appendChild(wasSpan);
+      }
+
+      var cmdSpan = document.createElement('span');
+      cmdSpan.className = 'cmd';
+      cmdSpan.textContent = p.command || '';
+      metaDiv.appendChild(cmdSpan);
+
+      info.appendChild(nameDiv);
+      info.appendChild(metaDiv);
+      row.appendChild(info);
+
+      var beforeWrap = document.createElement('div');
+      beforeWrap.className = 'row__before';
+      var beforeEdit = document.createElement('input');
+      beforeEdit.type = 'text';
+      beforeEdit.placeholder = 'Førpris';
+      beforeEdit.value = p.before || '';
+      beforeEdit.addEventListener('change', function(){
+        fetch('/gear/api/products', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ id: p.id, before: beforeEdit.value.trim() })
+        })
+          .then(function(r){
+            if(r.status === 401) throw new Error('unauthorized');
+            if(!r.ok) throw new Error('failed');
+            return loadProducts();
+          })
+          .catch(function(err){
+            if(err.message === 'unauthorized') unauthorizedMsg(addStatus);
+            else setStatus(addStatus, 'Kunne ikke opdatere førpris.', 'error');
+          });
+      });
+      beforeWrap.appendChild(beforeEdit);
+      row.appendChild(beforeWrap);
+
+      var sync = document.createElement('button');
+      sync.className = 'icon-btn icon-btn--sync';
+      sync.setAttribute('aria-label', 'Opdater ' + (p.name || p.url));
+      sync.textContent = '↻';
+      sync.addEventListener('click', function(){
+        sync.disabled = true;
+        fetch('/gear/api/products', {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ id: p.id, refresh: true })
+        })
+          .then(function(r){
+            if(r.status === 401) throw new Error('unauthorized');
+            if(!r.ok) throw new Error('failed');
+            return loadProducts();
+          })
+          .catch(function(err){
+            if(err.message === 'unauthorized') unauthorizedMsg(addStatus);
+            else setStatus(addStatus, 'Kunne ikke opdatere produktet.', 'error');
+          })
+          .finally(function(){ sync.disabled = false; });
+      });
+      row.appendChild(sync);
+
+      var del = document.createElement('button');
+      del.className = 'icon-btn icon-btn--del';
+      del.setAttribute('aria-label', 'Fjern ' + (p.name || p.url));
+      del.textContent = '×';
+      del.addEventListener('click', function(){
+        del.disabled = true;
+        fetch('/gear/api/products/' + p.id, {
+          method: 'DELETE',
+          headers: authHeaders()
+        })
+          .then(function(r){
+            if(r.status === 401) throw new Error('unauthorized');
+            if(!r.ok) throw new Error('failed');
+            return loadProducts();
+          })
+          .catch(function(err){
+            del.disabled = false;
+            if(err.message === 'unauthorized') unauthorizedMsg(addStatus);
+            else setStatus(addStatus, 'Kunne ikke fjerne produktet.', 'error');
+          });
+      });
+      row.appendChild(del);
+
+      rowsEl.appendChild(row);
+    });
+  }
+
+  function loadProducts(){
+    return fetch('/gear/api/products')
+      .then(function(r){ if(!r.ok) throw new Error('bad response'); return r.json(); })
+      .then(renderRows)
+      .catch(function(){ setStatus(addStatus, 'Kunne ikke hente produktlisten.', 'error'); });
+  }
+
+  addBtn.addEventListener('click', function(){
+    var url = urlInput.value.trim();
+    if(!url){
+      setStatus(addStatus, 'Indsæt et Power.dk-link først.', 'error');
+      urlInput.focus();
+      return;
+    }
+    addBtn.disabled = true;
+    setStatus(addStatus, 'Henter produktdata…');
+
+    fetch('/gear/api/products', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ url: url, command: commandInput.value.trim(), before: beforeInput.value.trim() })
+    })
+      .then(function(r){
+        if(r.status === 401) throw new Error('unauthorized');
+        if(!r.ok) return r.json().then(function(d){ throw new Error(d.error || 'add failed'); });
+        return r.json();
+      })
+      .then(function(){
+        urlInput.value = '';
+        commandInput.value = '';
+        beforeInput.value = '';
+        setStatus(addStatus, 'Tilføjet.', 'ok');
+        urlInput.focus();
+        return loadProducts();
+      })
+      .catch(function(err){
+        if(err.message === 'unauthorized') unauthorizedMsg(addStatus);
+        else setStatus(addStatus, err.message || 'Kunne ikke tilføje produktet.', 'error');
+      })
+      .finally(function(){ addBtn.disabled = false; });
+  });
+
+  urlInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ addBtn.click(); } });
+
+  loadConfig();
+  loadProducts();
+  setInterval(loadProducts, 8000);
+})();
+</script>
+</body>
+</html>
