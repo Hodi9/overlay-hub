@@ -237,5 +237,9 @@ export function createGearApp() {
     res.json({ ok: true });
   });
 
+  if (!controlPassword) {
+    console.log("ADVARSEL: GEAR_CONTROL_PASSWORD er ikke sat — gear-panelet er ubeskyttet for alle med linket.");
+  }
+
   return router;
 }
