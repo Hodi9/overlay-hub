@@ -65,6 +65,12 @@
   .row-remove{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.05rem;line-height:1;padding:4px 6px;border-radius:6px;}
   .row-remove:hover{color:var(--danger);background:var(--panel-2);}
 
+  .row-visibility{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.05rem;line-height:1;padding:4px 6px;border-radius:6px;}
+  .row-visibility:hover{color:var(--text);background:var(--panel-2);}
+  .row-visibility.hidden-state{color:var(--danger);}
+  .row.hidden-game{opacity:0.5;}
+  .row.hidden-game .row-name::after{content:" (skjult)"; color:var(--text-dim); font-weight:400; text-transform:none; letter-spacing:0; font-size:0.8rem;}
+
   .add-row{display:flex;gap:10px;padding:14px 18px;background:var(--panel-2);flex-wrap:wrap;}
   .add-row input[type="text"]{flex:1;min-width:120px;}
 
@@ -76,7 +82,7 @@
 <div class="wrap">
   <header>
     <h1>Gaming Gauntlet</h1>
-    <p>Styr badges og dødstæller på <a href="index.html" target="_blank">overlayet</a> — ændringer slår igennem øjeblikkeligt.</p>
+    <p>Styr <a href="index.html" target="_blank">gauntlet-overlayet</a> og <a href="deaths.html" target="_blank">dødstælleren</a> — to separate browser sources, du kan placere hver for sig i OBS. Ændringer slår igennem øjeblikkeligt.</p>
   </header>
 
   <section>
@@ -93,6 +99,7 @@
 
   <section>
     <p class="section-label">Control panel</p>
+    <p class="hint" style="margin:-4px 0 10px;">👁 viser/skjuler spillet på begge overlays — praktisk hvis et spil ikke er en del af den aktuelle gauntlet.</p>
     <div class="panel" id="panel"></div>
   </section>
 
@@ -177,7 +184,7 @@
       }
 
       var row = document.createElement('div');
-      row.className = 'row' + (isDone ? ' done' : '');
+      row.className = 'row' + (isDone ? ' done' : '') + (g.visible === false ? ' hidden-game' : '');
 
       var reorder = document.createElement('div');
       reorder.className = 'reorder';
@@ -236,6 +243,14 @@
         row.appendChild(stepper);
       }
 
+      var visBtn = document.createElement('button');
+      visBtn.className = 'row-visibility' + (g.visible === false ? ' hidden-state' : '');
+      visBtn.textContent = g.visible === false ? '🙈' : '👁';
+      visBtn.title = g.visible === false ? 'Skjult på overlay — klik for at vise' : 'Vist på overlay — klik for at skjule';
+      visBtn.setAttribute('aria-label', (g.visible === false ? 'Vis ' : 'Skjul ') + g.name + ' på overlayet');
+      visBtn.addEventListener('click', function(){ patchGame(g.id, { visible: g.visible === false }); });
+      row.appendChild(visBtn);
+
       var remove = document.createElement('button');
       remove.className = 'row-remove';
       remove.textContent = '✕';
@@ -251,7 +266,7 @@
 
       // death counter row
       var dRow = document.createElement('div');
-      dRow.className = 'row';
+      dRow.className = 'row' + (g.visible === false ? ' hidden-game' : '');
       var dSwatch = document.createElement('div');
       dSwatch.className = 'swatch';
       dSwatch.style.background = g.color;
