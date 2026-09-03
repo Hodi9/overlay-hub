@@ -15,7 +15,7 @@ body { color:var(--cream); font-family:"Barlow Semi Condensed",system-ui,sans-se
 .product-card__copy { min-width:0; padding:20px 18px 18px 2px; }
 .eyebrow { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
 .eyebrow b { color:var(--orange); }
-h1 { margin:4px 108px 8px 0; font-family:"Rajdhani",sans-serif; font-size:21px; line-height:1.05; }
+h1 { margin:4px 16px 8px 0; font-family:"Rajdhani",sans-serif; font-size:21px; line-height:1.05; }
 .details { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .price { color:var(--orange-soft); font-family:"Rajdhani",sans-serif; font-size:21px; font-weight:700; }
 .before-price { color:var(--muted); font-size:11px; text-decoration:line-through; }
