@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import brovsbroModule from "./apps/brovsbro/app.cjs";
 import { createMinecraftApp } from "./apps/minecraft/app.js";
 import { createGearApp } from "./apps/gear/app.js";
+import { createGauntletApp } from "./apps/gauntlet/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -21,6 +22,7 @@ attachSocket(server);
 
 app.use("/minecraft", createMinecraftApp());
 app.use("/gear", createGearApp());
+app.use("/gauntlet", createGauntletApp());
 
 app.use(express.static(path.join(__dirname, "public")));
 
