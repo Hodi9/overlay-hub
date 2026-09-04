@@ -43,5 +43,16 @@ window.GauntletTheme = (function(){
     return LOGO_BY_NAME[String(game.name || '').trim().toLowerCase()] || null;
   }
 
-  return { fontFor: fontFor, logoFor: logoFor };
+  function classFor(game){
+    var id = String(game.id || '').trim().toLowerCase();
+    if (FONT_BY_ID[id]) return id;
+    var name = String(game.name || '').trim().toLowerCase();
+    if (name === 'league of legends') return 'lol';
+    if (name === 'rocket league') return 'rocketleague';
+    if (name.indexOf('warzone') !== -1 || name.indexOf('call of duty') !== -1) return 'warzone';
+    if (name === 'fortnite' || name === 'minecraft') return name;
+    return 'generic';
+  }
+
+  return { fontFor: fontFor, logoFor: logoFor, classFor: classFor };
 })();

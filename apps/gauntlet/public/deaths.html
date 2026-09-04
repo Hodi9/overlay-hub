@@ -12,21 +12,27 @@
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
   body{font-family:'Rajdhani',sans-serif;}
 
-  .deaths{display:flex;flex-direction:column;gap:10px;padding:20px;width:fit-content;}
+  .deaths{display:flex;flex-direction:column;gap:8px;padding:20px;width:fit-content;}
   .death-card{
-    display:flex;width:260px;border-radius:14px;overflow:hidden;
-    background:#14161c;border:2px solid rgba(255,255,255,0.1);
-    box-shadow:0 4px 0 rgba(0,0,0,0.35), 0 8px 16px rgba(0,0,0,0.3);
+    --game:#278adf;display:grid;grid-template-columns:58px 94px;width:152px;height:59px;border-radius:13px;overflow:hidden;
+    background:#08090c;border:3px solid rgba(10,12,16,.86);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 4px 0 rgba(0,0,0,.5),0 7px 13px rgba(0,0,0,.32);
   }
   .death-icon{
-    width:58px;flex:none;display:flex;align-items:center;justify-content:center;
-    font-weight:800;font-size:1.15rem;color:#fff;padding:6px;
+    width:58px;display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:1.35rem;color:#fff;border-right:3px solid rgba(0,0,0,.3);
+    background:linear-gradient(145deg,color-mix(in srgb,var(--game) 72%,white),var(--game) 62%,color-mix(in srgb,var(--game) 82%,black));
+    text-shadow:0 2px 0 rgba(0,0,0,.42);
   }
-  .death-icon svg{width:30px;height:30px;}
-  .death-icon img{width:100%;height:100%;object-fit:contain;}
-  .death-body{flex:1;padding:8px 12px 10px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0;}
-  .death-label{font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;padding:2px 9px;border-radius:5px;color:#fff;}
-  .death-number{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.8rem;color:#fff;line-height:1;font-variant-numeric:tabular-nums;}
+  .death-icon svg{width:36px;height:36px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.3));}
+  .death-body{display:grid;grid-template-rows:20px 1fr;min-width:0;background:#050609;}
+  .death-label{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.69rem;text-transform:none;letter-spacing:.03em;color:#fff;background:var(--game);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
+  .death-number{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:1.72rem;color:#fff;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #000;}
+  .death-card.minecraft .death-icon{background:linear-gradient(145deg,#73df4c,#28a92d);}
+  .death-card.minecraft .death-icon svg{width:39px;height:39px;}
+  .death-card.fortnite .death-icon{font-size:1.55rem;}
+  .death-card.warzone .death-icon{font-size:1.12rem;letter-spacing:-.08em;}
+  .death-icon img{width:50px;height:46px;object-fit:contain;filter:drop-shadow(0 2px 1px rgba(0,0,0,.35));}
 </style>
 </head>
 <body>
@@ -55,7 +61,9 @@
 
     sorted.forEach(function(g){
       var card = document.createElement('div');
-      card.className = 'death-card';
+      var themeClass = (window.GauntletTheme && window.GauntletTheme.classFor(g)) || 'generic';
+      card.className = 'death-card ' + themeClass;
+      card.style.setProperty('--game', g.color);
       var font = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
       var logoUrl = window.GauntletTheme && window.GauntletTheme.logoFor(g);
       var iconStyle = font ? ' style="font-family:' + font + '"' : '';
@@ -63,9 +71,9 @@
         ? '<img src="' + logoUrl + '" alt="">'
         : (g.icon === 'creeper' ? creeperIcon : ('<span' + iconStyle + '>' + g.icon + '</span>'));
       card.innerHTML =
-        '<div class="death-icon" style="background:' + g.color + '">' + iconHtml + '</div>' +
+        '<div class="death-icon">' + iconHtml + '</div>' +
         '<div class="death-body">' +
-          '<span class="death-label" style="background:' + g.color + '">Deaths</span>' +
+          '<span class="death-label">Deaths</span>' +
           '<span class="death-number">' + (g.deaths || 0) + '</span>' +
         '</div>';
       deathsEl.appendChild(card);
