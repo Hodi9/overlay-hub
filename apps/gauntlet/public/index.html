@@ -86,12 +86,9 @@
       badge.style.borderColor = 'color-mix(in srgb, ' + g.color + ' 65%, black)';
       badge.style.fontFamily = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
       var logoUrl = window.GauntletTheme && window.GauntletTheme.logoFor(g);
-      var useLogoMark = themeClass === 'lol' || themeClass === 'rocketleague';
       var mark = isDone
         ? checkIcon
-        : (useLogoMark && logoUrl
-          ? '<img src="' + logoUrl + '" alt="">'
-          : (g.icon === 'creeper' ? creeperIcon : '<span>' + g.icon + '</span>'));
+        : (g.icon === 'creeper' ? creeperIcon : '<span>' + g.icon + '</span>');
       var name = themeClass === 'minecraft' && logoUrl
         ? '<img class="game-wordmark" src="' + logoUrl + '" alt="Minecraft">'
         : '<span class="badge-name">' + g.name + '</span>';
