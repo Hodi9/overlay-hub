@@ -6,7 +6,7 @@
 <title>Gaming Gauntlet Overlay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@600;700&family=Press+Start+2P&family=Black+Ops+One&family=Cinzel:wght@600;700&family=Bebas+Neue&family=Bungee&display=swap">
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
@@ -26,14 +26,18 @@
     color:#fff;
     border:2px solid rgba(255,255,255,0.18);
     box-shadow:0 3px 0 rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.3);
-    transition:opacity .2s ease, filter .2s ease;
+    transition:box-shadow .25s ease, transform .25s ease;
   }
-  .badge.pending{opacity:0.4; filter:grayscale(0.6);}
+  .badge.done{
+    box-shadow:0 3px 0 rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.3), 0 0 0 3px rgba(255,255,255,0.6), 0 0 18px rgba(255,255,255,0.45);
+    transform:translateY(-1px);
+  }
   .badge-icon{
     width:24px;height:24px;border-radius:50%;
     background:rgba(0,0,0,0.28);
     display:flex;align-items:center;justify-content:center;flex:none;
   }
+  .badge.done .badge-icon{background:rgba(255,255,255,0.3);}
   .badge-icon svg{width:14px;height:14px;}
   .badge-icon.count{font-family:'JetBrains Mono',monospace;font-size:0.85rem;font-weight:700;color:#fff;}
 </style>
@@ -41,6 +45,7 @@
 <body>
 <div class="badges" id="badges"></div>
 
+<script src="game-theme.js"></script>
 <script>
 (function(){
   var checkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -54,9 +59,10 @@
 
     sorted.forEach(function(g){
       var badge = document.createElement('div');
-      badge.className = 'badge' + (g.done ? '' : ' pending');
+      badge.className = 'badge' + (g.done ? ' done' : '');
       badge.style.background = g.color;
       badge.style.borderColor = 'color-mix(in srgb, ' + g.color + ' 65%, black)';
+      badge.style.fontFamily = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
       var icon = g.done
         ? '<span class="badge-icon">' + checkIcon + '</span>'
         : '<span class="badge-icon count">' + (g.count || 0) + '</span>';
