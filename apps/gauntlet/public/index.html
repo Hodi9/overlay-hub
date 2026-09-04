@@ -12,47 +12,53 @@
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
   body{font-family:'Rajdhani',sans-serif;}
 
-  .badges{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:20px;width:max-content;}
+  .badges{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:20px;width:max-content;}
   .badge{
     position:relative;
     display:inline-flex;
     align-items:center;
-    gap:9px;
-    min-height:48px;
-    padding:6px 18px 6px 6px;
-    border-radius:13px;
+    gap:10px;
+    height:46px;
+    min-width:220px;
+    padding:5px 16px 5px 5px;
+    border-radius:11px;
     font-weight:700;
     font-size:1.18rem;
     text-transform:uppercase;
     letter-spacing:0.04em;
     color:#fff;
-    border:3px solid rgba(15,18,24,.72);
-    box-shadow:inset 0 2px 0 rgba(255,255,255,.22), inset 0 -3px 0 rgba(0,0,0,.16), 0 4px 0 rgba(0,0,0,.48), 0 7px 13px rgba(0,0,0,.32);
+    border:3px solid rgba(10,12,16,.72);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.22),0 3px 0 rgba(0,0,0,.42),0 6px 10px rgba(0,0,0,.24);
     overflow:hidden;
     transition:box-shadow .25s ease, transform .25s ease;
   }
-  .badge::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.24),transparent 38%,rgba(0,0,0,.12));pointer-events:none;}
+  .badge::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 48%,rgba(0,0,0,.08));pointer-events:none;}
   .badge-name{position:relative;z-index:1;white-space:nowrap;line-height:1;}
   .badge.done{
-    box-shadow:inset 0 2px 0 rgba(255,255,255,.28), inset 0 -3px 0 rgba(0,0,0,.16), 0 4px 0 rgba(0,0,0,.48), 0 0 0 2px #61e53e, 0 0 15px rgba(91,255,65,.66);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 3px 0 rgba(0,0,0,.42),0 0 0 2px #52db38,0 0 12px rgba(82,219,56,.48);
     transform:translateY(-1px);
   }
   .badge-icon{
-    position:relative;z-index:1;width:32px;height:32px;border-radius:50%;
+    position:relative;z-index:1;width:31px;height:31px;border-radius:8px;
     background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.16);
     display:flex;align-items:center;justify-content:center;flex:none;
     box-shadow:inset 0 -2px 0 rgba(0,0,0,.2);
   }
-  .badge.done .badge-icon{background:#54d934;border-color:#a5ff8d;}
+  .badge.done .badge-icon{background:#55dc36;border-color:#9aff82;border-radius:50%;}
   .badge-icon svg{width:20px;height:20px;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35));}
   .badge-icon.count{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:800;color:#fff;}
+  .badge.fortnite{background:#258cf0!important;}
+  .badge.warzone{background:#b99a00!important;}
+  .badge.minecraft{background:#55b84c!important;}
+  .badge.lol{background:#10aaa8!important;}
+  .badge.rocketleague{background:#ef651d!important;}
   .badge.fortnite .badge-name{font-size:1.28rem;letter-spacing:.01em;text-shadow:0 2px 0 rgba(0,0,0,.28);transform:scaleY(1.08);}
   .badge.warzone .badge-name{font-size:1.22rem;letter-spacing:.025em;text-shadow:0 2px 0 rgba(0,0,0,.38);}
   .badge.minecraft .badge-name{font-size:.86rem;letter-spacing:-.02em;-webkit-text-stroke:1px #252525;text-shadow:2px 2px 0 #252525,0 2px 0 #252525;}
   .badge.lol .badge-name{font-size:1.02rem;color:#fff5c7;text-shadow:0 1px 0 #4d3210,1px 0 0 #4d3210;}
   .badge.rocketleague .badge-name{font-size:1.34rem;font-style:italic;letter-spacing:.015em;text-shadow:0 2px 0 rgba(0,0,0,.34);}
-  .badge-logo{position:relative;z-index:1;height:30px;width:auto;max-width:78px;object-fit:contain;filter:drop-shadow(0 2px 1px rgba(0,0,0,.45));flex:none;display:block;}
-  .badge.fortnite .badge-logo,.badge.warzone .badge-logo,.badge.minecraft .badge-logo{max-width:132px;}
+  .badge-logo{position:relative;z-index:1;height:28px;width:auto;max-width:72px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45));flex:none;display:block;}
+  .badge.fortnite .badge-logo,.badge.warzone .badge-logo,.badge.minecraft .badge-logo{height:29px;max-width:145px;margin:auto;}
   .badge.fortnite .badge-name,.badge.warzone .badge-name,.badge.minecraft .badge-name{display:none;}
   .badge.lol .badge-logo,.badge.rocketleague .badge-logo{width:30px;}
 </style>
@@ -76,7 +82,7 @@
       var badge = document.createElement('div');
       var themeClass = (window.GauntletTheme && window.GauntletTheme.classFor(g)) || 'generic';
       badge.className = 'badge ' + themeClass + (g.done ? ' done' : '');
-      badge.style.background = 'linear-gradient(180deg,color-mix(in srgb,' + g.color + ' 78%,white),color-mix(in srgb,' + g.color + ' 88%,black))';
+      badge.style.background = g.color;
       badge.style.borderColor = 'color-mix(in srgb, ' + g.color + ' 65%, black)';
       badge.style.fontFamily = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
       var icon = g.done

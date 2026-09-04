@@ -12,27 +12,28 @@
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
   body{font-family:'Rajdhani',sans-serif;}
 
-  .deaths{display:flex;flex-direction:column;gap:8px;padding:20px;width:fit-content;}
+  .deaths{display:flex;flex-direction:column;gap:7px;padding:20px;width:fit-content;}
   .death-card{
-    --game:#278adf;display:grid;grid-template-columns:58px 94px;width:152px;height:59px;border-radius:13px;overflow:hidden;
-    background:#08090c;border:3px solid rgba(10,12,16,.86);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 4px 0 rgba(0,0,0,.5),0 7px 13px rgba(0,0,0,.32);
+    --game:#278adf;display:grid;grid-template-columns:54px 88px;width:142px;height:56px;border-radius:11px;overflow:hidden;
+    background:#050609;border:3px solid rgba(8,10,14,.9);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 0 rgba(0,0,0,.48),0 6px 10px rgba(0,0,0,.25);
   }
   .death-icon{
-    width:58px;display:flex;align-items:center;justify-content:center;
+    width:54px;display:flex;align-items:center;justify-content:center;
     font-weight:900;font-size:1.35rem;color:#fff;border-right:3px solid rgba(0,0,0,.3);
-    background:linear-gradient(145deg,color-mix(in srgb,var(--game) 72%,white),var(--game) 62%,color-mix(in srgb,var(--game) 82%,black));
+    background:var(--game);
     text-shadow:0 2px 0 rgba(0,0,0,.42);
   }
   .death-icon svg{width:36px;height:36px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.3));}
   .death-body{display:grid;grid-template-rows:20px 1fr;min-width:0;background:#050609;}
   .death-label{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.69rem;text-transform:none;letter-spacing:.03em;color:#fff;background:var(--game);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
   .death-number{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:1.72rem;color:#fff;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #000;}
-  .death-card.minecraft .death-icon{background:linear-gradient(145deg,#73df4c,#28a92d);}
+  .death-card.fortnite .death-icon{background:#38a8ef;}
+  .death-card.warzone .death-icon{background:#f0ad00;color:#111;text-shadow:none;}
+  .death-card.minecraft .death-icon{background:#45c43d;}
   .death-card.minecraft .death-icon svg{width:39px;height:39px;}
   .death-card.fortnite .death-icon{font-size:1.55rem;}
   .death-card.warzone .death-icon{font-size:1.12rem;letter-spacing:-.08em;}
-  .death-icon img{width:50px;height:46px;object-fit:contain;filter:drop-shadow(0 2px 1px rgba(0,0,0,.35));}
 </style>
 </head>
 <body>
@@ -65,11 +66,8 @@
       card.className = 'death-card ' + themeClass;
       card.style.setProperty('--game', g.color);
       var font = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
-      var logoUrl = window.GauntletTheme && window.GauntletTheme.logoFor(g);
       var iconStyle = font ? ' style="font-family:' + font + '"' : '';
-      var iconHtml = logoUrl
-        ? '<img src="' + logoUrl + '" alt="">'
-        : (g.icon === 'creeper' ? creeperIcon : ('<span' + iconStyle + '>' + g.icon + '</span>'));
+      var iconHtml = g.icon === 'creeper' ? creeperIcon : ('<span' + iconStyle + '>' + g.icon + '</span>');
       card.innerHTML =
         '<div class="death-icon">' + iconHtml + '</div>' +
         '<div class="death-body">' +
