@@ -40,6 +40,7 @@
   .badge.done .badge-icon{background:rgba(255,255,255,0.3);}
   .badge-icon svg{width:14px;height:14px;}
   .badge-icon.count{font-family:'JetBrains Mono',monospace;font-size:0.85rem;font-weight:700;color:#fff;}
+  .badge-logo{height:28px;width:auto;max-width:70px;object-fit:contain;border-radius:6px;background:rgba(0,0,0,0.35);padding:3px 5px;flex:none;display:block;}
 </style>
 </head>
 <body>
@@ -66,7 +67,9 @@
       var icon = g.done
         ? '<span class="badge-icon">' + checkIcon + '</span>'
         : '<span class="badge-icon count">' + (g.count || 0) + '</span>';
-      badge.innerHTML = icon + '<span>' + g.name + '</span>';
+      var logoUrl = window.GauntletTheme && window.GauntletTheme.logoFor(g);
+      var logo = logoUrl ? '<img class="badge-logo" src="' + logoUrl + '" alt="">' : '';
+      badge.innerHTML = icon + logo + '<span>' + g.name + '</span>';
       badgesEl.appendChild(badge);
     });
   }

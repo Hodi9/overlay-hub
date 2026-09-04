@@ -21,5 +21,27 @@ window.GauntletTheme = (function(){
     return FONT_BY_NAME[String(game.name || '').trim().toLowerCase()] || null;
   }
 
-  return { fontFor: fontFor };
+  var LOGO_BY_ID = {
+    fortnite: 'assets/logos/fortnite.png',
+    warzone: 'assets/logos/warzone.png',
+    minecraft: 'assets/logos/minecraft.png',
+    lol: 'assets/logos/lol.png',
+    rocketleague: 'assets/logos/rocketleague.png'
+  };
+  var LOGO_BY_NAME = {
+    'fortnite': LOGO_BY_ID.fortnite,
+    'warzone': LOGO_BY_ID.warzone,
+    'call of duty': LOGO_BY_ID.warzone,
+    'minecraft': LOGO_BY_ID.minecraft,
+    'league of legends': LOGO_BY_ID.lol,
+    'rocket league': LOGO_BY_ID.rocketleague
+  };
+
+  function logoFor(game){
+    var byId = LOGO_BY_ID[game.id];
+    if (byId) return byId;
+    return LOGO_BY_NAME[String(game.name || '').trim().toLowerCase()] || null;
+  }
+
+  return { fontFor: fontFor, logoFor: logoFor };
 })();

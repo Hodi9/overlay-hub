@@ -20,9 +20,10 @@
   }
   .death-icon{
     width:58px;flex:none;display:flex;align-items:center;justify-content:center;
-    font-weight:800;font-size:1.15rem;color:#fff;
+    font-weight:800;font-size:1.15rem;color:#fff;padding:6px;
   }
   .death-icon svg{width:30px;height:30px;}
+  .death-icon img{width:100%;height:100%;object-fit:contain;}
   .death-body{flex:1;padding:8px 12px 10px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0;}
   .death-label{font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;padding:2px 9px;border-radius:5px;color:#fff;}
   .death-number{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.8rem;color:#fff;line-height:1;font-variant-numeric:tabular-nums;}
@@ -56,8 +57,11 @@
       var card = document.createElement('div');
       card.className = 'death-card';
       var font = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
+      var logoUrl = window.GauntletTheme && window.GauntletTheme.logoFor(g);
       var iconStyle = font ? ' style="font-family:' + font + '"' : '';
-      var iconHtml = g.icon === 'creeper' ? creeperIcon : ('<span' + iconStyle + '>' + g.icon + '</span>');
+      var iconHtml = logoUrl
+        ? '<img src="' + logoUrl + '" alt="">'
+        : (g.icon === 'creeper' ? creeperIcon : ('<span' + iconStyle + '>' + g.icon + '</span>'));
       card.innerHTML =
         '<div class="death-icon" style="background:' + g.color + '">' + iconHtml + '</div>' +
         '<div class="death-body">' +
