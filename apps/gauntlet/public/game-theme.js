@@ -25,8 +25,8 @@ window.GauntletTheme = (function(){
     fortnite: 'assets/logos/fortnite.png',
     warzone: 'assets/logos/warzone.png',
     minecraft: 'assets/logos/minecraft-transparent.png',
-    lol: 'assets/logos/lol.png',
-    rocketleague: 'assets/logos/rocketleague.png'
+    lol: 'assets/logos/lol-transparent.png',
+    rocketleague: 'assets/logos/rocketleague-transparent.png'
   };
   var LOGO_BY_NAME = {
     'fortnite': LOGO_BY_ID.fortnite,
