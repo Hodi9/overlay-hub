@@ -40,6 +40,8 @@
   .game-mark{position:relative;z-index:1;width:48px;height:46px;margin-left:-2px;display:flex;align-items:center;justify-content:center;flex:none;font-weight:900;font-size:1.22rem;color:#fff;border-right:2px solid rgba(0,0,0,.25);text-shadow:0 2px 0 rgba(0,0,0,.35);}
   .game-mark svg{width:34px;height:34px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25));}
   .game-mark img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 1px rgba(0,0,0,.35));}
+  .badge.done .game-mark{background:rgba(0,0,0,.14);}
+  .game-mark .completion-check{width:34px;height:34px;color:#fff;filter:drop-shadow(0 3px 0 rgba(0,0,0,.32));}
   .badge.fortnite{background:#258cf0!important;}
   .badge.warzone{background:#b99a00!important;}
   .badge.minecraft{background:#3f9144!important;}
@@ -64,10 +66,13 @@
 <script>
 (function(){
   var creeperIcon = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect x="1" y="2" width="2" height="2" fill="#0b0c10"/><rect x="5" y="2" width="2" height="2" fill="#0b0c10"/><rect x="3" y="3" width="2" height="1" fill="#0b0c10"/><rect x="2" y="4" width="1" height="2" fill="#0b0c10"/><rect x="5" y="4" width="1" height="2" fill="#0b0c10"/><rect x="3" y="4" width="2" height="2" fill="#0b0c10"/></svg>';
+  var checkIcon = '<svg class="completion-check" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 8.5L6.1 12L13.5 4" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function isDoneOf(g){ return g.type === 'count' ? g.count > 0 : g.done; }
 
   function render(games){
     var visible = games.filter(function(g){ return g.visible !== false; });
-    var sorted = visible.slice().sort(function(a,b){ return Number(a.done) - Number(b.done); });
+    var sorted = visible.slice().sort(function(a,b){ return Number(isDoneOf(a)) - Number(isDoneOf(b)); });
 
     var badgesEl = document.getElementById('badges');
     badgesEl.innerHTML = '';
@@ -75,15 +80,18 @@
     sorted.forEach(function(g){
       var badge = document.createElement('div');
       var themeClass = (window.GauntletTheme && window.GauntletTheme.classFor(g)) || 'generic';
-      badge.className = 'badge ' + themeClass + (g.done ? ' done' : '');
+      var isDone = isDoneOf(g);
+      badge.className = 'badge ' + themeClass + (isDone ? ' done' : '');
       badge.style.background = g.color;
       badge.style.borderColor = 'color-mix(in srgb, ' + g.color + ' 65%, black)';
       badge.style.fontFamily = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
       var logoUrl = window.GauntletTheme && window.GauntletTheme.logoFor(g);
       var useLogoMark = themeClass === 'lol' || themeClass === 'rocketleague';
-      var mark = useLogoMark && logoUrl
-        ? '<img src="' + logoUrl + '" alt="">'
-        : (g.icon === 'creeper' ? creeperIcon : '<span>' + g.icon + '</span>');
+      var mark = isDone
+        ? checkIcon
+        : (useLogoMark && logoUrl
+          ? '<img src="' + logoUrl + '" alt="">'
+          : (g.icon === 'creeper' ? creeperIcon : '<span>' + g.icon + '</span>'));
       var name = themeClass === 'minecraft' && logoUrl
         ? '<img class="game-wordmark" src="' + logoUrl + '" alt="Minecraft">'
         : '<span class="badge-name">' + g.name + '</span>';

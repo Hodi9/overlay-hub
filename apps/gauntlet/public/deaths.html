@@ -14,18 +14,14 @@
 
   .deaths{display:flex;flex-direction:column;gap:7px;padding:20px;width:fit-content;}
   .death-card{
-    --game:#278adf;display:grid;grid-template-columns:88px 42px;width:130px;height:56px;border-radius:11px;overflow:hidden;
+    --game:#278adf;width:88px;height:56px;border-radius:11px;overflow:hidden;
     background:#050609;border:3px solid rgba(8,10,14,.9);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 0 rgba(0,0,0,.48),0 6px 10px rgba(0,0,0,.25);
   }
-  .death-body{display:grid;grid-template-rows:20px 1fr;min-width:0;background:#050609;}
+  .death-body{display:grid;grid-template-rows:20px 1fr;width:100%;height:100%;min-width:0;background:#050609;}
   .death-label{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.69rem;text-transform:none;letter-spacing:.03em;color:#fff;background:var(--game);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
   .death-card.minecraft{--game:#3f9144!important;}
   .death-number{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:1.72rem;color:#fff;line-height:1;font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #000;}
-  .death-status{display:flex;align-items:center;justify-content:center;background:#050609;border-left:1px solid rgba(255,255,255,.08);}
-  .status-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#222832;border:2px solid #4a5361;color:#818b98;}
-  .status-dot.done{background:#19952f;border-color:#78f586;color:#fff;box-shadow:0 0 8px rgba(65,231,92,.55);}
-  .status-dot svg{width:17px;height:17px;}
 </style>
 </head>
 <body>
@@ -34,8 +30,6 @@
 <script src="game-theme.js"></script>
 <script>
 (function(){
-  var checkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-
   function isDoneOf(g){ return g.type === 'count' ? g.count > 0 : g.done; }
 
   function render(games){
@@ -54,8 +48,7 @@
         '<div class="death-body">' +
           '<span class="death-label">Deaths</span>' +
           '<span class="death-number">' + (g.deaths || 0) + '</span>' +
-        '</div>' +
-        '<div class="death-status"><span class="status-dot' + (isDoneOf(g) ? ' done' : '') + '">' + checkIcon + '</span></div>';
+        '</div>';
       deathsEl.appendChild(card);
     });
   }
