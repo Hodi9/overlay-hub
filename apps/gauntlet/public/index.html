@@ -18,7 +18,7 @@
     display:inline-flex;
     align-items:center;
     gap:10px;
-    height:46px;
+    height:56px;
     min-width:220px;
     padding:5px 16px 5px 5px;
     border-radius:11px;
@@ -38,18 +38,12 @@
     box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 3px 0 rgba(0,0,0,.42),0 0 0 2px #52db38,0 0 12px rgba(82,219,56,.48);
     transform:translateY(-1px);
   }
-  .badge-icon{
-    position:relative;z-index:1;width:31px;height:31px;border-radius:8px;
-    background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.16);
-    display:flex;align-items:center;justify-content:center;flex:none;
-    box-shadow:inset 0 -2px 0 rgba(0,0,0,.2);
-  }
-  .badge.done .badge-icon{background:#55dc36;border-color:#9aff82;border-radius:50%;}
-  .badge-icon svg{width:20px;height:20px;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35));}
-  .badge-icon.count{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:800;color:#fff;}
+  .game-mark{position:relative;z-index:1;width:48px;height:46px;margin-left:-2px;display:flex;align-items:center;justify-content:center;flex:none;font-weight:900;font-size:1.22rem;color:#fff;border-right:2px solid rgba(0,0,0,.25);text-shadow:0 2px 0 rgba(0,0,0,.35);}
+  .game-mark svg{width:34px;height:34px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25));}
+  .game-mark img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 1px rgba(0,0,0,.35));}
   .badge.fortnite{background:#258cf0!important;}
   .badge.warzone{background:#b99a00!important;}
-  .badge.minecraft{background:#55b84c!important;}
+  .badge.minecraft{background:#3f9144!important;}
   .badge.lol{background:#10aaa8!important;}
   .badge.rocketleague{background:#ef651d!important;}
   .badge.fortnite .badge-name{font-size:1.28rem;letter-spacing:.01em;text-shadow:0 2px 0 rgba(0,0,0,.28);transform:scaleY(1.08);}
@@ -59,8 +53,8 @@
   .badge.rocketleague .badge-name{font-size:1.34rem;font-style:italic;letter-spacing:.015em;text-shadow:0 2px 0 rgba(0,0,0,.34);}
   .badge-logo{position:relative;z-index:1;height:28px;width:auto;max-width:72px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45));flex:none;display:block;}
   .badge.fortnite .badge-logo,.badge.warzone .badge-logo,.badge.minecraft .badge-logo{height:29px;max-width:145px;margin:auto;}
-  .badge.fortnite .badge-name,.badge.warzone .badge-name,.badge.minecraft .badge-name{display:none;}
-  .badge.lol .badge-logo,.badge.rocketleague .badge-logo{width:30px;}
+  .badge.fortnite .badge-name,.badge.warzone .badge-name{font-size:1.28rem;}
+  .badge.minecraft .badge-name{font-size:.83rem;}
 </style>
 </head>
 <body>
@@ -69,7 +63,7 @@
 <script src="game-theme.js"></script>
 <script>
 (function(){
-  var checkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var creeperIcon = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect x="1" y="2" width="2" height="2" fill="#0b0c10"/><rect x="5" y="2" width="2" height="2" fill="#0b0c10"/><rect x="3" y="3" width="2" height="1" fill="#0b0c10"/><rect x="2" y="4" width="1" height="2" fill="#0b0c10"/><rect x="5" y="4" width="1" height="2" fill="#0b0c10"/><rect x="3" y="4" width="2" height="2" fill="#0b0c10"/></svg>';
 
   function render(games){
     var visible = games.filter(function(g){ return g.visible !== false; });
@@ -85,12 +79,12 @@
       badge.style.background = g.color;
       badge.style.borderColor = 'color-mix(in srgb, ' + g.color + ' 65%, black)';
       badge.style.fontFamily = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
-      var icon = g.done
-        ? '<span class="badge-icon">' + checkIcon + '</span>'
-        : '<span class="badge-icon count">' + (g.count || 0) + '</span>';
       var logoUrl = window.GauntletTheme && window.GauntletTheme.logoFor(g);
-      var logo = logoUrl ? '<img class="badge-logo" src="' + logoUrl + '" alt="">' : '';
-      badge.innerHTML = icon + logo + '<span class="badge-name">' + g.name + '</span>';
+      var useLogoMark = themeClass === 'lol' || themeClass === 'rocketleague';
+      var mark = useLogoMark && logoUrl
+        ? '<img src="' + logoUrl + '" alt="">'
+        : (g.icon === 'creeper' ? creeperIcon : '<span>' + g.icon + '</span>');
+      badge.innerHTML = '<span class="game-mark">' + mark + '</span><span class="badge-name">' + g.name + '</span>';
       badgesEl.appendChild(badge);
     });
   }
