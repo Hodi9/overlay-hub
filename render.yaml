@@ -16,6 +16,8 @@ services:
         generateValue: true
       - key: GEAR_CONTROL_PASSWORD
         sync: false
+      - key: GAUNTLET_CONTROL_PASSWORD
+        sync: false
       - key: NODE_VERSION
         value: 22
 

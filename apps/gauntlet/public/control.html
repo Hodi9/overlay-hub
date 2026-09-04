@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gaming Gauntlet — Control Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+  :root{
+    --bg:#12141a; --panel:#1a1d26; --panel-2:#20242f; --line:#2b2f3c;
+    --text:#eceaf2; --text-dim:#9a9db0; --check:#3fd67a; --danger:#e0607a; --pending-btn:#3a3f4d;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;padding:32px 20px 60px;}
+  .wrap{max-width:760px;margin:0 auto;}
+  header{margin-bottom:24px;}
+  h1{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:clamp(1.8rem,5vw,2.4rem);letter-spacing:0.03em;text-transform:uppercase;margin:0 0 6px;}
+  header p{margin:0;color:var(--text-dim);font-size:0.92rem;}
+  section{margin-bottom:26px;}
+  .section-label{font-family:'Rajdhani',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;font-size:0.76rem;color:var(--text-dim);margin:0 0 10px;}
+
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;}
+  .box .hint{margin:0 0 12px;font-size:0.82rem;color:var(--text-dim);}
+  .field-row{display:flex;gap:8px;align-items:center;}
+  input[type="text"], input[type="password"], input[type="color"], select{
+    font-family:'IBM Plex Sans',sans-serif;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--text);border-radius:7px;padding:8px 10px;font-size:0.9rem;
+  }
+  input[type="text"], input[type="password"]{flex:1;min-width:0;}
+  input[type="color"]{width:44px;padding:2px;flex:none;}
+  .btn{font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;background:var(--check);color:#0d1a12;border:none;border-radius:7px;padding:9px 16px;cursor:pointer;flex:none;}
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:0.5;cursor:default;}
+  .status-msg{margin-top:9px;font-size:0.8rem;min-height:1.1em;}
+  .status-msg.error{color:var(--danger);}
+  .status-msg.ok{color:var(--check);}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+  .row{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);border-left:3px solid transparent;flex-wrap:wrap;}
+  .row:last-child{border-bottom:none;}
+  .row.done{background:rgba(63,214,122,0.06);border-left-color:var(--check);}
+  .group-divider{padding:8px 18px 6px;font-family:'Rajdhani',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;font-size:0.7rem;color:var(--check);background:var(--panel-2);border-bottom:1px solid var(--line);}
+
+  .reorder{display:flex;flex-direction:column;gap:2px;flex:none;}
+  .reorder button{width:20px;height:16px;border:none;background:none;color:var(--text-dim);cursor:pointer;padding:0;line-height:1;font-size:0.7rem;border-radius:4px;}
+  .reorder button:hover:not(:disabled){background:var(--panel-2);color:var(--text);}
+  .reorder button:disabled{opacity:0.25;cursor:default;}
+
+  .swatch{width:10px;height:34px;border-radius:4px;flex:none;}
+  .row-name{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:1.02rem;text-transform:uppercase;letter-spacing:0.03em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .status-btn{display:flex;align-items:center;gap:7px;flex:none;width:112px;justify-content:center;padding:8px 0;border-radius:8px;border:1px solid var(--line);background:var(--pending-btn);color:var(--text-dim);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.07em;cursor:pointer;}
+  .status-btn:hover{filter:brightness(1.15);}
+  .status-btn .dot{width:8px;height:8px;border-radius:50%;background:var(--text-dim);flex:none;}
+  .status-btn.on{background:rgba(63,214,122,0.16);border-color:var(--check);color:var(--check);}
+  .status-btn.on .dot{background:var(--check);}
+
+  .stepper{display:flex;align-items:center;gap:8px;flex:none;}
+  .stepper button{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:0.95rem;cursor:pointer;line-height:1;}
+  .stepper button:hover{background:var(--line);}
+  .stepper .count{font-family:'JetBrains Mono',monospace;font-weight:700;min-width:1.6em;text-align:center;}
+
+  .row-remove{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.05rem;line-height:1;padding:4px 6px;border-radius:6px;}
+  .row-remove:hover{color:var(--danger);background:var(--panel-2);}
+
+  .row-visibility{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:1.05rem;line-height:1;padding:4px 6px;border-radius:6px;}
+  .row-visibility:hover{color:var(--text);background:var(--panel-2);}
+  .row-visibility.hidden-state{color:var(--danger);}
+  .row.hidden-game{opacity:0.5;}
+  .row.hidden-game .row-name::after{content:" (skjult)"; color:var(--text-dim); font-weight:400; text-transform:none; letter-spacing:0; font-size:0.8rem;}
+
+  .add-row{display:flex;gap:10px;padding:14px 18px;background:var(--panel-2);flex-wrap:wrap;}
+  .add-row input[type="text"]{flex:1;min-width:120px;}
+
+  footer{margin-top:22px;color:var(--text-dim);font-size:0.8rem;}
+  a{color:var(--check);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Gaming Gauntlet</h1>
+    <p>Styr <a href="index.html" target="_blank">gauntlet-overlayet</a> og <a href="deaths.html" target="_blank">dødstælleren</a> — to separate browser sources, du kan placere hver for sig i OBS. Ændringer slår igennem øjeblikkeligt.</p>
+  </header>
+
+  <section>
+    <p class="section-label">Adgangskode</p>
+    <div class="box">
+      <p class="hint">Kræves for at ændre noget. Gemmes på denne enhed.</p>
+      <div class="field-row">
+        <input type="password" id="f-token" placeholder="Adgangskode" autocomplete="off">
+        <button class="btn" id="save-token-btn">Gem</button>
+      </div>
+      <div class="status-msg" id="token-status"></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-label">Control panel</p>
+    <p class="hint" style="margin:-4px 0 10px;">Tallet (−/+) viser på overlayet, indtil du klikker Pending → Cleared, hvor det skifter til et flueben. 👁 viser/skjuler spillet på begge overlays.</p>
+    <div class="panel" id="panel"></div>
+  </section>
+
+  <section>
+    <p class="section-label">Death counter controls</p>
+    <div class="panel" id="deaths-panel"></div>
+  </section>
+
+  <footer id="global-status"></footer>
+</div>
+
+<script>
+(function(){
+  var TOKEN_KEY = 'gauntlet-control-token';
+  var tokenInput = document.getElementById('f-token');
+  var saveTokenBtn = document.getElementById('save-token-btn');
+  var tokenStatus = document.getElementById('token-status');
+  var globalStatus = document.getElementById('global-status');
+
+  function getToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
+  function setToken(v){ try{ localStorage.setItem(TOKEN_KEY, v); }catch(e){} }
+
+  tokenInput.value = getToken();
+  if (getToken()){ tokenStatus.textContent = 'Kode gemt på denne enhed.'; tokenStatus.className = 'status-msg ok'; }
+  saveTokenBtn.addEventListener('click', function(){
+    setToken(tokenInput.value.trim());
+    tokenStatus.textContent = 'Kode gemt på denne enhed.';
+    tokenStatus.className = 'status-msg ok';
+  });
+  tokenInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') saveTokenBtn.click(); });
+
+  function authHeaders(extra){
+    return Object.assign({ 'x-gauntlet-key': getToken() }, extra || {});
+  }
+
+  function setGlobalStatus(msg, kind){
+    globalStatus.textContent = msg;
+    globalStatus.className = kind ? kind : '';
+    if (msg) setTimeout(function(){ if (globalStatus.textContent === msg) globalStatus.textContent = ''; }, 3000);
+  }
+
+  function apiCall(url, options){
+    return fetch(url, options).then(function(r){
+      if (r.status === 401) { setGlobalStatus('Forkert eller manglende adgangskode.', 'status-msg error'); throw new Error('unauthorized'); }
+      if (!r.ok) { setGlobalStatus('Noget gik galt — prøv igen.', 'status-msg error'); throw new Error('failed'); }
+      return r.json();
+    });
+  }
+
+  var checkIcon = '<svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.2 11.5L13 4.5" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function isDoneOf(g){ return g.done; }
+
+  var latestGames = [];
+
+  function patchGame(id, patch){
+    return apiCall('/gauntlet/api/games/' + encodeURIComponent(id), {
+      method: 'PATCH', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(patch)
+    }).then(function(s){ render(s.games || []); });
+  }
+
+  function render(games){
+    latestGames = games;
+    var sorted = games.slice().sort(function(a,b){ return Number(isDoneOf(a)) - Number(isDoneOf(b)); });
+
+    var panel = document.getElementById('panel');
+    var deathsPanel = document.getElementById('deaths-panel');
+    panel.innerHTML = '';
+    deathsPanel.innerHTML = '';
+
+    var dividerShown = false;
+
+    sorted.forEach(function(g, i){
+      var isDone = isDoneOf(g);
+
+      if (isDone && !dividerShown){
+        dividerShown = true;
+        var divider = document.createElement('div');
+        divider.className = 'group-divider';
+        divider.textContent = 'Cleared';
+        panel.appendChild(divider);
+      }
+
+      var row = document.createElement('div');
+      row.className = 'row' + (isDone ? ' done' : '') + (g.visible === false ? ' hidden-game' : '');
+
+      var reorder = document.createElement('div');
+      reorder.className = 'reorder';
+      var up = document.createElement('button');
+      up.textContent = '▲';
+      up.setAttribute('aria-label', 'Flyt ' + g.name + ' op');
+      up.disabled = i === 0 || isDoneOf(sorted[i-1]) !== isDone;
+      up.addEventListener('click', function(){
+        var order = sorted.slice();
+        var tmp = order[i-1]; order[i-1] = order[i]; order[i] = tmp;
+        apiCall('/gauntlet/api/order', { method:'PUT', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ ids: order.map(function(x){return x.id;}) }) })
+          .then(function(s){ render(s.games || []); });
+      });
+      var down = document.createElement('button');
+      down.textContent = '▼';
+      down.setAttribute('aria-label', 'Flyt ' + g.name + ' ned');
+      down.disabled = i === sorted.length - 1 || isDoneOf(sorted[i+1]) !== isDone;
+      down.addEventListener('click', function(){
+        var order = sorted.slice();
+        var tmp = order[i+1]; order[i+1] = order[i]; order[i] = tmp;
+        apiCall('/gauntlet/api/order', { method:'PUT', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ ids: order.map(function(x){return x.id;}) }) })
+          .then(function(s){ render(s.games || []); });
+      });
+      reorder.appendChild(up); reorder.appendChild(down);
+      row.appendChild(reorder);
+
+      var swatch = document.createElement('div');
+      swatch.className = 'swatch';
+      swatch.style.background = g.color;
+      row.appendChild(swatch);
+
+      var label = document.createElement('div');
+      label.className = 'row-name';
+      label.textContent = g.name;
+      row.appendChild(label);
+
+      var stepper = document.createElement('div');
+      stepper.className = 'stepper';
+      var minus = document.createElement('button');
+      minus.textContent = '−';
+      minus.setAttribute('aria-label', 'Sænk tal for ' + g.name);
+      minus.addEventListener('click', function(){ patchGame(g.id, { count: Math.max(0, (g.count || 0) - 1) }); });
+      var countEl = document.createElement('span');
+      countEl.className = 'count';
+      countEl.textContent = g.count || 0;
+      var plus = document.createElement('button');
+      plus.textContent = '+';
+      plus.setAttribute('aria-label', 'Hæv tal for ' + g.name);
+      plus.addEventListener('click', function(){ patchGame(g.id, { count: (g.count || 0) + 1 }); });
+      stepper.appendChild(minus); stepper.appendChild(countEl); stepper.appendChild(plus);
+      row.appendChild(stepper);
+
+      var statusBtn = document.createElement('button');
+      statusBtn.className = 'status-btn' + (g.done ? ' on' : '');
+      statusBtn.innerHTML = '<span class="dot"></span><span>' + (g.done ? 'Cleared' : 'Pending') + '</span>';
+      statusBtn.addEventListener('click', function(){ patchGame(g.id, { done: !g.done }); });
+      row.appendChild(statusBtn);
+
+      var visBtn = document.createElement('button');
+      visBtn.className = 'row-visibility' + (g.visible === false ? ' hidden-state' : '');
+      visBtn.textContent = g.visible === false ? '🙈' : '👁';
+      visBtn.title = g.visible === false ? 'Skjult på overlay — klik for at vise' : 'Vist på overlay — klik for at skjule';
+      visBtn.setAttribute('aria-label', (g.visible === false ? 'Vis ' : 'Skjul ') + g.name + ' på overlayet');
+      visBtn.addEventListener('click', function(){ patchGame(g.id, { visible: g.visible === false }); });
+      row.appendChild(visBtn);
+
+      var remove = document.createElement('button');
+      remove.className = 'row-remove';
+      remove.textContent = '✕';
+      remove.setAttribute('aria-label', 'Fjern ' + g.name);
+      remove.addEventListener('click', function(){
+        if (!confirm('Fjern ' + g.name + ' fra gauntleten?')) return;
+        apiCall('/gauntlet/api/games/' + encodeURIComponent(g.id), { method:'DELETE', headers: authHeaders() })
+          .then(function(s){ render(s.games || []); });
+      });
+      row.appendChild(remove);
+
+      panel.appendChild(row);
+
+      // death counter row
+      var dRow = document.createElement('div');
+      dRow.className = 'row' + (g.visible === false ? ' hidden-game' : '');
+      var dSwatch = document.createElement('div');
+      dSwatch.className = 'swatch';
+      dSwatch.style.background = g.color;
+      dRow.appendChild(dSwatch);
+      var dLabel = document.createElement('div');
+      dLabel.className = 'row-name';
+      dLabel.textContent = g.name;
+      dRow.appendChild(dLabel);
+      var dStepper = document.createElement('div');
+      dStepper.className = 'stepper';
+      var dMinus = document.createElement('button');
+      dMinus.textContent = '−';
+      dMinus.addEventListener('click', function(){ patchGame(g.id, { deaths: Math.max(0, (g.deaths||0) - 1) }); });
+      var dCount = document.createElement('span');
+      dCount.className = 'count';
+      dCount.textContent = g.deaths || 0;
+      var dPlus = document.createElement('button');
+      dPlus.textContent = '+';
+      dPlus.addEventListener('click', function(){ patchGame(g.id, { deaths: (g.deaths||0) + 1 }); });
+      dStepper.appendChild(dMinus); dStepper.appendChild(dCount); dStepper.appendChild(dPlus);
+      dRow.appendChild(dStepper);
+
+      var dVisBtn = document.createElement('button');
+      dVisBtn.className = 'row-visibility' + (g.visible === false ? ' hidden-state' : '');
+      dVisBtn.textContent = g.visible === false ? '🙈' : '👁';
+      dVisBtn.title = g.visible === false ? 'Skjult på overlay — klik for at vise' : 'Vist på overlay — klik for at skjule';
+      dVisBtn.setAttribute('aria-label', (g.visible === false ? 'Vis ' : 'Skjul ') + g.name + ' på overlayet');
+      dVisBtn.addEventListener('click', function(){ patchGame(g.id, { visible: g.visible === false }); });
+      dRow.appendChild(dVisBtn);
+
+      deathsPanel.appendChild(dRow);
+    });
+
+    var addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    addRow.innerHTML =
+      '<input type="text" id="new-name" placeholder="Spilnavn">' +
+      '<input type="color" id="new-color" value="#5a6270">' +
+      '<button class="btn" id="add-btn">Tilføj</button>';
+    panel.appendChild(addRow);
+
+    document.getElementById('add-btn').addEventListener('click', function(){
+      var name = document.getElementById('new-name').value.trim();
+      if (!name) return;
+      var color = document.getElementById('new-color').value;
+      apiCall('/gauntlet/api/games', { method:'POST', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ name: name, color: color }) })
+        .then(function(s){ render(s.games || []); });
+    });
+  }
+
+  function loadState(){
+    return fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(function(s){ render(s.games || []); }).catch(function(){});
+  }
+
+  var events = new EventSource('/gauntlet/api/events');
+  events.onmessage = function(event){
+    try { render(JSON.parse(event.data).games || []); } catch(e){}
+  };
+
+  loadState();
+})();
+</script>
+</body>
+</html>

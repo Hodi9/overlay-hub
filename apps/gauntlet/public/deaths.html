@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gaming Gauntlet Death Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
+  body{font-family:'Rajdhani',sans-serif;}
+
+  .deaths{display:flex;flex-direction:column;gap:10px;padding:20px;width:fit-content;}
+  .death-card{
+    display:flex;width:260px;border-radius:14px;overflow:hidden;
+    background:#14161c;border:2px solid rgba(255,255,255,0.1);
+    box-shadow:0 4px 0 rgba(0,0,0,0.35), 0 8px 16px rgba(0,0,0,0.3);
+  }
+  .death-icon{
+    width:58px;flex:none;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:1.15rem;color:#fff;
+  }
+  .death-icon svg{width:30px;height:30px;}
+  .death-body{flex:1;padding:8px 12px 10px;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0;}
+  .death-label{font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;padding:2px 9px;border-radius:5px;color:#fff;}
+  .death-number{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.8rem;color:#fff;line-height:1;font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+<div class="deaths" id="deaths"></div>
+
+<script>
+(function(){
+  var creeperIcon = '<svg viewBox="0 0 8 8" shape-rendering="crispEdges">' +
+    '<rect x="1" y="2" width="2" height="2" fill="#0b0c10"/>' +
+    '<rect x="5" y="2" width="2" height="2" fill="#0b0c10"/>' +
+    '<rect x="3" y="3" width="2" height="1" fill="#0b0c10"/>' +
+    '<rect x="2" y="4" width="1" height="2" fill="#0b0c10"/>' +
+    '<rect x="5" y="4" width="1" height="2" fill="#0b0c10"/>' +
+    '<rect x="3" y="4" width="2" height="2" fill="#0b0c10"/>' +
+    '</svg>';
+
+  function isDoneOf(g){ return g.type === 'count' ? g.count > 0 : g.done; }
+
+  function render(games){
+    var visible = games.filter(function(g){ return g.visible !== false; });
+    var sorted = visible.slice().sort(function(a,b){ return Number(isDoneOf(a)) - Number(isDoneOf(b)); });
+
+    var deathsEl = document.getElementById('deaths');
+    deathsEl.innerHTML = '';
+
+    sorted.forEach(function(g){
+      var card = document.createElement('div');
+      card.className = 'death-card';
+      var iconHtml = g.icon === 'creeper' ? creeperIcon : ('<span>' + g.icon + '</span>');
+      card.innerHTML =
+        '<div class="death-icon" style="background:' + g.color + '">' + iconHtml + '</div>' +
+        '<div class="death-body">' +
+          '<span class="death-label" style="background:' + g.color + '">Deaths</span>' +
+          '<span class="death-number">' + (g.deaths || 0) + '</span>' +
+        '</div>';
+      deathsEl.appendChild(card);
+    });
+  }
+
+  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(function(s){ render(s.games || []); }).catch(function(){});
+
+  var events = new EventSource('/gauntlet/api/events');
+  events.onmessage = function(event){
+    try { render(JSON.parse(event.data).games || []); } catch(e){}
+  };
+})();
+</script>
+</body>
+</html>
