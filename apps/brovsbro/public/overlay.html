@@ -62,14 +62,14 @@
     align-items: stretch;
     width: 660px;
     background: var(--ink);
-    border: 3px solid var(--cabinet);
-    box-shadow:
-      0 0 0 3px var(--cabinet-edge),
-      0 0 0 7px var(--cabinet),
-      0 24px 50px -20px var(--shadow);
+    border-radius: 6px;
+    border: 2px solid var(--cabinet);
+    box-shadow: 0 20px 40px -18px var(--shadow);
+    overflow: hidden;
   }
-  .sb-side { flex: 1; display: flex; align-items: center; gap: 16px; padding: 16px 20px; }
-  .sb-side.sb-aggo { flex-direction: row-reverse; text-align: right; }
+  .sb-side { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
+  .sb-side.sb-aggo { text-align: right; }
+  .sb-cluster { display: flex; align-items: center; gap: 16px; }
   .sb-tag { font-size: 12px; letter-spacing: 0.05em; padding: 3px 7px; background: var(--p1); color: var(--ink); flex-shrink: 0; }
   .sb-aggo .sb-tag { background: var(--p2); }
   .sb-photo { width: 54px; height: 54px; flex-shrink: 0; overflow: hidden; image-rendering: pixelated; }
@@ -83,10 +83,8 @@
     font-family: 'Press Start 2P', monospace;
     font-size: 26px;
     line-height: 1;
-    margin-left: auto;
     transition: transform 0.2s steps(3);
   }
-  .sb-aggo .sb-score { margin-left: 0; margin-right: auto; }
   .sb-marcelo .sb-score { color: var(--p1); text-shadow: 0 0 10px var(--p1); }
   .sb-aggo .sb-score { color: var(--p2); text-shadow: 0 0 10px var(--p2); }
   .sb-score.bump { transform: scale(1.25); }
@@ -239,9 +237,11 @@
   <div id="scoreboard-view" data-view>
     <div class="scoreboard">
       <div class="sb-side sb-marcelo">
-        <span class="sb-tag pixel-font">P1</span>
-        <div class="sb-photo"><img src="/brovsbro/images/marcelo.png" alt="Marcelo" /></div>
-        <div class="sb-info"><span class="sb-name">Marcelo</span></div>
+        <div class="sb-cluster">
+          <span class="sb-tag pixel-font">P1</span>
+          <div class="sb-photo"><img src="/brovsbro/images/marcelo.png" alt="Marcelo" /></div>
+          <div class="sb-info"><span class="sb-name">Marcelo</span></div>
+        </div>
         <span class="sb-score" id="sb-marcelo-score">0</span>
       </div>
       <div class="sb-center">
@@ -251,9 +251,11 @@
       </div>
       <div class="sb-side sb-aggo">
         <span class="sb-score" id="sb-aggo-score">0</span>
-        <div class="sb-info"><span class="sb-name">Aggo</span></div>
-        <div class="sb-photo"><img src="/brovsbro/images/aggo.png" alt="Aggo" /></div>
-        <span class="sb-tag pixel-font">P2</span>
+        <div class="sb-cluster">
+          <div class="sb-info"><span class="sb-name">Aggo</span></div>
+          <div class="sb-photo"><img src="/brovsbro/images/aggo.png" alt="Aggo" /></div>
+          <span class="sb-tag pixel-font">P2</span>
+        </div>
       </div>
     </div>
   </div>
