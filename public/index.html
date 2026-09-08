@@ -78,6 +78,7 @@
   .icon.gear { background: linear-gradient(135deg, #8a3511, #ff7417); }
   .icon.gauntlet { background: linear-gradient(135deg, #3a2f6e, var(--violet)); }
   .icon.tlou2 { background: linear-gradient(135deg, #2f3a24, #6b7a52); }
+  .icon.gta5 { background: linear-gradient(135deg, #1e3a1c, #5fd15a); }
 
   .card-head h2 { margin: 0; font-size: 18px; }
   .card-head span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -114,6 +115,7 @@
   .gear-card .links a:hover { border-color: #ff7417; }
   .gauntlet-card .links a:not(.control):hover { border-color: var(--violet); }
   .tlou2-card .links a:not(.control):hover { border-color: #8aa06a; }
+  .gta5-card .links a:not(.control):hover { border-color: #5fd15a; }
 
   footer {
     max-width: 900px;
@@ -236,6 +238,20 @@
         <a class="control" href="/tlou2/control.html">Control panel</a>
       </div>
       <p class="card-hint">Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet.</p>
+    </section>
+    <section class="card gta5-card">
+      <div class="card-head">
+        <div class="icon gta5">🚗</div>
+        <div>
+          <h2>GTA V Story Tracker</h2>
+          <span>Story progression overlay — auto-opdateres via save-fil</span>
+        </div>
+      </div>
+      <div class="links">
+        <a href="/gta5/">Overlay</a>
+        <a class="control" href="/gta5/control.html">Control panel</a>
+      </div>
+      <p class="card-hint">Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet.</p>
     </section>
   </main>
 

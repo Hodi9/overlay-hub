@@ -8,6 +8,7 @@ import { createGearApp } from "./apps/gear/app.js";
 import { createGearBfApp } from "./apps/gear-bf/app.js";
 import { createGauntletApp } from "./apps/gauntlet/app.js";
 import { createTlou2App } from "./apps/tlou2/app.js";
+import { createGta5App } from "./apps/gta5/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -27,6 +28,7 @@ app.use("/gear", createGearApp());
 app.use("/gear-bf", createGearBfApp());
 app.use("/gauntlet", createGauntletApp());
 app.use("/tlou2", createTlou2App());
+app.use("/gta5", createGta5App());
 
 app.use(express.static(path.join(__dirname, "public")));
 

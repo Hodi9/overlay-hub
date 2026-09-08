@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA V Story Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+  :root{
+    --bone:#eef0ee; --green:#5fd15a; --dim:#9aa39a;
+    --michael:#4fa3e0; --franklin:#5fd15a; --trevor:#e0a13a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
+  body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-end;height:100vh;padding:26px;}
+  body.bg-preview{background:#0a0a0a;}
+
+  .tracker{
+    width:460px;
+    background:linear-gradient(180deg, rgba(10,10,10,.9), rgba(6,6,6,.94));
+    border:1px solid rgba(238,240,238,.16);
+    border-left:4px solid var(--green);
+    border-radius:4px;
+    padding:14px 18px 16px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5);
+    opacity:0;
+    transform:translateY(6px);
+    transition:opacity .4s ease, transform .4s ease, border-left-color .3s ease;
+  }
+  .tracker.ready{opacity:1;transform:translateY(0);}
+
+  .label{
+    font-size:.68rem;font-weight:600;letter-spacing:.22em;color:var(--dim);
+    text-transform:uppercase;margin-bottom:6px;
+  }
+  .mission-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .mission-name{
+    font-size:1.4rem;font-weight:700;letter-spacing:.02em;color:var(--bone);
+    text-transform:uppercase;line-height:1.1;
+  }
+  .mission-char{
+    font-size:.78rem;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;white-space:nowrap;padding:2px 8px;border-radius:3px;
+  }
+  .mission-char.michael{color:var(--michael);}
+  .mission-char.franklin{color:var(--franklin);}
+  .mission-char.trevor{color:var(--trevor);}
+
+  .bar-track{
+    position:relative;height:8px;border-radius:2px;background:rgba(238,240,238,.14);overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;width:0%;background:linear-gradient(90deg, #2f8a2c, var(--green));
+    transition:width .6s ease;
+  }
+  .bar-meta{
+    display:flex;justify-content:space-between;margin-top:8px;
+    font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--dim);letter-spacing:.02em;
+  }
+  .bar-meta .count{color:var(--bone);font-weight:600;}
+  .bar-meta .percent{color:var(--green);font-weight:700;}
+
+  .idle{font-size:.95rem;color:var(--dim);letter-spacing:.03em;}
+</style>
+</head>
+<body>
+<div class="tracker" id="tracker">
+  <div class="label">Grand Theft Auto V — Story</div>
+  <div id="content"></div>
+</div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  if (params.get('bg') === 'black') document.body.classList.add('bg-preview');
+  var profile = params.get('profile') || '';
+  var qs = profile ? ('?profile=' + encodeURIComponent(profile)) : '';
+
+  var box = document.getElementById('tracker');
+  var content = document.getElementById('content');
+
+  function render(state){
+    box.classList.add('ready');
+    var missions = state.missions || [];
+    var total = missions.length;
+    var idx = typeof state.currentIndex === 'number' ? state.currentIndex : -1;
+
+    if (idx < 0 || !missions[idx]){
+      content.innerHTML = '<div class="idle">Ikke startet endnu</div>';
+      return;
+    }
+
+    var current = missions[idx];
+    var completed = idx;
+    var percent = total ? Math.round((completed / total) * 1000) / 10 : 0;
+
+    content.innerHTML =
+      '<div class="mission-row">' +
+        '<span class="mission-name">' + escapeHtml(current.name || '') + '</span>' +
+        (current.character ? '<span class="mission-char ' + current.character + '">' + escapeHtml(current.character) + '</span>' : '') +
+      '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + percent + '%"></div></div>' +
+      '<div class="bar-meta"><span class="count">' + completed + ' / ' + total + '</span><span class="percent">' + percent + '%</span></div>';
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  fetch('/gta5/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
+
+  var events = new EventSource('/gta5/api/events' + qs);
+  events.onmessage = function(event){
+    try { render(JSON.parse(event.data)); } catch(e){}
+  };
+})();
+</script>
+</body>
+</html>

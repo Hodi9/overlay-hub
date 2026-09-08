@@ -3,3 +3,4 @@ node_modules/
 apps/brovsbro/brovsbro-state.json
 apps/tlou2/tracker/tlou2-tracker-config.json
 apps/tlou2/tracker/*.png
+apps/gta5/tracker/gta5-tracker-config.json

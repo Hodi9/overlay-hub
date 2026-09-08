@@ -22,6 +22,10 @@ services:
         sync: false
       - key: TLOU2_TRACKER_KEY
         generateValue: true
+      - key: GTA5_CONTROL_PASSWORD
+        sync: false
+      - key: GTA5_TRACKER_KEY
+        generateValue: true
       - key: NODE_VERSION
         value: 22
 
