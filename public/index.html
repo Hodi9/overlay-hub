@@ -79,6 +79,7 @@
   .icon.gauntlet { background: linear-gradient(135deg, #3a2f6e, var(--violet)); }
   .icon.tlou2 { background: linear-gradient(135deg, #2f3a24, #6b7a52); }
   .icon.gta5 { background: linear-gradient(135deg, #1e3a1c, #5fd15a); }
+  .icon.mafia { background: linear-gradient(135deg, #3a2c1a, #d4a24c); }
 
   .card-head h2 { margin: 0; font-size: 18px; }
   .card-head span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -116,6 +117,10 @@
   .gauntlet-card .links a:not(.control):hover { border-color: var(--violet); }
   .tlou2-card .links a:not(.control):hover { border-color: #8aa06a; }
   .gta5-card .links a:not(.control):hover { border-color: #5fd15a; }
+  .mafia-card .links a:not(.control):hover { border-color: #d4a24c; }
+  .game-group { margin-bottom: 14px; }
+  .game-group h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .game-group:last-of-type { margin-bottom: 0; }
 
   footer {
     max-width: 900px;
@@ -234,9 +239,10 @@
         </div>
       </div>
       <div class="links">
-        <a href="/tlou2/">Overlay</a>
+        <a href="/tlou2/?bg=black">Overlay</a>
         <a class="control" href="/tlou2/control.html">Control panel</a>
       </div>
+      <p class="card-hint">Denne overlay-link viser sort baggrund for at kunne ses her. I OBS, brug URL'en uden <code>?bg=black</code> så den forbliver gennemsigtig.</p>
       <p class="card-hint">Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet.</p>
     </section>
     <section class="card gta5-card">
@@ -248,10 +254,42 @@
         </div>
       </div>
       <div class="links">
-        <a href="/gta5/">Overlay</a>
+        <a href="/gta5/?bg=black">Overlay</a>
         <a class="control" href="/gta5/control.html">Control panel</a>
       </div>
+      <p class="card-hint">Denne overlay-link viser sort baggrund for at kunne ses her. I OBS, brug URL'en uden <code>?bg=black</code> så den forbliver gennemsigtig.</p>
       <p class="card-hint">Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet.</p>
+    </section>
+    <section class="card mafia-card">
+      <div class="card-head">
+        <div class="icon mafia">🎩</div>
+        <div>
+          <h2>Mafia Trilogy Trackers</h2>
+          <span>Story progression overlays — auto-opdateres via OCR</span>
+        </div>
+      </div>
+      <div class="game-group">
+        <h3>Mafia: Definitive Edition</h3>
+        <div class="links">
+          <a href="/mafia1/?bg=black">Overlay</a>
+          <a class="control" href="/mafia1/control.html">Control panel</a>
+        </div>
+      </div>
+      <div class="game-group">
+        <h3>Mafia II: Definitive Edition</h3>
+        <div class="links">
+          <a href="/mafia2/?bg=black">Overlay</a>
+          <a class="control" href="/mafia2/control.html">Control panel</a>
+        </div>
+      </div>
+      <div class="game-group">
+        <h3>Mafia III: Definitive Edition</h3>
+        <div class="links">
+          <a href="/mafia3/?bg=black">Overlay</a>
+          <a class="control" href="/mafia3/control.html">Control panel</a>
+        </div>
+      </div>
+      <p class="card-hint">Overlay-links viser sort baggrund for at kunne ses her. I OBS, brug URL'en uden <code>?bg=black</code>. Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne.</p>
     </section>
   </main>
 

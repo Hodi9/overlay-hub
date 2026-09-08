@@ -4,3 +4,7 @@ apps/brovsbro/brovsbro-state.json
 apps/tlou2/tracker/tlou2-tracker-config.json
 apps/tlou2/tracker/*.png
 apps/gta5/tracker/gta5-tracker-config.json
+apps/mafia1/tracker/mafia1-tracker-config.json
+apps/mafia2/tracker/mafia2-tracker-config.json
+apps/mafia3/tracker/mafia3-tracker-config.json
+apps/*/tracker/calibration-screenshot.png

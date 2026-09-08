@@ -5,11 +5,11 @@ import { DEFAULT_CHAPTERS } from "./chapters.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export function createTlou2App() {
+export function createMafia1App() {
   return createStoryTrackerApp({
     publicDir: path.join(__dirname, "public"),
-    envPrefix: "TLOU2",
-    dbTable: "tlou2_state",
+    envPrefix: "MAFIA1",
+    dbTable: "mafia1_state",
     defaultChapters: DEFAULT_CHAPTERS,
     cleanChapter: makeDayLocationCleaner(),
     matchText: dayLocationMatchText

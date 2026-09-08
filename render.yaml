@@ -26,6 +26,18 @@ services:
         sync: false
       - key: GTA5_TRACKER_KEY
         generateValue: true
+      - key: MAFIA1_CONTROL_PASSWORD
+        sync: false
+      - key: MAFIA1_TRACKER_KEY
+        generateValue: true
+      - key: MAFIA2_CONTROL_PASSWORD
+        sync: false
+      - key: MAFIA2_TRACKER_KEY
+        generateValue: true
+      - key: MAFIA3_CONTROL_PASSWORD
+        sync: false
+      - key: MAFIA3_TRACKER_KEY
+        generateValue: true
       - key: NODE_VERSION
         value: 22
 

@@ -9,6 +9,9 @@ import { createGearBfApp } from "./apps/gear-bf/app.js";
 import { createGauntletApp } from "./apps/gauntlet/app.js";
 import { createTlou2App } from "./apps/tlou2/app.js";
 import { createGta5App } from "./apps/gta5/app.js";
+import { createMafia1App } from "./apps/mafia1/app.js";
+import { createMafia2App } from "./apps/mafia2/app.js";
+import { createMafia3App } from "./apps/mafia3/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -29,6 +32,9 @@ app.use("/gear-bf", createGearBfApp());
 app.use("/gauntlet", createGauntletApp());
 app.use("/tlou2", createTlou2App());
 app.use("/gta5", createGta5App());
+app.use("/mafia1", createMafia1App());
+app.use("/mafia2", createMafia2App());
+app.use("/mafia3", createMafia3App());
 
 app.use(express.static(path.join(__dirname, "public")));
 

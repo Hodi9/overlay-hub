@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GTA V Story Overlay</title>
+<title>Mafia III Definitive Edition Overlay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap">
 <style>
-  :root{ --accent:#5fd15a; }
+  :root{ --accent:#d4652f; }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
   body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-start;height:100vh;padding:40px;}
@@ -74,22 +74,22 @@
       sectionHtml = 'Gennemført';
       currentHtml = '<span class="bullet"></span><span class="text">Historien er fuldført</span>';
     } else if (state.current){
-      sectionHtml = state.current.part ? escapeHtml(state.current.part) : '';
+      sectionHtml = escapeHtml(state.current.location || '');
       currentHtml = '<span class="bullet"></span><span class="text">' + escapeHtml(state.current.day || '') + '</span>';
     }
 
     content.innerHTML =
       '<div class="percent">' + percent.toFixed(1) + '%</div>' +
-      '<div class="label">Tracked Mission Progress</div>' +
+      '<div class="label">Tracked Chapter Progress</div>' +
       '<div class="bar-rail"><div class="bar-fill" style="width:' + percent + '%"></div></div>' +
-      '<div class="count">' + completed + ' / ' + total + ' Missions</div>' +
+      '<div class="count">' + completed + ' / ' + total + ' Chapters</div>' +
       '<div class="section">' + sectionHtml + '</div>' +
       '<div class="current">' + currentHtml + '</div>';
   }
 
-  fetch('/gta5/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
+  fetch('/mafia3/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
 
-  var events = new EventSource('/gta5/api/events' + qs);
+  var events = new EventSource('/mafia3/api/events' + qs);
   events.onmessage = function(event){
     try { render(JSON.parse(event.data)); } catch(e){}
   };
