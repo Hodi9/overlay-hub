@@ -168,12 +168,14 @@ export function createGta5App() {
   }
 
   function payload(state) {
-    const completed = Math.max(0, state.currentIndex);
     const total = state.missions.length;
+    const finished = state.currentIndex >= total;
+    const completed = finished ? total : Math.max(0, state.currentIndex);
     return {
       missions: state.missions,
       currentIndex: state.currentIndex,
-      current: state.currentIndex >= 0 ? state.missions[state.currentIndex] : null,
+      current: state.currentIndex >= 0 && state.currentIndex < total ? state.missions[state.currentIndex] : null,
+      finished,
       progress: { completed, total },
       percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
@@ -289,7 +291,7 @@ export function createGta5App() {
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
       const index = Number(request.body?.index);
-      if (!Number.isInteger(index) || index < -1 || index >= state.missions.length) {
+      if (!Number.isInteger(index) || index < -1 || index > state.missions.length) {
         return response.status(400).json({ error: "index er ugyldigt." });
       }
       state.currentIndex = index;
@@ -307,7 +309,7 @@ export function createGta5App() {
       const list = Array.isArray(request.body?.missions) ? request.body.missions : null;
       if (!list || !list.length) return response.status(400).json({ error: "missions skal være en ikke-tom liste." });
       state.missions = list.map((m) => cleanMission(m));
-      if (state.currentIndex >= state.missions.length) state.currentIndex = state.missions.length - 1;
+      if (state.currentIndex > state.missions.length) state.currentIndex = state.missions.length;
       await commit(profileId, state);
       response.json(payload(state));
     } catch (error) {

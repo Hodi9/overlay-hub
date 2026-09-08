@@ -167,12 +167,14 @@ export function createTlou2App() {
   }
 
   function payload(state) {
-    const completed = Math.max(0, state.currentIndex);
     const total = state.chapters.length;
+    const finished = state.currentIndex >= total;
+    const completed = finished ? total : Math.max(0, state.currentIndex);
     return {
       chapters: state.chapters,
       currentIndex: state.currentIndex,
-      current: state.currentIndex >= 0 ? state.chapters[state.currentIndex] : null,
+      current: state.currentIndex >= 0 && state.currentIndex < total ? state.chapters[state.currentIndex] : null,
+      finished,
       progress: { completed, total },
       percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
       lastOcr: state.lastOcr,
@@ -287,7 +289,7 @@ export function createTlou2App() {
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
       const index = Number(request.body?.index);
-      if (!Number.isInteger(index) || index < -1 || index >= state.chapters.length) {
+      if (!Number.isInteger(index) || index < -1 || index > state.chapters.length) {
         return response.status(400).json({ error: "index er ugyldigt." });
       }
       state.currentIndex = index;
@@ -305,7 +307,7 @@ export function createTlou2App() {
       const list = Array.isArray(request.body?.chapters) ? request.body.chapters : null;
       if (!list || !list.length) return response.status(400).json({ error: "chapters skal være en ikke-tom liste." });
       state.chapters = list.map((c) => cleanChapter(c));
-      if (state.currentIndex >= state.chapters.length) state.currentIndex = state.chapters.length - 1;
+      if (state.currentIndex > state.chapters.length) state.currentIndex = state.chapters.length;
       await commit(profileId, state);
       response.json(payload(state));
     } catch (error) {

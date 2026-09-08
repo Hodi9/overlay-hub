@@ -124,6 +124,7 @@
 
   <section>
     <div class="field-row">
+      <button class="btn" id="finish-btn">Marker som gennemført (100%)</button>
       <button class="btn secondary" id="reset-btn">Nulstil til "ikke startet"</button>
     </div>
   </section>
@@ -314,6 +315,13 @@
       addChapter(day, loc, part);
     });
   }
+
+  document.getElementById('finish-btn').addEventListener('click', function(){
+    if (!latest) return;
+    if (!confirm('Marker hele marathonet som gennemført (100%)?')) return;
+    apiCall('/tlou2/api/current' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ index: latest.chapters.length }) })
+      .then(render);
+  });
 
   document.getElementById('reset-btn').addEventListener('click', function(){
     if (!confirm('Nulstil marathon-progressionen til "ikke startet"?')) return;

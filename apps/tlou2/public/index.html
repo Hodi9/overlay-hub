@@ -6,63 +6,35 @@
 <title>TLOU2 Marathon Overlay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap">
 <style>
-  :root{
-    --bone:#e7e0c9; --moss:#6b7a52; --moss-dark:#3c4630; --rust:#9a3d33; --dim:#a9a692;
-  }
+  :root{ --accent:#8aa06a; }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
-  body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-end;height:100vh;padding:26px;}
+  body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-start;height:100vh;padding:40px;}
   body.bg-preview{background:#0b0c0a;}
 
-  .tracker{
-    width:460px;
-    background:linear-gradient(180deg, rgba(14,16,12,.88), rgba(10,11,9,.92));
-    border:1px solid rgba(231,224,201,.18);
-    border-left:4px solid var(--rust);
-    border-radius:4px;
-    padding:14px 18px 16px;
-    box-shadow:0 8px 24px rgba(0,0,0,.45);
-    opacity:0;
-    transform:translateY(6px);
-    transition:opacity .4s ease, transform .4s ease;
-  }
-  .tracker.ready{opacity:1;transform:translateY(0);}
+  .tracker{max-width:640px;opacity:0;transition:opacity .4s ease;}
+  .tracker.ready{opacity:1;}
 
-  .label{
-    font-size:.68rem;font-weight:600;letter-spacing:.22em;color:var(--dim);
-    text-transform:uppercase;margin-bottom:6px;
-  }
-  .chapter-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;}
-  .chapter-day{
-    font-size:1.5rem;font-weight:700;letter-spacing:.02em;color:var(--bone);
-    text-transform:uppercase;line-height:1.1;
-  }
-  .chapter-loc{
-    font-size:.85rem;font-weight:500;color:var(--moss);letter-spacing:.05em;
-    text-transform:uppercase;white-space:nowrap;
-  }
-  .bar-track{
-    position:relative;height:8px;border-radius:2px;background:rgba(231,224,201,.14);overflow:hidden;
-  }
-  .bar-fill{
-    height:100%;width:0%;background:linear-gradient(90deg, var(--moss-dark), var(--moss));
-    transition:width .6s ease;
-  }
-  .bar-meta{
-    display:flex;justify-content:space-between;margin-top:8px;
-    font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--dim);letter-spacing:.02em;
-  }
-  .bar-meta .count{color:var(--bone);font-weight:600;}
-  .bar-meta .percent{color:var(--rust);font-weight:700;}
+  .percent{font-size:3.75rem;font-weight:700;text-transform:uppercase;letter-spacing:-0.025em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
+  .label{margin-top:4px;font-size:0.875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.16em;color:rgba(255,255,255,.75);}
 
-  .idle{font-size:.95rem;color:var(--dim);letter-spacing:.03em;}
+  .bar-rail{margin-top:12px;height:16px;width:100%;border-radius:3px;border:2px solid #fff;padding:3px;}
+  .bar-fill{height:100%;border-radius:1px;border-right:2px solid #fff;background:rgba(255,255,255,.2);width:0%;transition:width .7s ease;}
+
+  .count{margin-top:12px;font-size:2.25rem;font-weight:700;text-transform:uppercase;letter-spacing:-0.025em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
+  .section{margin-top:4px;font-size:1.25rem;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,.85);min-height:1.5em;}
+
+  .current{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:1.125rem;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);}
+  .current .bullet{flex:none;width:8px;height:8px;transform:rotate(45deg);background:var(--accent);}
+  .current .text{text-shadow:0 2px 8px rgba(0,0,0,.9);}
+
+  .idle{font-size:1.25rem;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:0.1em;}
 </style>
 </head>
 <body>
 <div class="tracker" id="tracker">
-  <div class="label">The Last of Us Part II — Marathon</div>
   <div id="content"></div>
 </div>
 
@@ -76,34 +48,43 @@
   var box = document.getElementById('tracker');
   var content = document.getElementById('content');
 
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
   function render(state){
     box.classList.add('ready');
     var chapters = state.chapters || [];
     var total = chapters.length;
     var idx = typeof state.currentIndex === 'number' ? state.currentIndex : -1;
 
-    if (idx < 0 || !chapters[idx]){
+    if (idx < 0){
       content.innerHTML = '<div class="idle">Ikke startet endnu</div>';
       return;
     }
 
-    var current = chapters[idx];
-    var completed = idx; // chapters before current are done; current one is in progress
-    var percent = total ? Math.round((completed / total) * 1000) / 10 : 0;
+    var completed = state.progress ? state.progress.completed : Math.max(0, idx);
+    var percent = typeof state.percent === 'number' ? state.percent : (total ? Math.round((completed / total) * 1000) / 10 : 0);
+
+    var sectionHtml = '';
+    var currentHtml = '';
+    if (state.finished){
+      sectionHtml = 'Gennemført';
+      currentHtml = '<span class="bullet"></span><span class="text">Hele historien er set</span>';
+    } else if (state.current){
+      sectionHtml = escapeHtml(state.current.day || '');
+      currentHtml = '<span class="bullet"></span><span class="text">' + escapeHtml(state.current.location || state.current.day || '') + '</span>';
+    }
 
     content.innerHTML =
-      '<div class="chapter-row">' +
-        '<span class="chapter-day">' + escapeHtml(current.day || '') + '</span>' +
-        (current.location ? '<span class="chapter-loc">' + escapeHtml(current.location) + '</span>' : '') +
-      '</div>' +
-      '<div class="bar-track"><div class="bar-fill" style="width:' + percent + '%"></div></div>' +
-      '<div class="bar-meta"><span class="count">' + completed + ' / ' + total + '</span><span class="percent">' + percent + '%</span></div>';
-  }
-
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, function(c){
-      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
-    });
+      '<div class="percent">' + percent.toFixed(1) + '%</div>' +
+      '<div class="label">Tracked Chapter Progress</div>' +
+      '<div class="bar-rail"><div class="bar-fill" style="width:' + percent + '%"></div></div>' +
+      '<div class="count">' + completed + ' / ' + total + ' Chapters</div>' +
+      '<div class="section">' + sectionHtml + '</div>' +
+      '<div class="current">' + currentHtml + '</div>';
   }
 
   fetch('/tlou2/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
