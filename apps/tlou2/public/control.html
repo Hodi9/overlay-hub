@@ -78,19 +78,19 @@
   <header>
     <h1>TLOU2 Marathon</h1>
     <p>Styr <a href="index.html" target="_blank" id="overlay-link">overlayet</a> manuelt, eller lad OCR-trackeren opdatere det automatisk mens du spiller.</p>
-    <p id="profile-line" style="margin-top:6px;font-size:0.82rem;color:var(--text-dim);"></p>
+    <p id="profile-line" style="margin-top:6px;font-size:0.82rem;color:var(--text-dim);display:none;"></p>
   </header>
 
-  <section>
-    <p class="section-label">Profil</p>
-    <div class="box">
-      <p class="hint">Hver profil har sin egen adskilte fremgang — brug det til at køre trackeren for flere personer på samme server uden at de overskriver hinanden. Tomt navn = "main" (standardprofilen).</p>
+  <details id="profile-details" style="margin-bottom:26px;">
+    <summary style="cursor:pointer;color:var(--text-dim);font-size:0.82rem;">Kører du dette sammen med andre? (avanceret — profiler)</summary>
+    <div class="box" style="margin-top:10px;">
+      <p class="hint">Hver profil har sin egen adskilte fremgang — brug det hvis flere personer kører trackeren samtidig på samme server, så de ikke overskriver hinanden. Skiftes I bare til at spille efter tur, kan du ignorere dette og bare bruge det almindelige link.</p>
       <div class="field-row">
         <input type="text" id="f-profile" placeholder="fx main, eller en vens navn">
         <button class="btn secondary" id="switch-profile-btn">Skift profil</button>
       </div>
     </div>
-  </section>
+  </details>
 
   <section>
     <p class="section-label">Adgangskode</p>
@@ -138,8 +138,13 @@
   var qs = profile ? ('?profile=' + encodeURIComponent(profile)) : '';
 
   document.getElementById('f-profile').value = profile;
-  document.getElementById('profile-line').textContent = 'Aktiv profil: ' + (profile || 'main');
   document.getElementById('overlay-link').href = 'index.html' + qs;
+  if (profile) {
+    var profileLine = document.getElementById('profile-line');
+    profileLine.textContent = 'Aktiv profil: ' + profile;
+    profileLine.style.display = '';
+    document.getElementById('profile-details').open = true;
+  }
   document.getElementById('switch-profile-btn').addEventListener('click', function(){
     var next = document.getElementById('f-profile').value.trim();
     var nextQs = next ? ('?profile=' + encodeURIComponent(next)) : '';
