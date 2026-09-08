@@ -18,6 +18,10 @@ services:
         sync: false
       - key: GAUNTLET_CONTROL_PASSWORD
         sync: false
+      - key: TLOU2_CONTROL_PASSWORD
+        sync: false
+      - key: TLOU2_TRACKER_KEY
+        generateValue: true
       - key: NODE_VERSION
         value: 22
 

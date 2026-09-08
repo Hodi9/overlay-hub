@@ -1,3 +1,5 @@
 node_modules/
 .env
 apps/brovsbro/brovsbro-state.json
+apps/tlou2/tracker/tlou2-tracker-config.json
+apps/tlou2/tracker/*.png

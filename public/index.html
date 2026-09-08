@@ -77,6 +77,7 @@
   .icon.ascended { background: linear-gradient(135deg, #3a1f5c, var(--gold)); }
   .icon.gear { background: linear-gradient(135deg, #8a3511, #ff7417); }
   .icon.gauntlet { background: linear-gradient(135deg, #3a2f6e, var(--violet)); }
+  .icon.tlou2 { background: linear-gradient(135deg, #2f3a24, #6b7a52); }
 
   .card-head h2 { margin: 0; font-size: 18px; }
   .card-head span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -112,6 +113,7 @@
   .ascended-card .links a:not(.control):hover { border-color: var(--gold); }
   .gear-card .links a:hover { border-color: #ff7417; }
   .gauntlet-card .links a:not(.control):hover { border-color: var(--violet); }
+  .tlou2-card .links a:not(.control):hover { border-color: #8aa06a; }
 
   footer {
     max-width: 900px;
@@ -220,6 +222,20 @@
         <a class="control" href="/gauntlet/control.html">Control panel</a>
       </div>
       <p class="card-hint">Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS.</p>
+    </section>
+    <section class="card tlou2-card">
+      <div class="card-head">
+        <div class="icon tlou2">🍄</div>
+        <div>
+          <h2>The Last of Us Part II Tracker</h2>
+          <span>Story progression overlay — auto-opdateres via OCR</span>
+        </div>
+      </div>
+      <div class="links">
+        <a href="/tlou2/">Overlay</a>
+        <a class="control" href="/tlou2/control.html">Control panel</a>
+      </div>
+      <p class="card-hint">Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet.</p>
     </section>
   </main>
 
