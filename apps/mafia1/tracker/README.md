@@ -14,11 +14,11 @@ save-file-based tracker instead of OCR), just ask.
 2. Set `apiKey` to the `MAFIA1_TRACKER_KEY` value from Render.
 3. Double-click `Start Mafia1 Tracker.cmd` while you play.
 
-## The chapter list is a short starter, by design
+## The chapter list
 
-`apps/mafia1/chapters.js` only has the first few chapters — not a
-transcript of the game's real chapter titles, just what this was written
-with real confidence about. While you play, every OCR capture shows up
-live in the control panel; click **+ Tilføj som næste kapitel** when it
-says "Ingen match" to add the exact text from your own game, one chapter
-at a time, guaranteed correct because it's your actual game data.
+`apps/mafia1/chapters.js` has all 20 chapters, checked against two
+independent walkthrough sources rather than recalled from memory (they
+matched exactly). If the OCR still doesn't match what's on screen — wording
+can vary slightly, or this could just be wrong — the control panel shows
+every capture live; click **+ Tilføj som næste kapitel** when it says
+"Ingen match" to add the exact text from your own game instead.

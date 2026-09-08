@@ -14,11 +14,12 @@ a much more reliable save-file-based tracker instead of OCR), just ask.
 2. Set `apiKey` to the `MAFIA2_TRACKER_KEY` value from Render.
 3. Double-click `Start Mafia2 Tracker.cmd` while you play.
 
-## The chapter list is a short starter, by design
+## The chapter list
 
-`apps/mafia2/chapters.js` only has the first few chapters — not a
-transcript of the game's real chapter titles, just what this was written
-with real confidence about. While you play, every OCR capture shows up
-live in the control panel; click **+ Tilføj som næste kapitel** when it
-says "Ingen match" to add the exact text from your own game, one chapter
-at a time, guaranteed correct because it's your actual game data.
+`apps/mafia2/chapters.js` has all 16 chapters (Prologue + 15), checked
+against the Mafia Wiki rather than recalled from memory — worth mentioning
+since the initial memory-based guess actually had chapters 1 and 2 swapped
+("Home Sweet Home" isn't first, "The Old Country" is). If the OCR still
+doesn't match what's on screen, the control panel shows every capture
+live; click **+ Tilføj som næste kapitel** when it says "Ingen match" to
+add the exact text from your own game instead.

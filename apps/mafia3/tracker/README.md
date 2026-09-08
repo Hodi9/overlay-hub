@@ -14,11 +14,14 @@ a much more reliable save-file-based tracker instead of OCR), just ask.
 2. Set `apiKey` to the `MAFIA3_TRACKER_KEY` value from Render.
 3. Double-click `Start Mafia3 Tracker.cmd` while you play.
 
-## The chapter list is a short starter, by design
+## Mafia III doesn't have a fixed chapter order
 
-`apps/mafia3/chapters.js` only has the first few chapters — not a
-transcript of the game's real chapter titles, just what this was written
-with real confidence about. While you play, every OCR capture shows up
-live in the control panel; click **+ Tilføj som næste kapitel** when it
-says "Ingen match" to add the exact text from your own game, one chapter
-at a time, guaranteed correct because it's your actual game data.
+Unlike Mafia I and II, Mafia III lets you choose which of New Bordeaux's
+districts to take over and in what order — there's no single correct
+chapter sequence to pre-fill. `apps/mafia3/chapters.js` only has two
+verified-real mission names as a starting point (checked against
+mafiagame.fandom.com, not guessed). While you play, every OCR capture
+shows up live in the control panel; click **+ Tilføj som næste kapitel**
+when it says "Ingen match" to add the exact text from your own game — for
+this game especially, that's the real source of truth, not any pre-written
+list.
