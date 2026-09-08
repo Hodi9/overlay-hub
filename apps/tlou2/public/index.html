@@ -68,7 +68,10 @@
 
 <script>
 (function(){
-  if (location.search.indexOf('bg=black') !== -1) document.body.classList.add('bg-preview');
+  var params = new URLSearchParams(location.search);
+  if (params.get('bg') === 'black') document.body.classList.add('bg-preview');
+  var profile = params.get('profile') || '';
+  var qs = profile ? ('?profile=' + encodeURIComponent(profile)) : '';
 
   var box = document.getElementById('tracker');
   var content = document.getElementById('content');
@@ -103,9 +106,9 @@
     });
   }
 
-  fetch('/tlou2/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+  fetch('/tlou2/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
 
-  var events = new EventSource('/tlou2/api/events');
+  var events = new EventSource('/tlou2/api/events' + qs);
   events.onmessage = function(event){
     try { render(JSON.parse(event.data)); } catch(e){}
   };

@@ -45,6 +45,31 @@ rectangle around where the title card text appears, and add it to
 }
 ```
 
+## Running it for more than one person (e.g. you + a friend)
+
+Everything above assumes a single marathon. If a friend also wants their own
+tracked run on this same overlay-hub deployment, give their run a "profile"
+name so it gets its own separate progress, chapter list, and overlay/control
+URLs instead of overwriting yours:
+
+- Your own run stays exactly as-is (profile `main`, the default) — no change needed.
+- Their overlay: `https://overlay-hub.onrender.com/tlou2/?profile=<name>`
+- Their control panel: `https://overlay-hub.onrender.com/tlou2/control.html?profile=<name>` (there's also a "Skift profil" field at the top of the control panel to jump between profiles without editing the URL by hand)
+- Their local `tlou2-tracker-config.json` needs `"profile": "<name>"` added, and can reuse the same `panelUrl`/`apiKey` as yours:
+
+```json
+{
+  "panelUrl": "https://overlay-hub.onrender.com",
+  "apiKey": "...",
+  "profile": "friendname",
+  "region": null
+}
+```
+
+Pick a short, URL-safe name (lowercase letters/numbers/hyphens). A profile is
+created automatically the first time anything talks to it — no setup step on
+the server needed.
+
 ## Testing without touching the live overlay
 
 ```bash

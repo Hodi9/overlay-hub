@@ -99,6 +99,9 @@ function Get-ScreenRegionText([object]$Region, [object]$OcrEngine) {
 
 function Send-TrackerText([object]$Config, [string]$Text) {
   $uri = "$($Config.panelUrl.TrimEnd('/'))/tlou2/api/tracker"
+  if ($Config.profile) {
+    $uri = "$uri`?profile=$([Uri]::EscapeDataString($Config.profile))"
+  }
   $body = @{ text = $Text } | ConvertTo-Json
   $headers = @{ Authorization = "Bearer $($Config.apiKey)" }
   return Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -ContentType "application/json" -Body $body
@@ -122,7 +125,8 @@ if ($Calibrate) {
 $config = Read-TrackerConfig
 $region = Get-CaptureRegion $config
 $ocrEngine = Get-OcrEngineForRun
-Write-Host "TLOU2 OCR tracker watching region: x=$($region.X) y=$($region.Y) w=$($region.Width) h=$($region.Height) using $($ocrEngine.RecognizerLanguage.DisplayName) OCR"
+$profileLabel = if ($config.profile) { $config.profile } else { "main" }
+Write-Host "TLOU2 OCR tracker watching region: x=$($region.X) y=$($region.Y) w=$($region.Width) h=$($region.Height) using $($ocrEngine.RecognizerLanguage.DisplayName) OCR (profile: $profileLabel)"
 
 $script:lastText = ""
 
