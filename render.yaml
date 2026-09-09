@@ -38,6 +38,8 @@ services:
         sync: false
       - key: MAFIA3_TRACKER_KEY
         generateValue: true
+      - key: PERFEKTMATCH_CONTROL_PASSWORD
+        sync: false
       - key: NODE_VERSION
         value: 22
 

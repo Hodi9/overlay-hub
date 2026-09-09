@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>Perfekt Match — Overlay</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+  .pill {
+    position: absolute; left: 50%; bottom: 32px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 18px; padding: 14px 26px;
+    border-radius: 999px; background: rgba(21,21,26,0.88); white-space: nowrap; max-width: 1800px;
+  }
+  .wordmark { display: flex; align-items: center; gap: 9px; flex: none; }
+  .wordmark b { font-weight: 700; font-size: 16px; color: #fff; }
+  .divider { width: 1px; height: 16px; background: rgba(255,255,255,0.15); flex: none; }
+  .cast-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .cast-heart { flex: none; }
+
+  .dater { position: relative; display: flex; align-items: center; gap: 7px; }
+  .avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .dater-name { font-weight: 600; font-size: 14px; color: #fff; }
+
+  .social-popup {
+    position: absolute; left: 50%; bottom: 100%; margin-bottom: 16px; transform: translateX(-50%) translateY(10px);
+    display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-radius: 16px;
+    background: rgba(21,21,26,0.55); backdrop-filter: blur(5px); white-space: nowrap;
+    opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none;
+  }
+  .social-popup.show { opacity: 0.9; transform: translateX(-50%) translateY(0); }
+  .popup-avatar { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .popup-label { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .popup-handle { display: flex; align-items: center; gap: 7px; }
+  .popup-handle span { font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.9); }
+</style>
+</head>
+<body>
+
+<div class="pill" id="pill">
+  <div class="wordmark">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="#e8547a"><path d="M12 21s-7.2-4.6-10-9.2C0.4 8.2 2 4.5 5.6 4c2-0.3 3.7 0.7 4.9 2.4C11.7 4.7 13.4 3.7 15.4 4c3.6 0.5 5.2 4.2 3.6 7.8C15.2 16.4 12 21 12 21Z"/></svg>
+    <b id="show-title">Perfekt Match</b>
+  </div>
+  <div class="divider"></div>
+  <div class="cast-row" id="cast-row"></div>
+</div>
+
+<script>
+(function () {
+  var heartPath = 'M12 21s-7.2-4.6-10-9.2C0.4 8.2 2 4.5 5.6 4c2-0.3 3.7 0.7 4.9 2.4C11.7 4.7 13.4 3.7 15.4 4c3.6 0.5 5.2 4.2 3.6 7.8C15.2 16.4 12 21 12 21Z';
+  var personSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
+  var personSvgBig = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
+  var igSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="0.9" fill="rgba(255,255,255,0.75)" stroke="none"/></svg>';
+  var ttSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.75)"><path d="M16.5 3c.3 2.3 1.7 3.9 4 4.3v3.1c-1.5 0-2.9-.4-4-1.3v5.9c0 3.3-2.7 6-6 6s-6-2.7-6-6 2.7-6 6-6c.3 0 .6 0 .9.1v3.1c-.3-.1-.6-.2-.9-.2-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3z"/></svg>';
+
+  var castRow = document.getElementById('cast-row');
+  var showTitle = document.getElementById('show-title');
+  var currentCast = [];
+  var rotationTimer = null;
+  var rotationIndex = 0;
+  var CYCLE_MS = 15 * 60 * 1000; // every visible cast member gets a turn within this window
+
+  function popupHtml(member) {
+    var rows = [];
+    if (member.instagram) rows.push('<div class="popup-handle">' + igSvg + '<span>@' + member.instagram + '</span></div>');
+    if (member.tiktok) rows.push('<div class="popup-handle">' + ttSvg + '<span>@' + member.tiktok + '</span></div>');
+    if (!rows.length) return '';
+    var firstName = (member.name || '').split(' ')[0] || member.name;
+    return '<div class="social-popup" data-cast-id="' + member.id + '">' +
+      '<div class="popup-avatar">' + personSvgBig + '</div>' +
+      '<div><div class="popup-label">Følg ' + firstName + '</div>' + rows.join('') + '</div>' +
+    '</div>';
+  }
+
+  function render(state) {
+    showTitle.textContent = (state.show && state.show.title) || 'Perfekt Match';
+    var visible = (state.cast || []).filter(function (c) { return c.visible; });
+    currentCast = visible;
+
+    var parts = [];
+    visible.forEach(function (member, i) {
+      if (i > 0) parts.push('<svg class="cast-heart" width="12" height="12" viewBox="0 0 24 24" fill="#e8547a"><path d="' + heartPath + '"/></svg>');
+      parts.push(
+        '<div class="dater" data-cast-id="' + member.id + '">' +
+          '<div class="avatar">' + personSvg + '</div>' +
+          '<div class="dater-name">' + member.name + '</div>' +
+          popupHtml(member) +
+        '</div>'
+      );
+    });
+    castRow.innerHTML = parts.join('');
+    scheduleRotation();
+  }
+
+  function showPopupFor(castId) {
+    var el = castRow.querySelector('.social-popup[data-cast-id="' + castId + '"]');
+    if (!el) return;
+    el.classList.add('show');
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(function () { el.classList.remove('show'); }, 10000);
+  }
+
+  function scheduleRotation() {
+    clearInterval(rotationTimer);
+    rotationIndex = 0;
+    if (!currentCast.length) return;
+    var spacing = CYCLE_MS / currentCast.length;
+    function tick() {
+      if (!currentCast.length) return;
+      showPopupFor(currentCast[rotationIndex % currentCast.length].id);
+      rotationIndex++;
+    }
+    setTimeout(tick, 2000);
+    rotationTimer = setInterval(tick, spacing);
+  }
+
+  fetch('/perfektmatch/api/state').then(function (r) { return r.json(); }).then(render).catch(function () {});
+
+  var events = new EventSource('/perfektmatch/api/events');
+  events.onmessage = function (event) {
+    try { render(JSON.parse(event.data)); } catch (e) {}
+  };
+  events.addEventListener('trigger', function (event) {
+    try { showPopupFor(JSON.parse(event.data).castId); } catch (e) {}
+  });
+})();
+</script>
+
+</body>
+</html>
