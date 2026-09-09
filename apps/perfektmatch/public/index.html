@@ -59,6 +59,7 @@
   var showTitle = document.getElementById('show-title');
   var currentCast = [];
   var rotationTimer = null;
+  var rotationStartTimeout = null;
   var rotationIndex = 0;
   var CYCLE_MS = 15 * 60 * 1000; // every visible cast member gets a turn within this window
 
@@ -103,7 +104,13 @@
   }
 
   function scheduleRotation() {
+    // clear BOTH the interval and the initial-delay timeout — state updates (including
+    // the fetch + the SSE connection's own initial message, which land within ms of
+    // each other on every page load) each call render() → scheduleRotation(); leaving
+    // an old timeout running caused two people's boxes to pop within ms of each other
+    // and visibly overlap for their whole 10s window.
     clearInterval(rotationTimer);
+    clearTimeout(rotationStartTimeout);
     rotationIndex = 0;
     if (!currentCast.length) return;
     var spacing = CYCLE_MS / currentCast.length;
@@ -112,7 +119,7 @@
       showPopupFor(currentCast[rotationIndex % currentCast.length].id);
       rotationIndex++;
     }
-    setTimeout(tick, 2000);
+    rotationStartTimeout = setTimeout(tick, 2000);
     rotationTimer = setInterval(tick, spacing);
   }
 
