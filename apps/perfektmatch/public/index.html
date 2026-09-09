@@ -19,9 +19,9 @@
   .cast-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
   .cast-heart { flex: none; }
 
-  .dater { position: relative; display: flex; align-items: center; gap: 7px; }
-  .avatar { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .dater-name { font-weight: 600; font-size: 14px; color: #fff; }
+  .dater { position: relative; display: flex; align-items: center; gap: 9px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .dater-name { font-weight: 600; font-size: 15px; color: #fff; }
 
   .social-popup {
     position: absolute; left: 50%; bottom: 100%; margin-bottom: 16px; transform: translateX(-50%) translateY(10px);
@@ -30,7 +30,7 @@
     opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none;
   }
   .social-popup.show { opacity: 0.9; transform: translateX(-50%) translateY(0); }
-  .popup-avatar { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .popup-avatar { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .popup-label { font-size: 11px; color: rgba(255,255,255,0.5); }
   .popup-handle { display: flex; align-items: center; gap: 7px; }
   .popup-handle span { font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.9); }
@@ -50,8 +50,8 @@
 <script>
 (function () {
   var heartPath = 'M12 21s-7.2-4.6-10-9.2C0.4 8.2 2 4.5 5.6 4c2-0.3 3.7 0.7 4.9 2.4C11.7 4.7 13.4 3.7 15.4 4c3.6 0.5 5.2 4.2 3.6 7.8C15.2 16.4 12 21 12 21Z';
-  var personSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
-  var personSvgBig = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
+  var personSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
+  var personSvgBig = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
   var igSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="0.9" fill="rgba(255,255,255,0.75)" stroke="none"/></svg>';
   var ttSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.75)"><path d="M16.5 3c.3 2.3 1.7 3.9 4 4.3v3.1c-1.5 0-2.9-.4-4-1.3v5.9c0 3.3-2.7 6-6 6s-6-2.7-6-6 2.7-6 6-6c.3 0 .6 0 .9.1v3.1c-.3-.1-.6-.2-.9-.2-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3z"/></svg>';
 
@@ -63,6 +63,19 @@
   var rotationIndex = 0;
   var CYCLE_MS = 15 * 60 * 1000; // every visible cast member gets a turn within this window
 
+  function escapeAttr(value) {
+    return String(value || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  }
+
+  // a real photo when the cast member has one, else the generic silhouette — so
+  // future participants without a photo yet still render fine
+  function avatarHtml(member, big) {
+    if (member.photo) {
+      return '<img src="' + escapeAttr(member.photo) + '" alt="" style="width:100%;height:100%;object-fit:cover;">';
+    }
+    return big ? personSvgBig : personSvg;
+  }
+
   function popupHtml(member) {
     var rows = [];
     if (member.instagram) rows.push('<div class="popup-handle">' + igSvg + '<span>@' + member.instagram + '</span></div>');
@@ -70,7 +83,7 @@
     if (!rows.length) return '';
     var firstName = (member.name || '').split(' ')[0] || member.name;
     return '<div class="social-popup" data-cast-id="' + member.id + '">' +
-      '<div class="popup-avatar">' + personSvgBig + '</div>' +
+      '<div class="popup-avatar">' + avatarHtml(member, true) + '</div>' +
       '<div><div class="popup-label">Følg ' + firstName + '</div>' + rows.join('') + '</div>' +
     '</div>';
   }
@@ -85,7 +98,7 @@
       if (i > 0) parts.push('<svg class="cast-heart" width="12" height="12" viewBox="0 0 24 24" fill="#e8547a"><path d="' + heartPath + '"/></svg>');
       parts.push(
         '<div class="dater" data-cast-id="' + member.id + '">' +
-          '<div class="avatar">' + personSvg + '</div>' +
+          '<div class="avatar">' + avatarHtml(member, false) + '</div>' +
           '<div class="dater-name">' + member.name + '</div>' +
           popupHtml(member) +
         '</div>'

@@ -26,13 +26,14 @@ function cleanCastMember(input, existing) {
     gender: ["kvinde", "mand", "andet"].includes(input?.gender) ? input.gender : (base.gender || "andet"),
     instagram: input?.instagram !== undefined ? cleanHandle(input.instagram) : (base.instagram || ""),
     tiktok: input?.tiktok !== undefined ? cleanHandle(input.tiktok) : (base.tiktok || ""),
+    photo: input?.photo !== undefined ? String(input.photo || "").trim().slice(0, 300) : (base.photo || ""),
     visible: typeof input?.visible === "boolean" ? input.visible : (base.visible !== undefined ? base.visible : true)
   };
 }
 
 const DEFAULT_CAST = [
-  cleanCastMember({ name: "Iben Haastrup", gender: "kvinde", instagram: "ibenhaastrup", tiktok: "ibenhaastrup" }, null),
-  cleanCastMember({ name: "Mads Frandsen", gender: "mand", instagram: "mads_frandsen", tiktok: "mads_frandsen" }, null)
+  cleanCastMember({ name: "Iben Haastrup", gender: "kvinde", instagram: "ibenhaastrup", tiktok: "ibenhaastrup", photo: "/perfektmatch/photos/iben.jpg" }, null),
+  cleanCastMember({ name: "Mads Frandsen", gender: "mand", instagram: "mads_frandsen", tiktok: "mads_frandsen", photo: "/perfektmatch/photos/mads.jpg" }, null)
 ];
 
 export function createPerfektMatchApp() {
