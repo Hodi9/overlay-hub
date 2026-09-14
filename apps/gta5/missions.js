@@ -20,6 +20,7 @@ export const DEFAULT_MISSIONS = [
   { name: "Chop", character: "franklin" },
   { name: "The Long Stretch", character: "franklin" },
   { name: "Friend Request", character: "michael" },
+  { name: "The Good Husband", character: "michael" },
   { name: "Casing the Jewel Store", character: "michael" },
   { name: "The Jewel Store Job", character: null },
   { name: "Mr. Philips", character: "trevor" },
