@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseCollectrCards } from "../apps/pokemon/app.js";
+import { parseCollectrCards, parseTcgGraphCards } from "../apps/pokemon/app.js";
 
 test("parses Collectr's escaped 30th Celebration card payload", () => {
   const html = String.raw`{\"product_id\":\"696688\",\"catalog_category\":\"3\",\"catalog_group_id\":\"24722\",\"product_name\":\"Mew ex \",\"image_url\":\"https://cdn.example/card.jpg?width=1200\u0026quality=80\",\"card_number\":\"158/128\",\"rarity\":\"Futuristic Rare\",\"product_sub_type\":\"Holofoil\",\"is_card\":true,\"latest_price\":\"1808.2500\"}`;
@@ -17,6 +17,7 @@ test("parses Collectr's escaped 30th Celebration card payload", () => {
     finish: "Holofoil",
     price: "$1,808.25",
     priceValue: 1808.25,
+    kind: "chase",
     visible: true,
     source: "Collectr"
   });
@@ -25,4 +26,37 @@ test("parses Collectr's escaped 30th Celebration card payload", () => {
 test("ignores non-30th catalog groups", () => {
   const html = String.raw`{\"product_id\":\"1\",\"catalog_group_id\":\"999\",\"product_name\":\"Other\",\"image_url\":\"x\",\"card_number\":\"1\",\"rarity\":\"Rare\",\"product_sub_type\":\"Holofoil\",\"latest_price\":\"1\"}`;
   assert.deepEqual(parseCollectrCards(html), []);
+});
+
+test("maps and sorts Cardmarket EUR prices from TCGGraph", () => {
+  const cards = parseTcgGraphCards({
+    meta: { priceSource: "cardmarket" },
+    data: [
+      {
+        id: "pkm_30c_2",
+        name: "Pikachu ex",
+        collectorNumber: "150/128",
+        rarity: "Special Illustration Rare",
+        images: { large: { webp: "https://cdn.example/pikachu.webp" } },
+        prices: [
+          { source: "tcgplayer", currency: "USD", market: 900 },
+          { source: "cardmarket", currency: "EUR", finish: "foil", market: 380 }
+        ]
+      },
+      {
+        id: "pkm_30c_1",
+        name: "Charizard",
+        collectorNumber: "4/102",
+        rarity: "Rare Holo",
+        images: { normal: "https://cdn.example/charizard.webp" },
+        prices: [{ source: "cardmarket", currency: "EUR", finish: "foil", trend: 450 }]
+      }
+    ]
+  });
+  assert.equal(cards.length, 2);
+  assert.equal(cards[0].name, "Charizard");
+  assert.equal(cards[0].priceValue, 450);
+  assert.match(cards[0].price, /450/);
+  assert.equal(cards[0].source, "Cardmarket");
+  assert.equal(cards[1].image, "https://cdn.example/pikachu.webp");
 });

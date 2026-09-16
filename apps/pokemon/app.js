@@ -7,8 +7,10 @@ import seedCards from "./seed-30th.json" with { type: "json" };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const COLLECTR_URL = "https://app.getcollectr.com/sets/category/3/30th-celebration?groupId=24722&cardType=cards&sortType=price&sortOrder=DESC";
+const CARDMARKET_URL = "https://www.cardmarket.com/en/Pokemon/Products/Singles/30th-Celebration";
+const TCGGRAPH_URL = "https://api.tcggraph.com/v1/cards?game=pokemon&set=30th%20Celebration&source=cardmarket&sort=-price&limit=30&language=en";
 const SETS = {
-  "30th-celebration": { id: "30th-celebration", name: "30th Celebration", sourceUrl: COLLECTR_URL },
+  "30th-celebration": { id: "30th-celebration", name: "30th Celebration", sourceUrl: CARDMARKET_URL },
   "ascended-heroes": { id: "ascended-heroes", name: "Ascended Heroes", sourceUrl: "" }
 };
 
@@ -32,6 +34,49 @@ function formatUsd(value) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 }
 
+function formatEur(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "";
+  return new Intl.NumberFormat("da-DK", { style: "currency", currency: "EUR" }).format(amount);
+}
+
+function imageUrl(images) {
+  const candidate = images?.large || images?.normal || images?.small || "";
+  if (typeof candidate === "string") return candidate;
+  return candidate?.webp || candidate?.avif || candidate?.url || "";
+}
+
+export function parseTcgGraphCards(body) {
+  const data = Array.isArray(body?.data) ? body.data : [];
+  return data
+    .map((card) => {
+      const quote = (Array.isArray(card?.prices) ? card.prices : [])
+        .filter((price) => price?.source === "cardmarket" && price?.currency === "EUR")
+        .filter((price) => Number.isFinite(Number(price?.market ?? price?.trend)))
+        .sort((a, b) => Number(b.market ?? b.trend) - Number(a.market ?? a.trend))[0];
+      if (!quote) return null;
+      const priceValue = Number(quote.market ?? quote.trend);
+      return {
+        id: `tcggraph-${card.id}`,
+        sourceId: `tcggraph:${card.id}`,
+        setId: "30th-celebration",
+        name: String(card.name || "").trim(),
+        image: imageUrl(card.images),
+        number: String(card.collectorNumber || ""),
+        rarity: String(card.rarity || ""),
+        finish: String(quote.finish || ""),
+        price: formatEur(priceValue),
+        priceValue,
+        kind: "chase",
+        visible: true,
+        source: "Cardmarket"
+      };
+    })
+    .filter((card) => card?.name)
+    .sort((a, b) => b.priceValue - a.priceValue)
+    .slice(0, 30);
+}
+
 export function parseCollectrCards(html) {
   const cards = [];
   const seen = new Set();
@@ -52,6 +97,7 @@ export function parseCollectrCards(html) {
       finish: decodeSerializedString(match[6]),
       price: formatUsd(latestPrice),
       priceValue: Number(latestPrice) || 0,
+      kind: "chase",
       visible: true,
       source: "Collectr"
     });
@@ -66,6 +112,7 @@ function cleanSetId(value) {
 function cleanCard(input, existing = {}) {
   const setId = cleanSetId(input?.setId || existing.setId);
   const name = String(input?.name ?? existing.name ?? "").trim().slice(0, 100);
+  const requestedKind = input?.kind || existing.kind || (input?.sourceId || existing.sourceId ? "chase" : "pull");
   return {
     id: existing.id || crypto.randomUUID(),
     sourceId: existing.sourceId || null,
@@ -77,6 +124,7 @@ function cleanCard(input, existing = {}) {
     finish: String(input?.finish ?? existing.finish ?? "").trim().slice(0, 50),
     price: String(input?.price ?? existing.price ?? "").trim().slice(0, 40),
     priceValue: Number(input?.priceValue ?? existing.priceValue) || 0,
+    kind: requestedKind === "chase" ? "chase" : "pull",
     visible: typeof input?.visible === "boolean" ? input.visible : existing.visible !== false,
     source: existing.source || "Manual"
   };
@@ -95,11 +143,13 @@ function mergeImportedCards(current, imported) {
 export function createPokemonApp(options = {}) {
   const router = express.Router();
   const controlPassword = options.controlPassword ?? process.env.POKEMON_CONTROL_PASSWORD ?? "";
+  const tcgGraphKey = options.tcgGraphKey ?? process.env.TCGGRAPH_KEY ?? "";
   const fetchImpl = options.fetchImpl || globalThis.fetch;
-  const refreshIntervalMs = options.refreshIntervalMs ?? 15 * 60 * 1000;
+  const refreshIntervalMs = options.refreshIntervalMs ?? 6 * 60 * 60 * 1000;
   let cards = seedCards.map((card) => cleanCard(card, card));
   let lastSync = null;
   let lastSyncError = "";
+  let lastSyncSource = tcgGraphKey ? "Cardmarket" : "Collectr fallback";
   let db = null;
 
   function authorized(request) {
@@ -131,6 +181,7 @@ export function createPokemonApp(options = {}) {
     if (Array.isArray(result.rows[0]?.data?.cards)) {
       cards = result.rows[0].data.cards.map((card) => cleanCard(card, card));
       lastSync = result.rows[0].data.lastSync || null;
+      lastSyncSource = result.rows[0].data.lastSyncSource || lastSyncSource;
     } else {
       await persist();
     }
@@ -142,7 +193,7 @@ export function createPokemonApp(options = {}) {
       `INSERT INTO pokemon_overlay_state (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      ["primary", JSON.stringify({ cards, lastSync })]
+      ["primary", JSON.stringify({ cards, lastSync, lastSyncSource })]
     );
   }
 
@@ -159,21 +210,53 @@ export function createPokemonApp(options = {}) {
     if (!imported.length) throw new Error("Ingen kort kunne aflæses fra Collectr.");
     cards = mergeImportedCards(cards, imported);
     lastSync = new Date().toISOString();
+    lastSyncSource = "Collectr fallback";
     lastSyncError = "";
     await persist();
     return imported.length;
   }
 
-  function payload(setId = "30th-celebration") {
-    const selected = setId === "all" ? cards : cards.filter((card) => card.setId === cleanSetId(setId));
+  async function importCardmarket() {
+    if (!tcgGraphKey) return importCollectr();
+    if (typeof fetchImpl !== "function") throw new Error("Fetch er ikke tilgængelig.");
+    const response = await fetchImpl(TCGGRAPH_URL, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${tcgGraphKey}`
+      }
+    });
+    if (!response.ok) throw new Error(`Cardmarket-priskilden svarede med ${response.status}.`);
+    const body = await response.json();
+    if (body?.meta?.priceSource && body.meta.priceSource !== "cardmarket") {
+      throw new Error("Priskilden returnerede ikke Cardmarket-priser.");
+    }
+    const imported = parseTcgGraphCards(body);
+    if (!imported.length) throw new Error("Ingen Cardmarket-priser kunne aflæses for 30th Celebration.");
+    cards = mergeImportedCards(cards, imported);
+    lastSync = new Date().toISOString();
+    lastSyncSource = "Cardmarket";
+    lastSyncError = "";
+    await persist();
+    return imported.length;
+  }
+
+  function payload(setId = "30th-celebration", view = "chase") {
+    const bySet = setId === "all" ? cards : cards.filter((card) => card.setId === cleanSetId(setId));
+    const selectedView = ["pulls", "chase", "all"].includes(view) ? view : "chase";
+    const selected = selectedView === "all"
+      ? bySet
+      : bySet.filter((card) => card.kind === (selectedView === "pulls" ? "pull" : "chase"));
     return {
       cards: selected,
       sets: Object.values(SETS),
       selectedSet: setId === "all" ? "all" : cleanSetId(setId),
+      selectedView,
       lastSync,
       lastSyncError,
+      lastSyncSource,
+      cardmarketEnabled: Boolean(tcgGraphKey),
       passwordRequired: true,
-      sourceUrl: COLLECTR_URL
+      sourceUrl: tcgGraphKey ? CARDMARKET_URL : COLLECTR_URL
     };
   }
 
@@ -181,13 +264,13 @@ export function createPokemonApp(options = {}) {
 
   router.get("/api/state", (request, response) => {
     response.set("Cache-Control", "no-store");
-    response.json(payload(String(request.query.set || "30th-celebration")));
+    response.json(payload(String(request.query.set || "30th-celebration"), String(request.query.view || "chase")));
   });
 
   router.post("/api/import/30th", requireAuth, async (_request, response, next) => {
     try {
-      const imported = await importCollectr();
-      response.json({ ...payload("30th-celebration"), imported });
+      const imported = await importCardmarket();
+      response.json({ ...payload("30th-celebration", "chase"), imported });
     } catch (error) {
       lastSyncError = error.message;
       next(error);
@@ -200,7 +283,7 @@ export function createPokemonApp(options = {}) {
       if (!card.name) return response.status(400).json({ error: "Kortet skal have et navn." });
       cards.push(card);
       await persist();
-      response.json(payload(card.setId));
+      response.json(payload(card.setId, card.kind === "pull" ? "pulls" : "chase"));
     } catch (error) {
       next(error);
     }
@@ -212,7 +295,7 @@ export function createPokemonApp(options = {}) {
       if (index === -1) return response.status(404).json({ error: "Kortet findes ikke." });
       cards[index] = cleanCard(request.body, cards[index]);
       await persist();
-      response.json(payload(cards[index].setId));
+      response.json(payload(cards[index].setId, cards[index].kind === "pull" ? "pulls" : "chase"));
     } catch (error) {
       next(error);
     }
@@ -224,7 +307,21 @@ export function createPokemonApp(options = {}) {
       if (!existing) return response.status(404).json({ error: "Kortet findes ikke." });
       cards = cards.filter((card) => card.id !== request.params.id);
       await persist();
-      response.json(payload(existing.setId));
+      response.json(payload(existing.setId, existing.kind === "pull" ? "pulls" : "chase"));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/api/cards/:id/hit", requireAuth, async (request, response, next) => {
+    try {
+      const chaseCard = cards.find((card) => card.id === request.params.id && card.kind === "chase");
+      if (!chaseCard) return response.status(404).json({ error: "Chase-kortet findes ikke." });
+      const pull = cleanCard({ ...chaseCard, id: undefined, sourceId: null, kind: "pull", visible: true }, {});
+      pull.source = "Ramt fra chase list";
+      cards.push(pull);
+      await persist();
+      response.json(payload("all", "pulls"));
     } catch (error) {
       next(error);
     }
@@ -238,16 +335,16 @@ export function createPokemonApp(options = {}) {
   router.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
   connectDatabase()
-    .then(() => importCollectr())
+    .then(() => importCardmarket())
     .catch((error) => {
       lastSyncError = error.message;
       console.error("Pokemon initialisation failed; using bundled cards.", error);
     });
 
   const refreshTimer = setInterval(() => {
-    importCollectr().catch((error) => {
+    importCardmarket().catch((error) => {
       lastSyncError = error.message;
-      console.error("Pokemon Collectr refresh failed.", error);
+      console.error("Pokemon price refresh failed.", error);
     });
   }, refreshIntervalMs);
   refreshTimer.unref?.();
