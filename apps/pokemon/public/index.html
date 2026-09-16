@@ -8,31 +8,29 @@
   :root{--gold:#f3cf66;--cream:#fff9e9;--muted:#b9b3c8;--panel:rgba(10,8,18,.94);--line:rgba(243,207,102,.62)}
   *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:transparent;color:var(--cream);font-family:Inter,ui-sans-serif,system-ui,sans-serif}
   body{min-height:100vh;display:grid;place-items:center;padding:24px}body.preview{background:#08070d}
-  .card{width:min(340px,88vw);filter:drop-shadow(0 16px 32px rgba(0,0,0,.55))}
-  .set-label{display:inline-flex;align-items:center;gap:7px;margin:0 0 8px 8px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--gold)}
-  .set-label:before{content:"✦"}.frame{position:relative;width:100%;aspect-ratio:5/7;display:grid;place-items:center;perspective:1000px}
+  .card{width:min(360px,90vw);filter:drop-shadow(0 16px 32px rgba(0,0,0,.55))}
+  .set-label{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;margin:0 0 12px;padding:10px 16px;border:2px solid var(--gold);border-radius:3px;background:rgba(7,6,12,.98);box-shadow:0 0 0 1px rgba(0,0,0,.9),0 7px 20px rgba(0,0,0,.48);font-size:clamp(14px,4.4vw,18px);font-weight:950;letter-spacing:.12em;text-align:center;text-transform:uppercase;color:#ffe487;text-shadow:0 1px 8px rgba(243,207,102,.32)}
+  .set-label:before{content:"✦";font-size:.85em}.frame{position:relative;width:100%;aspect-ratio:5/7;display:grid;place-items:center;perspective:1000px}
   .art{display:block;max-width:100%;max-height:100%;border-radius:12px;transform-style:preserve-3d;backface-visibility:hidden;transition:transform .32s ease,opacity .32s ease}.art.out{transform:rotateY(92deg);opacity:.15}.art.in{transition:none;transform:rotateY(-92deg);opacity:.15}
   .empty{text-align:center;color:var(--muted);padding:28px}.empty b{display:block;color:var(--cream);font-size:18px;margin-bottom:6px}
-  .info{margin-top:8px;padding:11px 13px 12px;border:1px solid var(--line);border-radius:11px;background:var(--panel);backdrop-filter:blur(8px)}
-  .top,.bottom{display:flex;justify-content:space-between;gap:12px;align-items:baseline}.name{font-weight:900;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.price{color:var(--gold);font-weight:900;white-space:nowrap}.bottom{margin-top:4px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}.meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.index{color:#fff;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .price-badge{position:absolute;right:11px;bottom:11px;z-index:2;padding:7px 10px;border:2px solid var(--gold);border-radius:3px;background:rgba(7,6,12,.96);color:#ffe487;font-size:15px;font-weight:950;box-shadow:0 5px 16px rgba(0,0,0,.55)}
   [hidden]{display:none!important}@media(prefers-reduced-motion:reduce){.art{transition:none}}
 </style>
 </head>
 <body>
 <main class="card">
   <div class="set-label" id="set-label">30th Celebration</div>
-  <div class="frame" id="stage"><img class="art" id="art" alt=""><div class="empty" id="empty"><b>Ingen kort endnu</b>Tilføj kort fra kontrolpanelet.</div></div>
-  <div class="info"><div class="top"><span class="name" id="name">Pokémon</span><span class="price" id="price"></span></div><div class="bottom"><span class="meta" id="meta"></span><span class="index" id="index">0/0</span></div></div>
+  <div class="frame" id="stage"><img class="art" id="art" alt=""><span class="price-badge" id="price" hidden></span><div class="empty" id="empty"><b>Ingen kort endnu</b>Tilføj kort fra kontrolpanelet.</div></div>
 </main>
 <script>
 (function(){
   var params=new URLSearchParams(location.search),setId=params.get('set')||'30th-celebration',view=params.get('view')||(setId==='all'||setId==='ascended-heroes'?'pulls':'chase');
   if(params.get('bg')==='black')document.body.classList.add('preview');
-  var cards=[],showPrices=false,position=0,timer=null,els={art:document.getElementById('art'),empty:document.getElementById('empty'),name:document.getElementById('name'),price:document.getElementById('price'),meta:document.getElementById('meta'),index:document.getElementById('index'),label:document.getElementById('set-label')};
+  var cards=[],showPrices=false,position=0,timer=null,els={art:document.getElementById('art'),empty:document.getElementById('empty'),price:document.getElementById('price'),label:document.getElementById('set-label')};
   function render(){
     els.label.textContent=view==='pulls'?'Mine hits':'30th Chase List';
-    if(!cards.length){els.art.hidden=true;els.empty.hidden=false;els.name.textContent='Pokémon';els.price.textContent='';els.meta.textContent='';els.index.textContent='0/0';return;}
-    var card=cards[position];els.art.hidden=false;els.empty.hidden=true;els.art.src=card.image||'';els.art.alt=card.name||'';els.name.textContent=card.name||'Pokémon';els.price.textContent=showPrices?(card.price||''):'';els.price.hidden=!showPrices;els.meta.textContent=[card.rarity,card.number,card.finish].filter(Boolean).join(' · ');els.index.textContent=(position+1)+'/'+cards.length;
+    if(!cards.length){els.art.hidden=true;els.empty.hidden=false;els.price.textContent='';els.price.hidden=true;return;}
+    var card=cards[position];els.art.hidden=false;els.empty.hidden=true;els.art.src=card.image||'';els.art.alt=card.name||'';els.price.textContent=showPrices?(card.price||''):'';els.price.hidden=!showPrices||!card.price;
   }
   function next(){if(cards.length<2)return;els.art.classList.add('out');setTimeout(function(){position=(position+1)%cards.length;render();els.art.classList.remove('out');els.art.classList.add('in');void els.art.offsetWidth;els.art.classList.remove('in');},320)}
   function restart(){clearInterval(timer);if(cards.length>1)timer=setInterval(next,7000)}
