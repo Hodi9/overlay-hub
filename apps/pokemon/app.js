@@ -352,6 +352,7 @@ export function createPokemonApp(options = {}) {
       lastSyncError,
       lastSyncSource,
       cardmarketEnabled: Boolean(tcgGraphKey),
+      persistentStorage: Boolean(db),
       settings,
       passwordRequired: true,
       sourceUrl: tcgGraphKey ? CARDMARKET_URL : COLLECTR_URL
