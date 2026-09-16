@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseCollectrCards, parseTcgGraphCards } from "../apps/pokemon/app.js";
+import { CLASSIC_CHASE_CARDS, curateChaseCards, parseCollectrCards, parseTcgGraphCards, RGB_MEW_CARDS } from "../apps/pokemon/app.js";
 
 test("parses Collectr's escaped 30th Celebration card payload", () => {
   const html = String.raw`{\"product_id\":\"696688\",\"catalog_category\":\"3\",\"catalog_group_id\":\"24722\",\"product_name\":\"Mew ex \",\"image_url\":\"https://cdn.example/card.jpg?width=1200\u0026quality=80\",\"card_number\":\"158/128\",\"rarity\":\"Futuristic Rare\",\"product_sub_type\":\"Holofoil\",\"is_card\":true,\"latest_price\":\"1808.2500\"}`;
@@ -59,4 +59,23 @@ test("maps and sorts Cardmarket EUR prices from TCGGraph", () => {
   assert.match(cards[0].price, /450/);
   assert.equal(cards[0].source, "Cardmarket");
   assert.equal(cards[1].image, "https://cdn.example/pikachu.webp");
+});
+
+test("keeps all three unpriced RGB Mew chase cards as featured cards", () => {
+  assert.deepEqual(RGB_MEW_CARDS.map((card) => card.number), ["R/RGB", "G/RGB", "B/RGB"]);
+  assert.equal(RGB_MEW_CARDS.every((card) => card.kind === "chase" && card.featured && !card.price), true);
+  assert.equal(new Set(RGB_MEW_CARDS.map((card) => card.image)).size, 3);
+});
+
+test("curates 30 cards with the five classics and without regular Greninja ex", () => {
+  const main = Array.from({ length: 30 }, (_, index) => ({
+    sourceId: `main:${index}`,
+    name: index === 0 ? "Greninja ex" : `Main ${index}`,
+    number: index === 0 ? "021/128" : `${index}/128`,
+    priceValue: 1000 - index
+  }));
+  const curated = curateChaseCards(main, CLASSIC_CHASE_CARDS);
+  assert.equal(curated.length + RGB_MEW_CARDS.length, 30);
+  assert.equal(CLASSIC_CHASE_CARDS.every((classic) => curated.some((card) => card.sourceId === classic.sourceId)), true);
+  assert.equal(curated.some((card) => card.name === "Greninja ex" && card.number === "021/128"), false);
 });

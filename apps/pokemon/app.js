@@ -7,8 +7,57 @@ import seedCards from "./seed-30th.json" with { type: "json" };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const COLLECTR_URL = "https://app.getcollectr.com/sets/category/3/30th-celebration?groupId=24722&cardType=cards&sortType=price&sortOrder=DESC";
+const CLASSIC_COLLECTR_URL = "https://app.getcollectr.com/sets/category/3/30th-celebration-classic-collection?groupId=24837&cardType=cards&sortType=price&sortOrder=DESC";
 const CARDMARKET_URL = "https://www.cardmarket.com/en/Pokemon/Products/Singles/30th-Celebration";
 const TCGGRAPH_URL = "https://api.tcggraph.com/v1/cards?game=pokemon&set=30th%20Celebration&source=cardmarket&sort=-price&limit=30&language=en";
+export const CLASSIC_CHASE_CARDS = [
+  { id: "classic-714386", sourceId: "classic:714386", setId: "30th-celebration", name: "Lugia", image: "https://public.getcollectr.com/public-assets/products/product_714386.jpg?optimizer=image&format=webp&width=1200&quality=80&strip=metadata", number: "149/147", rarity: "Classic Collection", finish: "Holofoil", price: "$1,280.49", priceValue: 1280.49, kind: "chase", visible: true, source: "Collectr" },
+  { id: "classic-716198", sourceId: "classic:716198", setId: "30th-celebration", name: "Gengar (Prime)", image: "https://public.getcollectr.com/public-assets/products/product_716198.jpg?optimizer=image&format=webp&width=1200&quality=80&strip=metadata", number: "94/102", rarity: "Classic Collection", finish: "Holofoil", price: "$989.99", priceValue: 989.99, kind: "chase", visible: true, source: "Collectr" },
+  { id: "classic-716160", sourceId: "classic:716160", setId: "30th-celebration", name: "Dark Tyranitar", image: "https://public.getcollectr.com/public-assets/products/product_716160.jpg?optimizer=image&format=webp&width=1200&quality=80&strip=metadata", number: "19/109", rarity: "Classic Collection", finish: "Holofoil", price: "$590.99", priceValue: 590.99, kind: "chase", visible: true, source: "Collectr" },
+  { id: "classic-716210", sourceId: "classic:716210", setId: "30th-celebration", name: "Magikarp", image: "https://public.getcollectr.com/public-assets/products/product_716210.jpg?optimizer=image&format=webp&width=1200&quality=80&strip=metadata", number: "203/193", rarity: "Classic Collection", finish: "Holofoil", price: "$581.14", priceValue: 581.14, kind: "chase", visible: true, source: "Collectr" },
+  { id: "classic-714372", sourceId: "classic:714372", setId: "30th-celebration", name: "Charizard", image: "https://public.getcollectr.com/public-assets/products/product_714372.jpg?optimizer=image&format=webp&width=1200&quality=80&strip=metadata", number: "4/102", rarity: "Classic Collection", finish: "Holofoil", price: "$495.00", priceValue: 495, kind: "chase", visible: true, source: "Collectr" }
+];
+export const RGB_MEW_CARDS = [
+  {
+    id: "featured-rgb-mew-red",
+    setId: "30th-celebration",
+    name: "Mew (Red)",
+    image: "https://billsarchive.com/assets/articles/rgb-mew-red.webp",
+    number: "R/RGB",
+    rarity: "RGB Secret Rare",
+    finish: "Foil",
+    kind: "chase",
+    featured: true,
+    visible: true,
+    source: "30th Celebration RGB"
+  },
+  {
+    id: "featured-rgb-mew-green",
+    setId: "30th-celebration",
+    name: "Mew (Green)",
+    image: "https://billsarchive.com/assets/articles/rgb-mew-green.webp",
+    number: "G/RGB",
+    rarity: "RGB Secret Rare",
+    finish: "Foil",
+    kind: "chase",
+    featured: true,
+    visible: true,
+    source: "30th Celebration RGB"
+  },
+  {
+    id: "featured-rgb-mew-blue",
+    setId: "30th-celebration",
+    name: "Mew (Blue)",
+    image: "https://billsarchive.com/assets/articles/rgb-mew-blue.webp",
+    number: "B/RGB",
+    rarity: "RGB Secret Rare",
+    finish: "Foil",
+    kind: "chase",
+    featured: true,
+    visible: true,
+    source: "30th Celebration RGB"
+  }
+];
 const SETS = {
   "30th-celebration": { id: "30th-celebration", name: "30th Celebration", sourceUrl: CARDMARKET_URL },
   "ascended-heroes": { id: "ascended-heroes", name: "Ascended Heroes", sourceUrl: "" }
@@ -77,24 +126,28 @@ export function parseTcgGraphCards(body) {
     .slice(0, 30);
 }
 
-export function parseCollectrCards(html) {
+export function parseCollectrCards(html, options = {}) {
   const cards = [];
   const seen = new Set();
-  const pattern = /\\"product_id\\":\\"(\d+)\\"[\s\S]*?\\"catalog_group_id\\":\\"24722\\"[\s\S]*?\\"product_name\\":\\"([\s\S]*?)\\"[\s\S]*?\\"image_url\\":\\"([\s\S]*?)\\"[\s\S]*?\\"card_number\\":\\"([\s\S]*?)\\"[\s\S]*?\\"rarity\\":\\"([\s\S]*?)\\"[\s\S]*?\\"product_sub_type\\":\\"([\s\S]*?)\\"[\s\S]*?\\"latest_price\\":\\"([\s\S]*?)\\"/g;
+  const groupId = String(options.groupId || "24722");
+  const idPrefix = String(options.idPrefix || "collectr");
+  const sourcePrefix = String(options.sourcePrefix || "");
+  const pattern = /\\"product_id\\":\\"(\d+)\\"[\s\S]*?\\"catalog_group_id\\":\\"(\d+)\\"[\s\S]*?\\"product_name\\":\\"([\s\S]*?)\\"[\s\S]*?\\"image_url\\":\\"([\s\S]*?)\\"[\s\S]*?\\"card_number\\":\\"([\s\S]*?)\\"[\s\S]*?\\"rarity\\":\\"([\s\S]*?)\\"[\s\S]*?\\"product_sub_type\\":\\"([\s\S]*?)\\"[\s\S]*?\\"latest_price\\":\\"([\s\S]*?)\\"/g;
   let match;
   while ((match = pattern.exec(String(html || ""))) !== null) {
+    if (match[2] !== groupId) continue;
     if (seen.has(match[1])) continue;
     seen.add(match[1]);
-    const latestPrice = decodeSerializedString(match[7]);
+    const latestPrice = decodeSerializedString(match[8]);
     cards.push({
-      id: `collectr-${match[1]}`,
-      sourceId: match[1],
+      id: `${idPrefix}-${match[1]}`,
+      sourceId: `${sourcePrefix}${match[1]}`,
       setId: "30th-celebration",
-      name: decodeSerializedString(match[2]).trim(),
-      image: decodeSerializedString(match[3]),
-      number: decodeSerializedString(match[4]),
-      rarity: decodeSerializedString(match[5]),
-      finish: decodeSerializedString(match[6]),
+      name: decodeSerializedString(match[3]).trim(),
+      image: decodeSerializedString(match[4]),
+      number: decodeSerializedString(match[5]),
+      rarity: decodeSerializedString(match[6]),
+      finish: decodeSerializedString(match[7]),
       price: formatUsd(latestPrice),
       priceValue: Number(latestPrice) || 0,
       kind: "chase",
@@ -103,6 +156,18 @@ export function parseCollectrCards(html) {
     });
   }
   return cards;
+}
+
+export function curateChaseCards(mainCards, classicCards) {
+  const wantedClassicIds = new Set(CLASSIC_CHASE_CARDS.map((card) => card.sourceId));
+  const parsedClassic = new Map(classicCards.map((card) => [card.sourceId, card]));
+  const requiredClassic = CLASSIC_CHASE_CARDS.map((fallback) => parsedClassic.get(fallback.sourceId) || fallback);
+  const eligibleMain = mainCards
+    .filter((card) => !(card.name === "Greninja ex" && /^0?21(?:\/|$)/.test(card.number)))
+    .sort((a, b) => b.priceValue - a.priceValue)
+    .filter((card) => !wantedClassicIds.has(card.sourceId));
+  const mainSlots = Math.max(0, 30 - RGB_MEW_CARDS.length - requiredClassic.length);
+  return [...requiredClassic, ...eligibleMain.slice(0, mainSlots)].sort((a, b) => b.priceValue - a.priceValue);
 }
 
 function cleanSetId(value) {
@@ -125,6 +190,7 @@ function cleanCard(input, existing = {}) {
     price: String(input?.price ?? existing.price ?? "").trim().slice(0, 40),
     priceValue: Number(input?.priceValue ?? existing.priceValue) || 0,
     kind: requestedKind === "chase" ? "chase" : "pull",
+    featured: Boolean(input?.featured ?? existing.featured),
     visible: typeof input?.visible === "boolean" ? input.visible : existing.visible !== false,
     source: existing.source || "Manual"
   };
@@ -146,7 +212,8 @@ export function createPokemonApp(options = {}) {
   const tcgGraphKey = options.tcgGraphKey ?? process.env.TCGGRAPH_KEY ?? "";
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const refreshIntervalMs = options.refreshIntervalMs ?? 6 * 60 * 60 * 1000;
-  let cards = seedCards.map((card) => cleanCard(card, card));
+  let cards = [...RGB_MEW_CARDS, ...curateChaseCards(seedCards, CLASSIC_CHASE_CARDS)].map((card) => cleanCard(card, card));
+  let settings = { showPrices: false };
   let lastSync = null;
   let lastSyncError = "";
   let lastSyncSource = tcgGraphKey ? "Cardmarket" : "Collectr fallback";
@@ -161,6 +228,13 @@ export function createPokemonApp(options = {}) {
     if (!controlPassword) return response.status(503).json({ error: "Kontrolpanelets adgangskode er ikke konfigureret endnu." });
     if (authorized(request)) return next();
     return response.status(401).json({ error: "Forkert eller manglende adgangskode." });
+  }
+
+  function ensureFeaturedCards() {
+    const missing = RGB_MEW_CARDS.filter((featuredCard) => !cards.some((card) => card.id === featuredCard.id));
+    if (!missing.length) return false;
+    cards = [...missing.map((card) => cleanCard(card, card)), ...cards];
+    return true;
   }
 
   async function connectDatabase() {
@@ -182,7 +256,10 @@ export function createPokemonApp(options = {}) {
       cards = result.rows[0].data.cards.map((card) => cleanCard(card, card));
       lastSync = result.rows[0].data.lastSync || null;
       lastSyncSource = result.rows[0].data.lastSyncSource || lastSyncSource;
+      settings.showPrices = result.rows[0].data.settings?.showPrices === true;
+      if (ensureFeaturedCards()) await persist();
     } else {
+      ensureFeaturedCards();
       await persist();
     }
   }
@@ -193,51 +270,71 @@ export function createPokemonApp(options = {}) {
       `INSERT INTO pokemon_overlay_state (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      ["primary", JSON.stringify({ cards, lastSync, lastSyncSource })]
+      ["primary", JSON.stringify({ cards, settings, lastSync, lastSyncSource })]
     );
   }
 
   async function importCollectr() {
     if (typeof fetchImpl !== "function") throw new Error("Fetch er ikke tilgængelig.");
-    const response = await fetchImpl(COLLECTR_URL, {
+    const requestOptions = {
       headers: {
         Accept: "text/html,application/xhtml+xml",
         "User-Agent": "Mozilla/5.0 (compatible; OverlayHub/1.0; +https://overlay-hub.onrender.com/)"
       }
-    });
-    if (!response.ok) throw new Error(`Collectr svarede med ${response.status}.`);
-    const imported = parseCollectrCards(await response.text());
-    if (!imported.length) throw new Error("Ingen kort kunne aflæses fra Collectr.");
+    };
+    const [mainResponse, classicResponse] = await Promise.all([
+      fetchImpl(COLLECTR_URL, requestOptions),
+      fetchImpl(CLASSIC_COLLECTR_URL, requestOptions)
+    ]);
+    if (!mainResponse.ok || !classicResponse.ok) {
+      throw new Error(`Collectr svarede med ${mainResponse.ok ? classicResponse.status : mainResponse.status}.`);
+    }
+    const mainCards = parseCollectrCards(await mainResponse.text());
+    const classicCards = parseCollectrCards(await classicResponse.text(), { groupId: "24837", idPrefix: "classic", sourcePrefix: "classic:" });
+    const imported = curateChaseCards(mainCards, classicCards);
+    if (imported.length < 27) throw new Error("Den kuraterede top 30 kunne ikke aflæses fra Collectr.");
     cards = mergeImportedCards(cards, imported);
     lastSync = new Date().toISOString();
     lastSyncSource = "Collectr fallback";
     lastSyncError = "";
     await persist();
-    return imported.length;
+    return imported.length + RGB_MEW_CARDS.length;
   }
 
   async function importCardmarket() {
     if (!tcgGraphKey) return importCollectr();
     if (typeof fetchImpl !== "function") throw new Error("Fetch er ikke tilgængelig.");
-    const response = await fetchImpl(TCGGRAPH_URL, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${tcgGraphKey}`
-      }
-    });
+    const [response, classicResponse] = await Promise.all([
+      fetchImpl(TCGGRAPH_URL, {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${tcgGraphKey}`
+        }
+      }),
+      fetchImpl(CLASSIC_COLLECTR_URL, {
+        headers: {
+          Accept: "text/html,application/xhtml+xml",
+          "User-Agent": "Mozilla/5.0 (compatible; OverlayHub/1.0; +https://overlay-hub.onrender.com/)"
+        }
+      })
+    ]);
     if (!response.ok) throw new Error(`Cardmarket-priskilden svarede med ${response.status}.`);
     const body = await response.json();
     if (body?.meta?.priceSource && body.meta.priceSource !== "cardmarket") {
       throw new Error("Priskilden returnerede ikke Cardmarket-priser.");
     }
-    const imported = parseTcgGraphCards(body);
-    if (!imported.length) throw new Error("Ingen Cardmarket-priser kunne aflæses for 30th Celebration.");
+    const mainCards = parseTcgGraphCards(body);
+    const classicCards = classicResponse.ok
+      ? parseCollectrCards(await classicResponse.text(), { groupId: "24837", idPrefix: "classic", sourcePrefix: "classic:" })
+      : CLASSIC_CHASE_CARDS;
+    const imported = curateChaseCards(mainCards, classicCards);
+    if (imported.length < 27) throw new Error("Ingen komplet top 30 kunne aflæses for 30th Celebration.");
     cards = mergeImportedCards(cards, imported);
     lastSync = new Date().toISOString();
     lastSyncSource = "Cardmarket";
     lastSyncError = "";
     await persist();
-    return imported.length;
+    return imported.length + RGB_MEW_CARDS.length;
   }
 
   function payload(setId = "30th-celebration", view = "chase") {
@@ -255,6 +352,7 @@ export function createPokemonApp(options = {}) {
       lastSyncError,
       lastSyncSource,
       cardmarketEnabled: Boolean(tcgGraphKey),
+      settings,
       passwordRequired: true,
       sourceUrl: tcgGraphKey ? CARDMARKET_URL : COLLECTR_URL
     };
@@ -284,6 +382,19 @@ export function createPokemonApp(options = {}) {
       cards.push(card);
       await persist();
       response.json(payload(card.setId, card.kind === "pull" ? "pulls" : "chase"));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.patch("/api/settings", requireAuth, async (request, response, next) => {
+    try {
+      if (typeof request.body?.showPrices !== "boolean") {
+        return response.status(400).json({ error: "showPrices skal være true eller false." });
+      }
+      settings = { ...settings, showPrices: request.body.showPrices };
+      await persist();
+      response.json(payload("all", "all"));
     } catch (error) {
       next(error);
     }
