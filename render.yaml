@@ -40,6 +40,8 @@ services:
         generateValue: true
       - key: PERFEKTMATCH_CONTROL_PASSWORD
         sync: false
+      - key: POKEMON_CONTROL_PASSWORD
+        sync: false
       - key: NODE_VERSION
         value: 22
 
