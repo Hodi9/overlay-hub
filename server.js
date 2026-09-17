@@ -14,6 +14,7 @@ import { createMafia2App } from "./apps/mafia2/app.js";
 import { createMafia3App } from "./apps/mafia3/app.js";
 import { createPerfektMatchApp } from "./apps/perfektmatch/app.js";
 import { createPokemonApp } from "./apps/pokemon/app.js";
+import { createMoonTvApp } from "./apps/moontv/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -39,6 +40,7 @@ app.use("/mafia2", createMafia2App());
 app.use("/mafia3", createMafia3App());
 app.use("/perfektmatch", createPerfektMatchApp());
 app.use("/pokemon", createPokemonApp());
+app.use("/moontv", createMoonTvApp());
 
 app.use(express.static(path.join(__dirname, "public")));
 

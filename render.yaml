@@ -42,6 +42,8 @@ services:
         sync: false
       - key: POKEMON_CONTROL_PASSWORD
         sync: false
+      - key: MOONTV_CONTROL_PASSWORD
+        sync: false
       - key: TCGGRAPH_KEY
         sync: false
       - key: NODE_VERSION
