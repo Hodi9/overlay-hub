@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8" />
+<title>Bros vs Bros — Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --left: #123f6e;
+    --left-dark: #0c2c4d;
+    --left-text: #ffffff;
+    --right: #d6d6d6;
+    --right-dark: #bdbdbd;
+    --right-text: #1b1b1b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: transparent;
+    font-family: "Montserrat", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  [data-view] { display: none; }
+  [data-view].active { display: block; }
+
+  /* ---------- fælles bar ---------- */
+  .wrap { padding: 20px; display: inline-flex; flex-direction: column; align-items: center; gap: 8px; }
+  .bar {
+    display: flex; align-items: stretch; height: 58px;
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+  }
+  .avatar {
+    width: 58px; height: 58px; flex-shrink: 0; display: grid; place-items: center;
+    font-weight: 800; font-size: 20px; letter-spacing: .02em; overflow: hidden;
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 7px; }
+  .avatar, .fc-photo { grid-template-columns: 100%; grid-template-rows: 100%; }
+  .avatar.left { background: var(--left-dark); color: var(--left-text); }
+  .avatar.right { background: var(--right-dark); color: var(--right-text); }
+  .name {
+    min-width: 190px; padding: 0 26px; display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-weight: 800; font-size: 21px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+  }
+  .name.left { background: var(--left); color: var(--left-text); }
+  .name.right { background: var(--right); color: var(--right-text); }
+  .score {
+    width: 68px; flex-shrink: 0; display: grid; place-items: center;
+    font-weight: 800; font-size: 30px; font-variant-numeric: tabular-nums;
+    transition: transform .25s ease;
+  }
+  .score.left { background: var(--left-dark); color: var(--left-text); }
+  .score.right { background: var(--right-dark); color: var(--right-text); }
+  .score span { display: inline-block; transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+  .score.bump span { transform: scale(1.22); }
+
+  .info {
+    font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase;
+    color: #fff; background: rgba(15, 15, 18, .72); padding: 6px 14px; border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+  }
+  .info:empty { display: none; }
+
+  .pips { display: flex; gap: 5px; }
+  .pip { width: 9px; height: 9px; border-radius: 50%; background: currentColor; opacity: .28; }
+  .pip.on { opacity: 1; }
+  .bar.winner-left .name.left, .bar.winner-right .name.right { box-shadow: inset 0 -4px 0 #f5c542; }
+
+  /* ---------- fightcard ---------- */
+  #fightcard-view { width: 100vw; height: 100vh; }
+  #fightcard-view.active { display: flex; align-items: center; justify-content: center; background: #111; }
+  .stage { width: 1920px; height: 1080px; flex-shrink: 0; transform-origin: center; position: relative; display: grid; grid-template-columns: 1fr 1fr; }
+  .half { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 46px; }
+  .half.left { background: linear-gradient(160deg, var(--left), var(--left-dark)); color: var(--left-text); }
+  .half.right { background: linear-gradient(200deg, var(--right), var(--right-dark)); color: var(--right-text); }
+  .fc-photo {
+    width: 440px; height: 440px; border-radius: 36px; overflow: hidden; display: grid; place-items: center;
+    background: rgba(255, 255, 255, .12); font-size: 150px; font-weight: 800;
+    box-shadow: 0 30px 60px -20px rgba(0, 0, 0, .45);
+  }
+  .fc-photo img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 40px; }
+  .fc-name { font-size: 96px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; line-height: 1; }
+  .fc-title {
+    position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+    font-size: 30px; font-weight: 700; letter-spacing: .4em; text-transform: uppercase;
+    color: #fff; background: rgba(15, 15, 18, .72); padding: 14px 34px; border-radius: 999px;
+  }
+  .fc-vs {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 150px; height: 150px; border-radius: 50%; background: #fff; color: #111;
+    display: grid; place-items: center; font-size: 54px; font-weight: 800;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+  }
+</style>
+</head>
+<body>
+
+  <div id="scoreboard-view" data-view>
+    <div class="wrap">
+      <div class="bar">
+        <div class="avatar left" data-avatar="left"></div>
+        <div class="name left" data-name="left"></div>
+        <div class="score left" id="sb-left"><span>0</span></div>
+        <div class="score right" id="sb-right"><span>0</span></div>
+        <div class="avatar right" data-avatar="right"></div>
+        <div class="name right" data-name="right"></div>
+      </div>
+      <div class="info" id="sb-info"></div>
+    </div>
+  </div>
+
+  <div id="duel-view" data-view>
+    <div class="wrap">
+      <div class="bar" id="duel-bar">
+        <div class="avatar left" data-avatar="left"></div>
+        <div class="name left"><span data-name="left"></span><span class="pips" id="pips-left"></span></div>
+        <div class="score left" id="duel-left"><span>0</span></div>
+        <div class="score right" id="duel-right"><span>0</span></div>
+        <div class="avatar right" data-avatar="right"></div>
+        <div class="name right"><span class="pips" id="pips-right"></span><span data-name="right"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="fightcard-view" data-view>
+    <div class="stage">
+      <div class="half left">
+        <div class="fc-photo" data-avatar="left"></div>
+        <div class="fc-name" data-name="left"></div>
+      </div>
+      <div class="half right">
+        <div class="fc-photo" data-avatar="right"></div>
+        <div class="fc-name" data-name="right"></div>
+      </div>
+      <div class="fc-title">Bros vs Bros</div>
+      <div class="fc-vs">VS</div>
+    </div>
+  </div>
+
+<script src="/brosvsbros/socket.io/socket.io.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const view = params.get("view") || "scoreboard";
+  (document.getElementById(view + "-view") || document.getElementById("scoreboard-view")).classList.add("active");
+
+  function scaleStage() {
+    const stage = document.querySelector("#fightcard-view .stage");
+    if (stage) stage.style.transform = "scale(" + Math.min(innerWidth / 1920, innerHeight / 1080) + ")";
+  }
+  scaleStage();
+  addEventListener("resize", scaleStage);
+
+  const DEFAULT_PLAYERS = {
+    left: { name: "Hold 1", image: "", color: "#123f6e" },
+    right: { name: "Hold 2", image: "", color: "#d6d6d6" }
+  };
+
+  function shade(hex, amount) {
+    const n = parseInt(hex.slice(1), 16);
+    const f = (c) => Math.max(0, Math.min(255, Math.round(c + (amount < 0 ? c : 255 - c) * amount)));
+    return "#" + [n >> 16, (n >> 8) & 255, n & 255].map((c) => f(c).toString(16).padStart(2, "0")).join("");
+  }
+  function textOn(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    return lum > 0.6 ? "#1b1b1b" : "#ffffff";
+  }
+  function initials(name) {
+    return String(name || "?").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  }
+
+  let lastPlayersKey = "";
+  function applyPlayers(players) {
+    const key = JSON.stringify(players);
+    if (key === lastPlayersKey) return;
+    lastPlayersKey = key;
+    const root = document.documentElement.style;
+    [["left", "left"], ["right", "right"]].forEach(([id, side]) => {
+      const p = players[id];
+      const color = /^#[0-9a-f]{6}$/i.test(p.color || "") ? p.color : DEFAULT_PLAYERS[id].color;
+      const text = textOn(color);
+      root.setProperty("--" + side, color);
+      root.setProperty("--" + side + "-dark", shade(color, text === "#ffffff" ? -0.28 : -0.12));
+      root.setProperty("--" + side + "-text", text);
+      document.querySelectorAll('[data-name="' + id + '"]').forEach((el) => { el.textContent = p.name; });
+      document.querySelectorAll('[data-avatar="' + id + '"]').forEach((el) => {
+        if (el.classList.contains("avatar")) el.style.display = p.image ? "" : "none";
+        el.textContent = "";
+        if (p.image) {
+          const img = new Image();
+          img.alt = "";
+          img.onerror = () => { el.textContent = initials(p.name); };
+          img.src = p.image;
+          el.appendChild(img);
+        } else {
+          el.textContent = initials(p.name);
+        }
+      });
+    });
+  }
+
+  function setScore(el, value) {
+    const span = el.querySelector("span");
+    if (span.textContent !== String(value)) {
+      span.textContent = value;
+      el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+      setTimeout(() => el.classList.remove("bump"), 260);
+    }
+  }
+
+  function renderPips(container, count) {
+    const total = Math.max(count, 3);
+    container.innerHTML = "";
+    for (let i = 0; i < total; i++) {
+      const pip = document.createElement("span");
+      pip.className = "pip" + (i < count ? " on" : "");
+      container.appendChild(pip);
+    }
+  }
+
+  const socket = io({ path: "/brosvsbros/socket.io" });
+  socket.on("state", (state) => {
+    applyPlayers({ ...DEFAULT_PLAYERS, ...(state.players || {}) });
+
+    setScore(document.getElementById("sb-left"), state.scores.left);
+    setScore(document.getElementById("sb-right"), state.scores.right);
+    const info = ["Runde " + state.round, state.current?.name].filter(Boolean).join(" · ");
+    document.getElementById("sb-info").textContent = info;
+
+    const duel = state.duel || { points: { left: 0, right: 0 }, sets: { left: 0, right: 0 } };
+    setScore(document.getElementById("duel-left"), duel.points.left);
+    setScore(document.getElementById("duel-right"), duel.points.right);
+    renderPips(document.getElementById("pips-left"), duel.sets.left);
+    renderPips(document.getElementById("pips-right"), duel.sets.right);
+    const bar = document.getElementById("duel-bar");
+    bar.classList.toggle("winner-left", duel.sets.left >= 3);
+    bar.classList.toggle("winner-right", duel.sets.right >= 3);
+  });
+</script>
+</body>
+</html>
