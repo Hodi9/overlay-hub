@@ -1,316 +1,397 @@
 <!doctype html>
-<html lang="en">
+<html lang="da">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Overlay Hub</title>
+<title>Overlay Hub — dreamglow</title>
+<meta name="description" content="Browser sources og kontrolpaneler til OBS og Pogly, lavet af dreamglow.">
+<meta name="theme-color" content="#11201a">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2311201a'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%238ee6b1' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%238ee6b1'/%3E%3Cpath d='M24 51h16' stroke='%238ee6b1' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
-    color-scheme: dark;
-    --bg: #0b0b12;
-    --panel: #14141f;
-    --line: #2a2a3d;
-    --text: #f1f1f6;
-    --muted: #9797ad;
-    --pink: #ff3d6e;
-    --cyan: #33e6d8;
-    --lime: #a2d344;
-    --amber: #e8a33d;
-    --gold: #f5c542;
-    --violet: #8b6cf5;
+    --bg: #eef1ec;
+    --paper: #fbfaf6;
+    --ink: #11201a;
+    --muted: #647069;
+    --line: #dae0da;
+    --mint: #8ee6b1;
+    --mint-soft: #d9f5e4;
+    --mint-dark: #17714c;
+    --shadow: 0 1px 0 rgba(17,32,26,.04), 0 8px 24px -12px rgba(17,32,26,.18);
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
     margin: 0;
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 15% 0%, rgba(255,61,110,.12), transparent 45%),
-      radial-gradient(circle at 85% 100%, rgba(51,230,216,.10), transparent 45%),
-      var(--bg);
-    color: var(--text);
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-    padding: clamp(24px, 5vw, 56px);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Schibsted Grotesk", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
-  header { max-width: 900px; margin: 0 auto 40px; }
-  header h1 {
-    margin: 0 0 8px;
-    font-size: clamp(28px, 5vw, 40px);
-    letter-spacing: -.02em;
-  }
-  header p { margin: 0; color: var(--muted); font-size: 15px; }
-  header p.contact { margin-top: 10px; color: var(--text); }
-  header p.contact::before { content: "💬 "; }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 
-  main {
-    max-width: 900px;
-    margin: 0 auto;
-    display: grid;
-    gap: 24px;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  /* Top bar */
+  .top {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 22px 0;
   }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
+  .brand svg { width: 30px; height: 30px; display: block; }
+  .status {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    background: var(--paper); border: 1px solid var(--line);
+    padding: 6px 12px; border-radius: 999px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #b8c0bb; }
+  .status.ok .dot { background: #22b36b; box-shadow: 0 0 0 4px rgba(34,179,107,.18); }
+  .status.down .dot { background: #d9534f; }
 
+  /* Hero */
+  .hero { padding: 36px 0 28px; }
+  .hero h1 {
+    margin: 0; max-width: 16ch;
+    font-size: clamp(36px, 6.5vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800;
+  }
+  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--mint) 62%); padding: 0 .08em; }
+  .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
+
+  /* Toolbar */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 28px 0 22px; }
+  .search {
+    flex: 1 1 260px; display: flex; align-items: center; gap: 10px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px;
+  }
+  .search svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
+  .search input { flex: 1; border: 0; background: none; font: inherit; padding: 13px 0; color: var(--ink); outline: none; min-width: 0; }
+  .search:focus-within { border-color: var(--mint-dark); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+    padding: 9px 14px; border-radius: 999px;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  /* Grid */
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
   .card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 24px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column;
   }
-  .card-head {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 18px;
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .emoji { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 21px; background: var(--bg); }
+  .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mint-dark); background: var(--mint-soft); padding: 4px 9px; border-radius: 999px; }
+  .card h2 { margin: 0; font-size: 20px; letter-spacing: -.015em; line-height: 1.2; }
+  .card .sub { margin: 4px 0 16px; color: var(--muted); font-size: 14px; }
+  .group-title { margin: 14px 0 6px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .group-title:first-of-type { margin-top: 0; }
+  .rows { display: grid; gap: 6px; }
+  .row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    border: 1px solid var(--line); border-radius: 12px; padding: 6px 6px 6px 12px;
   }
-  .icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
+  .row .name { flex: 1 1 90px; font-weight: 600; font-size: 14px; min-width: 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+    padding: 7px 11px; border-radius: 9px; white-space: nowrap;
   }
-  .icon.brovsbro { background: linear-gradient(135deg, var(--pink), var(--cyan)); }
-  .icon.minecraft { background: linear-gradient(135deg, #2f4a1e, var(--lime)); }
-  .icon.rdr2 { background: linear-gradient(135deg, #5c2a1a, var(--amber)); }
-  .icon.ascended { background: linear-gradient(135deg, #3a1f5c, var(--gold)); }
-  .icon.gear { background: linear-gradient(135deg, #8a3511, #ff7417); }
-  .icon.gauntlet { background: linear-gradient(135deg, #3a2f6e, var(--violet)); }
-  .icon.tlou2 { background: linear-gradient(135deg, #2f3a24, #6b7a52); }
-  .icon.gta5 { background: linear-gradient(135deg, #1e3a1c, #5fd15a); }
-  .icon.mafia { background: linear-gradient(135deg, #3a2c1a, #d4a24c); }
-  .icon.perfektmatch { background: linear-gradient(135deg, #5a2438, #e8547a); }
+  .btn:hover { border-color: var(--ink); }
+  .btn svg { width: 14px; height: 14px; }
+  .btn.copied { background: var(--mint-soft); border-color: var(--mint-dark); color: var(--mint-dark); }
+  .control {
+    margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 700; font-size: 14px;
+    padding: 12px; border-radius: 12px;
+  }
+  .control:hover { background: #1f3a2e; }
+  .control svg { width: 15px; height: 15px; }
+  .extra { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  details { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; font-size: 13px; color: var(--muted); }
+  summary { cursor: pointer; font-weight: 600; color: var(--ink); list-style: none; display: flex; align-items: center; gap: 6px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "+"; font-family: "JetBrains Mono", monospace; color: var(--mint-dark); }
+  details[open] summary::before { content: "−"; }
+  details p { margin: 8px 0 0; }
+  code { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--bg); color: var(--ink); padding: 1px 5px; border-radius: 5px; word-break: break-all; }
+  .card-spacer { flex: 1; }
+  .empty { display: none; text-align: center; color: var(--muted); padding: 48px 0; }
 
-  .card-head h2 { margin: 0; font-size: 18px; }
-  .card-head span { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  /* Info strip */
+  .tips { margin: 40px 0 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .tip { border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+  .tip b { display: block; margin-bottom: 4px; }
+  .tip span { color: var(--muted); font-size: 14px; }
 
-  .links { display: flex; flex-wrap: wrap; gap: 8px; }
-  .links a {
-    color: var(--text);
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 9px 14px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
-    background: rgba(255,255,255,.03);
-    transition: border-color .15s, background .15s;
-  }
-  .links a:hover { background: rgba(255,255,255,.07); }
-  .links a.control { border-color: rgba(255,61,110,.4); }
-  .card-hint {
-    margin: 12px 0 0;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .card-hint code {
-    color: var(--text);
-    background: rgba(255,255,255,.06);
-    padding: 1px 5px;
-    border-radius: 4px;
-  }
-  .brovsbro-card .links a:not(.control):hover { border-color: var(--cyan); }
-  .minecraft-card .links a:not(.control):hover { border-color: var(--lime); }
-  .rdr2-card .links a:not(.control):hover { border-color: var(--amber); }
-  .ascended-card .links a:not(.control):hover { border-color: var(--gold); }
-  .gear-card .links a:hover { border-color: #ff7417; }
-  .gauntlet-card .links a:not(.control):hover { border-color: var(--violet); }
-  .tlou2-card .links a:not(.control):hover { border-color: #8aa06a; }
-  .gta5-card .links a:not(.control):hover { border-color: #5fd15a; }
-  .mafia-card .links a:not(.control):hover { border-color: #d4a24c; }
-  .game-group { margin-bottom: 14px; }
-  .game-group h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
-  .game-group:last-of-type { margin-bottom: 0; }
+  footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 40px 0 110px; color: var(--muted); font-size: 14px; }
+  footer a { color: var(--ink); font-weight: 600; }
 
-  footer {
-    max-width: 900px;
-    margin: 40px auto 0;
-    color: var(--muted);
-    font-size: 12px;
+  /* Contact */
+  .contact-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 20;
+    display: inline-flex; align-items: center; gap: 8px;
+    font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
+    background: var(--mint); color: var(--ink); border: 2px solid var(--ink);
+    padding: 12px 18px; border-radius: 999px; box-shadow: 0 10px 30px -10px rgba(17,32,26,.45);
   }
-  footer a { color: var(--muted); }
+  .contact-fab svg { width: 18px; height: 18px; }
+  .popover {
+    position: fixed; right: 20px; bottom: 84px; z-index: 21; width: min(340px, calc(100vw - 40px));
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 22px; padding: 20px;
+    box-shadow: 0 20px 50px -20px rgba(17,32,26,.5);
+    opacity: 0; transform: translateY(8px) scale(.98); pointer-events: none; transition: opacity .15s, transform .15s;
+  }
+  .popover.open { opacity: 1; transform: none; pointer-events: auto; }
+  .pop-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .popover h3 { margin: 2px 0 0; font-size: 21px; letter-spacing: -.015em; }
+  .popover p { margin: 10px 0 14px; color: var(--muted); font-size: 14px; }
+  .close { border: 0; background: var(--bg); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 18px; color: var(--ink); flex-shrink: 0; }
+  .handle { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 14px; }
+  .handle strong { font-family: "JetBrains Mono", monospace; font-size: 15px; }
+  .pop-actions { display: grid; gap: 8px; margin-top: 10px; }
+  .pop-actions a { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 700; padding: 12px; border-radius: 14px; }
+  .pop-actions .primary { background: var(--mint); }
+  .pop-actions .secondary { border: 1px solid var(--line); }
+  .pop-actions svg { width: 15px; height: 15px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 30;
+    background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  :focus-visible { outline: 2px solid var(--mint-dark); outline-offset: 2px; }
+  @media (max-width: 520px) {
+    .hero { padding-top: 16px; }
+    .contact-fab span { display: none; }
+    .contact-fab { padding: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body>
-  <header>
-    <h1>Overlay Hub</h1>
-    <p>OBS / Pogly browser sources and control panels for every overlay running on this service.</p>
-    <p class="contact">These overlays are made by dreamglow. To gain access, message me on Discord (dreamglow#8451) or Twitch (@dreamglowxd).</p>
-  </header>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#11201a"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#8ee6b1" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#8ee6b1"/><path d="M24 51h16" stroke="#8ee6b1" stroke-width="4" stroke-linecap="round"/></svg>
+        Overlay Hub
+      </a>
+      <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
+    </header>
 
-  <main>
-    <section class="card brovsbro-card">
-      <div class="card-head">
-        <div class="icon brovsbro">🥊</div>
-        <div>
-          <h2>Bro vs Bro</h2>
-          <span>Aggo vs Marcelo — score overlay</span>
-        </div>
-      </div>
-      <div class="links">
-        <a href="/brovsbro/overlay">Scoreboard</a>
-        <a href="/brovsbro/overlay?view=duel">Duel bar</a>
-        <a href="/brovsbro/overlay?view=fightcard">Fightcard</a>
-        <a class="control" href="/brovsbro/panel">Control panel</a>
-      </div>
+    <section class="hero">
+      <h1>Overlays til <em>livestreams</em>, klar til OBS.</h1>
+      <p>Browser sources og kontrolpaneler til alle de overlays, der kører på denne service. Lavet af dreamglow — skriv til mig for at få adgang.</p>
     </section>
 
-    <section class="card minecraft-card">
-      <div class="card-head">
-        <div class="icon minecraft">⛏️</div>
-        <div>
-          <h2>Minecraft Boss Tracker</h2>
-          <span>Warden · Elder Guardian · Wither · Ender Dragon</span>
-        </div>
+    <div class="toolbar">
+      <label class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Søg efter overlay, spil eller show…" autocomplete="off" aria-label="Søg">
+      </label>
+      <div class="chips" id="chips" role="group" aria-label="Filtrér">
+        <button class="chip" data-filter="alle" aria-pressed="true">Alle</button>
+        <button class="chip" data-filter="spil" aria-pressed="false">Spil-trackers</button>
+        <button class="chip" data-filter="show" aria-pressed="false">Shows &amp; events</button>
+        <button class="chip" data-filter="stream" aria-pressed="false">Stream-værktøjer</button>
       </div>
-      <div class="links">
-        <a href="/minecraft/overlay?bg=black">Overlay</a>
-        <a href="/minecraft/wither-overlay?bg=black">Wither Skulls</a>
-        <a class="control" href="/minecraft/control">Control panel</a>
-      </div>
-      <p class="card-hint">These links show a black background for previewing. In OBS, use the URL without <code>?bg=black</code> so it stays transparent.</p>
+    </div>
+
+    <main class="grid" id="grid"></main>
+    <p class="empty" id="empty">Ingen overlays matcher din søgning.</p>
+
+    <section class="tips">
+      <div class="tip"><b>Gennemsigtig i OBS</b><span>“OBS-link” kopierer URL’en og fjerner automatisk <code>bg=black</code>, så baggrunden bliver gennemsigtig.</span></div>
+      <div class="tip"><b>Anbefalet størrelse</b><span>Sæt browser sourcen til 1920 × 1080 og skalér den i OBS.</span></div>
+      <div class="tip"><b>Live-opdatering</b><span>Ændringer i kontrolpanelerne sendes med det samme til alle åbne overlays.</span></div>
     </section>
 
-    <section class="card rdr2-card">
-      <div class="card-head">
-        <div class="icon rdr2">🤠</div>
-        <div>
-          <h2>RDR2 Marathon Tracker</h2>
-          <span>Story mode progression bar — hosted separately</span>
-        </div>
-      </div>
-      <div class="links">
-        <a href="https://rdr2-marathon-tracker.onrender.com/overlay">Overlay</a>
-        <a class="control" href="https://rdr2-marathon-tracker.onrender.com/control">Control panel</a>
-      </div>
-    </section>
+    <footer>
+      <span>Lavet af dreamglow · <a href="https://www.twitch.tv/dreamglowxd" target="_blank" rel="noopener">twitch.tv/dreamglowxd</a></span>
+      <a href="/health">Serverstatus</a>
+    </footer>
+  </div>
 
-    <section class="card ascended-card">
-      <div class="card-head">
-        <div class="icon ascended">⭐</div>
-        <div>
-          <h2>Pokemon kortåbning</h2>
-          <span>Dine egne hits + automatisk 30th Chase List</span>
-        </div>
-      </div>
-      <div class="links">
-        <a href="/pokemon/?view=pulls&set=all&bg=black">Mine hits</a>
-        <a href="/pokemon/?view=chase&set=30th-celebration&bg=black">30th Chase List</a>
-        <a class="control" href="/pokemon/control.html">Control panel</a>
-        <a href="https://pulldex.onrender.com/">Pulldex</a>
-      </div>
-      <p class="card-hint">“Mine hits” viser kun kort, du selv tilføjer eller markerer som ramt. Chase-listen roterer gennem de 30 dyreste 30th-kort og er klar til Cardmarket-priser i EUR. Fjern <code>&amp;bg=black</code> i OBS for transparent baggrund.</p>
-    </section>
+  <button class="contact-fab" id="contact-btn" aria-expanded="false" aria-controls="contact">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>
+    <span>Kontakt</span>
+  </button>
 
-    <section class="card gear-card">
-      <div class="card-head">
-        <div class="icon gear">🖥️</div>
-        <div>
-          <h2>Mit stream-gear</h2>
-          <span>Automatisk produktrotation med chatkommandoer</span>
-        </div>
+  <div class="popover" id="contact" role="dialog" aria-labelledby="contact-title">
+    <div class="pop-head">
+      <div>
+        <div class="eyebrow">Kontakt</div>
+        <h3 id="contact-title">Skriv til mig på Discord</h3>
       </div>
-      <div class="links">
-        <a href="/gear/">Overlay</a>
-        <a class="control" href="/gear/control.html">Control panel</a>
-      </div>
-      <p class="card-hint">Viser ét produkt i 7 sekunder ad gangen. Sekvensen gentages automatisk hvert 15. minut.</p>
-    </section>
-    <section class="card gauntlet-card">
-      <div class="card-head">
-        <div class="icon gauntlet">🎮</div>
-        <div>
-          <h2>Gaming Gauntlet</h2>
-          <span>Multi-game challenge badges + death counter</span>
-        </div>
-      </div>
-      <div class="links">
-        <a href="/gauntlet/">Overlay</a>
-        <a href="/gauntlet/deaths.html">Death counter</a>
-        <a class="control" href="/gauntlet/control.html">Control panel</a>
-      </div>
-      <p class="card-hint">Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS.</p>
-    </section>
-    <section class="card tlou2-card">
-      <div class="card-head">
-        <div class="icon tlou2">🍄</div>
-        <div>
-          <h2>The Last of Us Part II Tracker</h2>
-          <span>Story progression overlay — auto-opdateres via OCR</span>
-        </div>
-      </div>
-      <div class="links">
-        <a href="/tlou2/?bg=black">Overlay</a>
-        <a class="control" href="/tlou2/control.html">Control panel</a>
-      </div>
-      <p class="card-hint">Denne overlay-link viser sort baggrund for at kunne ses her. I OBS, brug URL'en uden <code>?bg=black</code> så den forbliver gennemsigtig.</p>
-      <p class="card-hint">Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet.</p>
-    </section>
-    <section class="card gta5-card">
-      <div class="card-head">
-        <div class="icon gta5">🚗</div>
-        <div>
-          <h2>GTA V Story Tracker</h2>
-          <span>Story progression overlay — auto-opdateres via save-fil</span>
-        </div>
-      </div>
-      <div class="links">
-        <a href="/gta5/?bg=black">Overlay</a>
-        <a class="control" href="/gta5/control.html">Control panel</a>
-      </div>
-      <p class="card-hint">Denne overlay-link viser sort baggrund for at kunne ses her. I OBS, brug URL'en uden <code>?bg=black</code> så den forbliver gennemsigtig.</p>
-      <p class="card-hint">Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet.</p>
-    </section>
-    <section class="card mafia-card">
-      <div class="card-head">
-        <div class="icon mafia">🎩</div>
-        <div>
-          <h2>Mafia Trilogy Trackers</h2>
-          <span>Story progression overlays — auto-opdateres via OCR</span>
-        </div>
-      </div>
-      <div class="game-group">
-        <h3>Mafia: Definitive Edition</h3>
-        <div class="links">
-          <a href="/mafia1/?bg=black">Overlay</a>
-          <a class="control" href="/mafia1/control.html">Control panel</a>
-        </div>
-      </div>
-      <div class="game-group">
-        <h3>Mafia II: Definitive Edition</h3>
-        <div class="links">
-          <a href="/mafia2/?bg=black">Overlay</a>
-          <a class="control" href="/mafia2/control.html">Control panel</a>
-        </div>
-      </div>
-      <div class="game-group">
-        <h3>Mafia III: Definitive Edition</h3>
-        <div class="links">
-          <a href="/mafia3/?bg=black">Overlay</a>
-          <a class="control" href="/mafia3/control.html">Control panel</a>
-        </div>
-      </div>
-      <p class="card-hint">Overlay-links viser sort baggrund for at kunne ses her. I OBS, brug URL'en uden <code>?bg=black</code>. Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne.</p>
-    </section>
-    <section class="card perfektmatch-card">
-      <div class="card-head">
-        <div class="icon perfektmatch">💘</div>
-        <div>
-          <h2>Perfekt Match</h2>
-          <span>Dating-show overlay med roterende social-media pop-ups</span>
-        </div>
-      </div>
-      <div class="links">
-        <a href="/perfektmatch/">Overlay</a>
-        <a class="control" href="/perfektmatch/control.html">Control panel</a>
-      </div>
-      <p class="card-hint">Understøtter et vilkårligt antal deltagere — tilføj/fjern dem fra kontrolpanelet, episode for episode. Instagram/TikTok-boksene roterer automatisk hvert 15. minut, eller udløs dem manuelt med "Vis nu".</p>
-    </section>
-  </main>
+      <button class="close" id="contact-close" aria-label="Luk">×</button>
+    </div>
+    <p>Send en venneanmodning til mit brugernavn, så vender jeg tilbage.</p>
+    <div class="handle">
+      <strong id="discord-name">dreamglow#8451</strong>
+      <button class="btn" id="copy-discord"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopiér</button>
+    </div>
+    <div class="pop-actions">
+      <a class="primary" href="https://discord.com/app" target="_blank" rel="noopener">Åbn Discord <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      <a class="secondary" href="https://www.twitch.tv/dreamglowxd" target="_blank" rel="noopener">Eller find mig på Twitch</a>
+    </div>
+  </div>
 
-  <footer>
-    <a href="/health">/health</a>
-  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const OVERLAYS = [
+  { id: "brovsbro", cat: "show", emoji: "🥊", tag: "Show", title: "Bro vs Bro", sub: "Aggo vs Marcelo — score-overlay",
+    links: [["Scoreboard", "/brovsbro/overlay"], ["Duel bar", "/brovsbro/overlay?view=duel"], ["Fightcard", "/brovsbro/overlay?view=fightcard"]],
+    control: "/brovsbro/panel" },
+  { id: "minecraft", cat: "spil", emoji: "⛏️", tag: "Spil", title: "Minecraft Boss Tracker", sub: "Warden · Elder Guardian · Wither · Ender Dragon",
+    links: [["Overlay", "/minecraft/overlay?bg=black"], ["Wither Skulls", "/minecraft/wither-overlay?bg=black"]],
+    control: "/minecraft/control" },
+  { id: "rdr2", cat: "spil", emoji: "🤠", tag: "Spil", title: "RDR2 Marathon Tracker", sub: "Story-progression — hostes separat",
+    links: [["Overlay", "https://rdr2-marathon-tracker.onrender.com/overlay"]],
+    control: "https://rdr2-marathon-tracker.onrender.com/control" },
+  { id: "pokemon", cat: "stream", emoji: "⭐", tag: "Stream", title: "Pokémon kortåbning", sub: "Dine egne hits + automatisk 30th Chase List",
+    links: [["Mine hits", "/pokemon/?view=pulls&set=all&bg=black"], ["30th Chase List", "/pokemon/?view=chase&set=30th-celebration&bg=black"]],
+    control: "/pokemon/control.html", extra: [["Pulldex", "https://pulldex.onrender.com/"]],
+    info: "“Mine hits” viser kun kort, du selv tilføjer eller markerer som ramt. Chase-listen roterer gennem de 30 dyreste 30th-kort med Cardmarket-priser i EUR." },
+  { id: "gear", cat: "stream", emoji: "🖥️", tag: "Stream", title: "Mit stream-gear", sub: "Automatisk produktrotation med chatkommandoer",
+    links: [["Overlay", "/gear/"]], control: "/gear/control.html",
+    info: "Viser ét produkt i 7 sekunder ad gangen. Sekvensen gentages automatisk hvert 15. minut." },
+  { id: "gauntlet", cat: "show", emoji: "🎮", tag: "Event", title: "Gaming Gauntlet", sub: "Multi-game challenge-badges + dødstæller",
+    links: [["Overlay", "/gauntlet/"], ["Dødstæller", "/gauntlet/deaths.html"]], control: "/gauntlet/control.html",
+    info: "Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS." },
+  { id: "tlou2", cat: "spil", emoji: "🍄", tag: "Spil", title: "The Last of Us Part II", sub: "Story-progression — auto-opdateres via OCR",
+    links: [["Overlay", "/tlou2/?bg=black"]], control: "/tlou2/control.html",
+    info: "Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
+  { id: "gta5", cat: "spil", emoji: "🚗", tag: "Spil", title: "GTA V Story Tracker", sub: "Story-progression — auto-opdateres via save-fil",
+    links: [["Overlay", "/gta5/?bg=black"]], control: "/gta5/control.html",
+    info: "Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
+  { id: "mafia", cat: "spil", emoji: "🎩", tag: "Spil", title: "Mafia Trilogy Trackers", sub: "Story-progression — auto-opdateres via OCR",
+    groups: [
+      ["Mafia: Definitive Edition", [["Overlay", "/mafia1/?bg=black"], ["Kontrolpanel", "/mafia1/control.html", true]]],
+      ["Mafia II: Definitive Edition", [["Overlay", "/mafia2/?bg=black"], ["Kontrolpanel", "/mafia2/control.html", true]]],
+      ["Mafia III: Definitive Edition", [["Overlay", "/mafia3/?bg=black"], ["Kontrolpanel", "/mafia3/control.html", true]]]
+    ],
+    info: "Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne." },
+  { id: "perfektmatch", cat: "show", emoji: "💘", tag: "Show", title: "Perfekt Match", sub: "Dating-show-overlay med roterende social-media pop-ups",
+    links: [["Overlay", "/perfektmatch/"]], control: "/perfektmatch/control.html",
+    info: "Understøtter et vilkårligt antal deltagere — tilføj/fjern dem fra kontrolpanelet. Instagram/TikTok-boksene roterer hvert 15. minut, eller udløs dem manuelt med “Vis nu”." }
+];
+
+const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+const ICON_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+const ICON_SLIDERS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function obsUrl(href) {
+  const u = new URL(href, location.origin);
+  u.searchParams.delete("bg");
+  return u.toString();
+}
+
+function row([name, href, isControl]) {
+  if (isControl) return `<div class="row"><span class="name">${esc(name)}</span><a class="btn" href="${esc(href)}">Åbn ${ICON_ARROW}</a></div>`;
+  return `<div class="row"><span class="name">${esc(name)}</span>` +
+    `<a class="btn" href="${esc(href)}" target="_blank" rel="noopener">Åbn</a>` +
+    `<button class="btn" data-copy="${esc(obsUrl(href))}" title="Kopiér URL til OBS (gennemsigtig baggrund)">${ICON_COPY}OBS-link</button></div>`;
+}
+
+function card(o) {
+  let body = "";
+  if (o.groups) {
+    body = o.groups.map(([t, links]) => `<div class="group-title">${esc(t)}</div><div class="rows">${links.map(row).join("")}</div>`).join("");
+  } else {
+    body = `<div class="rows">${o.links.map(row).join("")}</div>`;
+  }
+  const extra = o.extra ? `<div class="extra">${o.extra.map(([n, h]) => `<a class="btn" href="${esc(h)}" target="_blank" rel="noopener">${esc(n)} ${ICON_ARROW}</a>`).join("")}</div>` : "";
+  const control = o.control ? `<a class="control" href="${esc(o.control)}">${ICON_SLIDERS} Kontrolpanel</a>` : "";
+  const info = o.info ? `<details><summary>Opsætning &amp; info</summary><p>${o.info}</p></details>` : "";
+  const search = [o.title, o.sub, o.tag, ...(o.links || []).map(l => l[0]), ...(o.groups || []).map(g => g[0])].join(" ").toLowerCase();
+  return `<article class="card" data-cat="${o.cat}" data-search="${esc(search)}">
+    <div class="card-top"><div class="emoji" aria-hidden="true">${o.emoji}</div><span class="tag">${esc(o.tag)}</span></div>
+    <h2>${esc(o.title)}</h2><p class="sub">${esc(o.sub)}</p>
+    ${body}${extra}<div class="card-spacer"></div>${control}${info}
+  </article>`;
+}
+
+const grid = document.getElementById("grid");
+grid.innerHTML = OVERLAYS.map(card).join("");
+
+// Filter + search
+let filter = "alle";
+const q = document.getElementById("q");
+function apply() {
+  const term = q.value.trim().toLowerCase();
+  let shown = 0;
+  grid.querySelectorAll(".card").forEach(c => {
+    const ok = (filter === "alle" || c.dataset.cat === filter) && (!term || c.dataset.search.includes(term));
+    c.hidden = !ok; if (ok) shown++;
+  });
+  document.getElementById("empty").style.display = shown ? "none" : "block";
+}
+q.addEventListener("input", apply);
+document.getElementById("chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  filter = b.dataset.filter;
+  document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b));
+  apply();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement !== q) { e.preventDefault(); q.focus(); }
+  if (e.key === "Escape") setContact(false);
+});
+
+// Copy helpers
+const toast = document.getElementById("toast");
+let toastTimer;
+function showToast(msg) {
+  toast.textContent = msg; toast.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove("show"), 1800);
+}
+async function copy(text, btn, msg) {
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select();
+    try { document.execCommand("copy"); } catch {} t.remove();
+  }
+  if (btn) { btn.classList.add("copied"); setTimeout(() => btn.classList.remove("copied"), 1500); }
+  showToast(msg);
+}
+grid.addEventListener("click", e => {
+  const b = e.target.closest("[data-copy]"); if (!b) return;
+  copy(b.dataset.copy, b, "OBS-link kopieret");
+});
+
+// Contact popover
+const pop = document.getElementById("contact");
+const fab = document.getElementById("contact-btn");
+function setContact(open) { pop.classList.toggle("open", open); fab.setAttribute("aria-expanded", open); }
+fab.addEventListener("click", () => setContact(!pop.classList.contains("open")));
+document.getElementById("contact-close").addEventListener("click", () => setContact(false));
+document.addEventListener("click", e => { if (!pop.contains(e.target) && !fab.contains(e.target)) setContact(false); });
+document.getElementById("copy-discord").addEventListener("click", e =>
+  copy(document.getElementById("discord-name").textContent, e.currentTarget, "Discord-navn kopieret"));
+
+// Server status
+(async () => {
+  const el = document.getElementById("status"), txt = document.getElementById("status-text");
+  try {
+    const r = await fetch("/health", { cache: "no-store" });
+    const ok = r.ok && (await r.json()).ok;
+    el.classList.add(ok ? "ok" : "down"); txt.textContent = ok ? "Server online" : "Server svarer ikke";
+  } catch { el.classList.add("down"); txt.textContent = "Server svarer ikke"; }
+})();
+</script>
 </body>
 </html>
