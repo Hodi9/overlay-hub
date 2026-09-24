@@ -190,6 +190,7 @@
         <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#221c15"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#c7b6ff" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#c7b6ff"/><path d="M24 51h16" stroke="#c7b6ff" stroke-width="4" stroke-linecap="round"/></svg>
         Overlay Hub
       </a>
+      <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
     </header>
 
     <section class="hero">
@@ -221,7 +222,6 @@
 
     <footer>
       <span>Lavet af dreamglow · <a href="https://www.twitch.tv/dreamglowxd" target="_blank" rel="noopener">twitch.tv/dreamglowxd</a></span>
-      <a href="/health">Serverstatus</a>
     </footer>
   </div>
 
@@ -398,6 +398,23 @@ document.addEventListener("click", e => { if (!pop.contains(e.target) && !fab.co
 document.getElementById("copy-discord").addEventListener("click", e =>
   copy(document.getElementById("discord-name").textContent, e.currentTarget, "Discord-navn kopieret"));
 
+// Server status
+async function checkServer() {
+  const el = document.getElementById("status"), txt = document.getElementById("status-text");
+  for (let i = 0; i < 4; i++) {
+    try {
+      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 8000);
+      const r = await fetch("/health?t=" + Date.now(), { cache: "no-store", signal: ctrl.signal });
+      clearTimeout(t);
+      if (r.ok) { el.className = "status ok"; txt.textContent = "Server online"; return; }
+    } catch {}
+    txt.textContent = "Tjekker server…";
+    await new Promise((res) => setTimeout(res, 2500));
+  }
+  el.className = "status down"; txt.textContent = "Server svarer ikke";
+}
+checkServer();
+setInterval(checkServer, 60000);
 </script>
 </body>
 </html>
