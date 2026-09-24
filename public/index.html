@@ -266,7 +266,7 @@ const OVERLAYS = [
     links: [["Mine hits", "/pokemon/?view=pulls&set=all"], ["30th Chase List", "/pokemon/?view=chase&set=30th-celebration"]],
     control: "/pokemon/control.html", extra: [["Pulldex", "https://pulldex.onrender.com/"]],
     info: "“Mine hits” viser kun kort, du selv tilføjer eller markerer som ramt. Chase-listen roterer gennem de 30 dyreste 30th-kort med Cardmarket-priser i EUR." },
-  { id: "gear", cat: "stream", tag: "Stream", title: "Mit stream-gear", sub: "Automatisk produktrotation med chatkommandoer",
+  { id: "gear", cat: "stream", tag: "Stream", title: "Wendels Power Gear", hidden: true, sub: "Automatisk produktrotation med chatkommandoer",
     links: [["Overlay", "/gear/"]], control: "/gear/control.html",
     info: "Viser ét produkt i 7 sekunder ad gangen. Sekvensen gentages automatisk hvert 15. minut." },
   { id: "gauntlet", cat: "show", tag: "Event", title: "Gaming Gauntlet", sub: "Multi-game challenge-badges + dødstæller",
@@ -341,7 +341,7 @@ function card(o, i) {
 }
 
 const grid = document.getElementById("grid");
-grid.innerHTML = OVERLAYS.map(card).join("");
+grid.innerHTML = OVERLAYS.filter((o) => !o.hidden).map(card).join("");
 
 // Filter + search
 let filter = "alle";
