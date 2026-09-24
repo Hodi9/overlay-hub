@@ -88,8 +88,21 @@
     background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
     padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column;
   }
-  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-  .emoji { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 21px; background: var(--bg); }
+  .cover {
+    position: relative; margin: -22px -22px 18px; height: 92px; border-radius: 21px 21px 0 0;
+    border-bottom: 1px solid var(--line); background-color: #1c1828; overflow: hidden;
+    display: flex; align-items: flex-start; justify-content: flex-end; padding: 14px;
+  }
+  .cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(22,19,30,.85)); pointer-events: none; }
+  .cover .tag { position: relative; z-index: 1; background: rgba(13,11,18,.72); backdrop-filter: blur(4px); }
+  .p0 { background-image: radial-gradient(rgba(199,182,255,.45) 1.5px, transparent 1.7px); background-size: 14px 14px; }
+  .p1 { background-image: repeating-linear-gradient(45deg, rgba(199,182,255,.22) 0 5px, transparent 5px 14px); }
+  .p2 { background-image: linear-gradient(rgba(199,182,255,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(199,182,255,.2) 1px, transparent 1px); background-size: 18px 18px; }
+  .p3 { background-image: conic-gradient(rgba(199,182,255,.16) 25%, transparent 0 50%, rgba(199,182,255,.16) 0 75%, transparent 0); background-size: 22px 22px; }
+  .p4 { background-image: repeating-radial-gradient(circle at 100% 0, rgba(199,182,255,.24) 0 2px, transparent 2px 13px); }
+  .p5 { background-image: linear-gradient(135deg, rgba(199,182,255,.18) 25%, transparent 25%), linear-gradient(225deg, rgba(199,182,255,.18) 25%, transparent 25%); background-size: 22px 22px; background-position: 0 0, 11px 0; }
+  .p6 { background-image: repeating-linear-gradient(0deg, rgba(199,182,255,.2) 0 2px, transparent 2px 10px); }
+  .p7 { background-image: radial-gradient(circle, transparent 6px, rgba(199,182,255,.2) 7px, transparent 8px); background-size: 24px 24px; }
   .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mint-dark); background: var(--mint-soft); padding: 4px 9px; border-radius: 999px; }
   .card h2 { margin: 0; font-size: 20px; letter-spacing: -.015em; line-height: 1.2; }
   .card .sub { margin: 4px 0 16px; color: var(--muted); font-size: 14px; }
@@ -253,39 +266,39 @@
 
 <script>
 const OVERLAYS = [
-  { id: "brovsbro", cat: "show", emoji: "🥊", tag: "Show", title: "Bro vs Bro", sub: "Aggo vs Marcelo — score-overlay",
+  { id: "brovsbro", cat: "show", tag: "Show", title: "Bro vs Bro", sub: "Aggo vs Marcelo — score-overlay",
     links: [["Scoreboard", "/brovsbro/overlay"], ["Duel bar", "/brovsbro/overlay?view=duel"], ["Fightcard", "/brovsbro/overlay?view=fightcard"]],
     control: "/brovsbro/panel" },
-  { id: "minecraft", cat: "spil", emoji: "⛏️", tag: "Spil", title: "Minecraft Boss Tracker", sub: "Warden · Elder Guardian · Wither · Ender Dragon",
+  { id: "minecraft", cat: "spil", tag: "Spil", title: "Minecraft Boss Tracker", sub: "Warden · Elder Guardian · Wither · Ender Dragon",
     links: [["Overlay", "/minecraft/overlay"], ["Wither Skulls", "/minecraft/wither-overlay"]],
     control: "/minecraft/control" },
-  { id: "rdr2", cat: "spil", emoji: "🤠", tag: "Spil", title: "RDR2 Marathon Tracker", sub: "Story-progression — hostes separat",
+  { id: "rdr2", cat: "spil", tag: "Spil", title: "RDR2 Marathon Tracker", sub: "Story-progression — hostes separat",
     links: [["Overlay", "https://rdr2-marathon-tracker.onrender.com/overlay"]],
     control: "https://rdr2-marathon-tracker.onrender.com/control" },
-  { id: "pokemon", cat: "stream", emoji: "⭐", tag: "Stream", title: "Pokémon kortåbning", sub: "Dine egne hits + automatisk 30th Chase List",
+  { id: "pokemon", cat: "stream", tag: "Stream", title: "Pokémon kortåbning", sub: "Dine egne hits + automatisk 30th Chase List",
     links: [["Mine hits", "/pokemon/?view=pulls&set=all"], ["30th Chase List", "/pokemon/?view=chase&set=30th-celebration"]],
     control: "/pokemon/control.html", extra: [["Pulldex", "https://pulldex.onrender.com/"]],
     info: "“Mine hits” viser kun kort, du selv tilføjer eller markerer som ramt. Chase-listen roterer gennem de 30 dyreste 30th-kort med Cardmarket-priser i EUR." },
-  { id: "gear", cat: "stream", emoji: "🖥️", tag: "Stream", title: "Mit stream-gear", sub: "Automatisk produktrotation med chatkommandoer",
+  { id: "gear", cat: "stream", tag: "Stream", title: "Mit stream-gear", sub: "Automatisk produktrotation med chatkommandoer",
     links: [["Overlay", "/gear/"]], control: "/gear/control.html",
     info: "Viser ét produkt i 7 sekunder ad gangen. Sekvensen gentages automatisk hvert 15. minut." },
-  { id: "gauntlet", cat: "show", emoji: "🎮", tag: "Event", title: "Gaming Gauntlet", sub: "Multi-game challenge-badges + dødstæller",
+  { id: "gauntlet", cat: "show", tag: "Event", title: "Gaming Gauntlet", sub: "Multi-game challenge-badges + dødstæller",
     links: [["Overlay", "/gauntlet/"], ["Dødstæller", "/gauntlet/deaths.html"]], control: "/gauntlet/control.html",
     info: "Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS." },
-  { id: "tlou2", cat: "spil", emoji: "🍄", tag: "Spil", title: "The Last of Us Part II", sub: "Story-progression — auto-opdateres via OCR",
+  { id: "tlou2", cat: "spil", tag: "Spil", title: "The Last of Us Part II", sub: "Story-progression — auto-opdateres via OCR",
     links: [["Overlay", "/tlou2/"]], control: "/tlou2/control.html",
     info: "Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
-  { id: "gta5", cat: "spil", emoji: "🚗", tag: "Spil", title: "GTA V Story Tracker", sub: "Story-progression — auto-opdateres via save-fil",
+  { id: "gta5", cat: "spil", tag: "Spil", title: "GTA V Story Tracker", sub: "Story-progression — auto-opdateres via save-fil",
     links: [["Overlay", "/gta5/"]], control: "/gta5/control.html",
     info: "Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
-  { id: "mafia", cat: "spil", emoji: "🎩", tag: "Spil", title: "Mafia Trilogy Trackers", sub: "Story-progression — auto-opdateres via OCR",
+  { id: "mafia", cat: "spil", tag: "Spil", title: "Mafia Trilogy Trackers", sub: "Story-progression — auto-opdateres via OCR",
     groups: [
       ["Mafia: Definitive Edition", [["Overlay", "/mafia1/"], ["Kontrolpanel", "/mafia1/control.html", true]]],
       ["Mafia II: Definitive Edition", [["Overlay", "/mafia2/"], ["Kontrolpanel", "/mafia2/control.html", true]]],
       ["Mafia III: Definitive Edition", [["Overlay", "/mafia3/"], ["Kontrolpanel", "/mafia3/control.html", true]]]
     ],
     info: "Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne." },
-  { id: "perfektmatch", cat: "show", emoji: "💘", tag: "Show", title: "Perfekt Match", sub: "Dating-show-overlay med roterende social-media pop-ups",
+  { id: "perfektmatch", cat: "show", tag: "Show", title: "Perfekt Match", sub: "Dating-show-overlay med roterende social-media pop-ups",
     links: [["Overlay", "/perfektmatch/"]], control: "/perfektmatch/control.html",
     info: "Understøtter et vilkårligt antal deltagere — tilføj/fjern dem fra kontrolpanelet. Instagram/TikTok-boksene roterer hvert 15. minut, eller udløs dem manuelt med “Vis nu”." }
 ];
@@ -309,7 +322,7 @@ function row([name, href, isControl]) {
     `<button class="btn" data-copy="${esc(obsUrl(href))}" title="Kopiér URL til OBS">${ICON_COPY}Kopiér</button></div>`;
 }
 
-function card(o) {
+function card(o, i) {
   let body = "";
   if (o.groups) {
     body = o.groups.map(([t, links]) => `<div class="group-title">${esc(t)}</div><div class="rows">${links.map(row).join("")}</div>`).join("");
@@ -321,7 +334,7 @@ function card(o) {
   const info = o.info ? `<details><summary>Opsætning &amp; info</summary><p>${o.info}</p></details>` : "";
   const search = [o.title, o.sub, o.tag, ...(o.links || []).map(l => l[0]), ...(o.groups || []).map(g => g[0])].join(" ").toLowerCase();
   return `<article class="card" data-cat="${o.cat}" data-search="${esc(search)}">
-    <div class="card-top"><div class="emoji" aria-hidden="true">${o.emoji}</div><span class="tag">${esc(o.tag)}</span></div>
+    <div class="cover p${i % 8}" aria-hidden="true"><span class="tag">${esc(o.tag)}</span></div>
     <h2>${esc(o.title)}</h2><p class="sub">${esc(o.sub)}</p>
     ${body}${extra}<div class="card-spacer"></div>${control}${info}
   </article>`;
