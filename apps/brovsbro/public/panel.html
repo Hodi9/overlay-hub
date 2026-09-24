@@ -4,165 +4,190 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bro vs Bro — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
-
   :root {
-    --ink: #0a0a16;
-    --panel: #150e26;
-    --panel-2: #1c1330;
-    --bone: #f1edff;
-    --bone-dim: #8f87ac;
-    --p1: #ff3864;
-    --p2: #1ee8ff;
-    --coin: #ffd23f;
-    --line: rgba(241, 237, 255, 0.14);
-    --danger: #ff6b3d;
+    --bg: #f4eee3;
+    --paper: #fffbf4;
+    --ink: #221c15;
+    --muted: #7a6f61;
+    --line: #e7dccb;
+    --accent: #c4b1ff;
+    --accent-soft: #efe8ff;
+    --danger: #c2413b;
+    --left: #123f6e;
+    --right: #d6d6d6;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--ink);
-    color: var(--bone);
-    font-family: 'VT323', monospace;
-    font-size: 18px;
-    min-height: 100vh;
-    position: relative;
-  }
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0px, rgba(255, 255, 255, 0.025) 1px, transparent 2px, transparent 3px);
-  }
-  .wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 28px 20px 80px; display: flex; flex-direction: column; gap: 24px; }
-  h1 { font-family: 'Press Start 2P', monospace; font-size: 20px; text-transform: uppercase; margin: 0; line-height: 1.4; text-shadow: 3px 3px 0 var(--p1), 6px 6px 0 var(--p2); }
-  .sub { color: var(--bone-dim); font-size: 15px; margin: 8px 0 0; }
-  .sub code { color: var(--coin); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Schibsted Grotesk", system-ui, sans-serif; font-size: 15px; line-height: 1.45; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 18px 80px; display: flex; flex-direction: column; gap: 16px; }
+  h1 { margin: 0; font-size: 30px; letter-spacing: -.02em; font-weight: 800; }
+  .sub { color: var(--muted); margin: 6px 0 0; font-size: 14px; }
+  .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .links a { font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: none; border: 1px solid var(--line); background: var(--paper); padding: 7px 12px; border-radius: 999px; }
+  .links a:hover { border-color: var(--ink); }
 
-  .card { background: var(--panel); border: 2px solid var(--panel-2); box-shadow: 0 0 0 2px var(--cabinet-edge, #0d0819); padding: 20px; }
-  .card h2 { font-family: 'Press Start 2P', monospace; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; color: var(--coin); margin: 0; }
-  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-  .clear-btn {
-    appearance: none; border: 2px solid var(--line); background: transparent; color: var(--bone-dim);
-    width: 28px; height: 28px; font-size: 14px; cursor: pointer; font-family: 'VT323', monospace; line-height: 1;
-    flex-shrink: 0;
-  }
-  .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-shadow: 0 10px 26px -18px rgba(34,28,21,.3); }
+  .card h2 { margin: 0 0 14px; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .card-head h2 { margin: 0; }
 
-  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .player { background: var(--panel-2); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 4px solid var(--accent); }
-  .player.marcelo { --accent: var(--p1); }
-  .player.aggo { --accent: var(--p2); }
-  .player-name { font-family: 'VT323', monospace; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; font-size: 20px; }
-  .player-score { font-family: 'Press Start 2P', monospace; font-size: 34px; color: var(--accent); text-shadow: 0 0 12px var(--accent); font-variant-numeric: tabular-nums; }
-  .score-controls { display: flex; gap: 10px; }
-  .score-btn {
-    appearance: none; border: 2px solid var(--line); background: var(--panel); color: var(--bone);
-    width: 44px; height: 44px; font-size: 20px; cursor: pointer; font-family: 'VT323', monospace;
-  }
-  .score-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .score-btn:active { transform: scale(0.94); }
-  .score-btn.small { width: 28px; height: 28px; font-size: 14px; }
-  .sets-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
-  .sets-label { font-size: 14px; color: var(--bone-dim); }
-  .sets-label b { color: var(--accent); }
+  .players { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .players { grid-template-columns: 1fr; } }
+  .player { border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 5px solid var(--pc); }
+  .player.marcelo { --pc: var(--left); }
+  .player.aggo { --pc: var(--right); }
+  .player-name { font-weight: 700; font-size: 17px; }
+  .player-score { font-weight: 800; font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .score-controls { display: flex; gap: 8px; }
+  .score-btn { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); width: 48px; height: 44px; border-radius: 12px; font-size: 22px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .score-btn:hover { border-color: var(--ink); }
+  .score-btn:active { transform: scale(.95); }
+  .score-btn.plus { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .score-btn.small { width: 32px; height: 30px; font-size: 16px; border-radius: 9px; }
+  .sets-row { display: flex; align-items: center; gap: 8px; }
+  .sets-label { font-size: 14px; color: var(--muted); }
+  .sets-label b { color: var(--ink); }
 
-  .row { display: flex; gap: 10px; align-items: center; }
-  .field {
-    flex: 1; background: var(--panel-2); border: 2px solid var(--line); color: var(--bone);
-    padding: 10px 12px; font-family: 'VT323', monospace; font-size: 17px;
-  }
-  .field:focus { outline: 2px solid var(--coin); outline-offset: 1px; }
-  .btn {
-    appearance: none; border: 2px solid var(--line); background: var(--panel-2); color: var(--bone);
-    padding: 10px 16px; font-family: 'VT323', monospace; font-weight: 400;
-    letter-spacing: 0.04em; text-transform: uppercase; font-size: 16px; cursor: pointer;
-  }
-  .btn:hover { border-color: var(--coin); color: var(--coin); }
-  .btn.primary { background: var(--coin); border-color: var(--coin); color: var(--ink); font-weight: 700; }
-  .btn.primary:hover { opacity: 0.9; color: var(--ink); }
+  /* deltagere */
+  .people { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .people { grid-template-columns: 1fr; } }
+  .person { border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .person-top { display: flex; align-items: center; gap: 12px; }
+  .photo { width: 72px; height: 72px; border-radius: 14px; overflow: hidden; flex-shrink: 0; display: grid; place-items: center; font-weight: 800; font-size: 24px; color: #fff; background: var(--pc); }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .person-side { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .photo-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  label.small-btn, button.small-btn { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 6px 10px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  label.small-btn:hover, button.small-btn:hover { border-color: var(--ink); }
+  .color-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .color-row input[type=color] { width: 40px; height: 30px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--paper); cursor: pointer; }
+
+  .row { display: flex; gap: 8px; align-items: center; }
+  .field { flex: 1; min-width: 0; background: #fff; border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; border-radius: 10px; font: inherit; }
+  .field:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  .btn { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 10px 14px; border-radius: 10px; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+  .btn:hover { border-color: var(--ink); }
+  .btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .btn.primary:hover { background: #3a3127; }
   .btn.danger { color: var(--danger); }
   .btn.danger:hover { border-color: var(--danger); }
+  .btn.accent { background: var(--accent); border-color: var(--ink); }
 
   .current-dyst { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .current-dyst .name { font-family: 'Press Start 2P', monospace; font-size: 18px; text-transform: uppercase; color: var(--bone); }
-  .round-pill { font-family: 'VT323', monospace; letter-spacing: 0.04em; text-transform: uppercase; font-size: 15px; color: var(--coin); }
+  .current-dyst .name { font-weight: 800; font-size: 22px; }
+  .round-pill { font-size: 13px; font-weight: 700; background: var(--accent-soft); color: #5b3fcf; padding: 5px 11px; border-radius: 999px; }
+  .clear-btn { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--muted); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+  .clear-btn:hover { border-color: var(--danger); color: var(--danger); }
 
-  .queue-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
-  .queue-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--panel-2); padding: 8px 12px; font-size: 17px; }
-  .queue-item .pos { color: var(--coin); font-family: 'VT323', monospace; font-size: 15px; }
-  .queue-item button { appearance: none; border: none; background: transparent; color: var(--bone-dim); cursor: pointer; font-size: 16px; }
+  .queue-list { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .queue-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+  .queue-item .pos { color: var(--muted); font-weight: 700; margin-right: 6px; }
+  .queue-item button { appearance: none; border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 15px; }
   .queue-item button:hover { color: var(--danger); }
-  .empty { color: var(--bone-dim); font-size: 15px; font-style: italic; }
+  .empty { color: var(--muted); font-style: italic; }
 
-  .preset-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-  .preset-btn {
-    appearance: none; border: 2px solid var(--line); background: transparent; color: var(--bone-dim);
-    padding: 6px 12px; font-size: 14px; cursor: pointer; font-family: 'VT323', monospace;
-  }
-  .preset-btn:hover { border-color: var(--coin); color: var(--coin); }
-  .preset-btn.active { border-color: var(--coin); color: var(--coin); background: rgba(255, 210, 63, 0.12); }
+  .preset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .preset-btn { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 6px 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .preset-btn:hover { border-color: var(--ink); }
+  .preset-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-  .log { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
-  .log-item { font-size: 16px; color: var(--bone-dim); display: flex; gap: 8px; }
-  .log-item time { font-variant-numeric: tabular-nums; opacity: 0.7; }
+  .log { display: flex; flex-direction: column; gap: 4px; max-height: 190px; overflow-y: auto; }
+  .log-item { font-size: 14px; color: var(--muted); display: flex; gap: 10px; }
+  .log-item time { font-variant-numeric: tabular-nums; }
 
-  .lock { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
-  .lock input { width: 240px; }
-  .toast {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: var(--p1); color: var(--bone); padding: 10px 18px; font-size: 15px;
-    opacity: 0; pointer-events: none; transition: opacity 0.2s ease; font-family: 'VT323', monospace;
-    border: 2px solid var(--ink);
-  }
+  .lock { display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; min-height: 70vh; text-align: center; padding: 20px; }
+  .lock .field { width: 260px; flex: none; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: #fff; padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
   .toast.show { opacity: 1; }
-  .toast.success { background: #2fb86b; }
+  .toast.success { background: var(--ink); }
 </style>
 </head>
 <body>
 
 <div class="wrap" id="app" hidden>
   <div>
-    <h1>Bro vs Bro — Kontrolpanel</h1>
-    <p class="sub">Overlay-url til OBS/Pogly: <code id="overlay-url"></code></p>
+    <h1>Bro vs Bro</h1>
+    <p class="sub">Kontrolpanel · ændringer vises med det samme på alle overlays.</p>
+    <div class="links">
+      <a href="/brovsbro/overlay" target="_blank" rel="noopener">Scoreboard ↗</a>
+      <a href="/brovsbro/overlay?view=duel" target="_blank" rel="noopener">Duel bar ↗</a>
+      <a href="/brovsbro/overlay?view=fightcard" target="_blank" rel="noopener">Fightcard ↗</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>Deltagere</h2>
+      <button class="small-btn" id="players-reset-btn" title="Gendan Marcelo og Aggo">Standard</button>
+    </div>
+    <div class="people">
+      <div class="person" data-person="marcelo" style="--pc: var(--left)">
+        <div class="person-top">
+          <div class="photo" id="photo-marcelo"></div>
+          <div>
+            <div class="person-side">Venstre side</div>
+            <div class="photo-actions">
+              <label class="small-btn">Upload billede<input type="file" accept="image/*" hidden id="file-marcelo"></label>
+              <button class="small-btn" id="noimg-marcelo">Fjern</button>
+            </div>
+          </div>
+        </div>
+        <input class="field" id="name-marcelo" placeholder="Navn" maxlength="32">
+        <div class="color-row">Farve <input type="color" id="color-marcelo"></div>
+        <button class="btn primary" id="save-marcelo">Gem</button>
+      </div>
+      <div class="person" data-person="aggo" style="--pc: var(--right)">
+        <div class="person-top">
+          <div class="photo" id="photo-aggo"></div>
+          <div>
+            <div class="person-side">Højre side</div>
+            <div class="photo-actions">
+              <label class="small-btn">Upload billede<input type="file" accept="image/*" hidden id="file-aggo"></label>
+              <button class="small-btn" id="noimg-aggo">Fjern</button>
+            </div>
+          </div>
+        </div>
+        <input class="field" id="name-aggo" placeholder="Navn" maxlength="32">
+        <div class="color-row">Farve <input type="color" id="color-aggo"></div>
+        <button class="btn primary" id="save-aggo">Gem</button>
+      </div>
+    </div>
   </div>
 
   <div class="card">
     <h2>Point</h2>
     <div class="players">
       <div class="player marcelo">
-        <span class="player-name">Marcelo</span>
+        <span class="player-name" data-pname="marcelo">Marcelo</span>
         <span class="player-score" id="score-marcelo">0</span>
         <div class="score-controls">
           <button class="score-btn" data-action="score:dec" data-player="marcelo">&minus;</button>
-          <button class="score-btn" data-action="score:inc" data-player="marcelo">+</button>
+          <button class="score-btn plus" data-action="score:inc" data-player="marcelo">+</button>
         </div>
       </div>
       <div class="player aggo">
-        <span class="player-name">Aggo</span>
+        <span class="player-name" data-pname="aggo">Aggo</span>
         <span class="player-score" id="score-aggo">0</span>
         <div class="score-controls">
           <button class="score-btn" data-action="score:dec" data-player="aggo">&minus;</button>
-          <button class="score-btn" data-action="score:inc" data-player="aggo">+</button>
+          <button class="score-btn plus" data-action="score:inc" data-player="aggo">+</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-head">
-      <h2>Duel-bar</h2>
-    </div>
+    <h2>Duel bar</h2>
     <div class="players">
       <div class="player marcelo">
-        <span class="player-name">Marcelo</span>
+        <span class="player-name" data-pname="marcelo">Marcelo</span>
         <span class="player-score" id="duel-score-marcelo">0</span>
         <div class="score-controls">
           <button class="score-btn" data-action="duel:point:dec" data-player="marcelo">&minus;</button>
-          <button class="score-btn" data-action="duel:point:inc" data-player="marcelo">+</button>
+          <button class="score-btn plus" data-action="duel:point:inc" data-player="marcelo">+</button>
         </div>
         <div class="sets-row">
           <span class="sets-label">Sæt: <b id="duel-sets-marcelo">0</b></span>
@@ -171,11 +196,11 @@
         </div>
       </div>
       <div class="player aggo">
-        <span class="player-name">Aggo</span>
+        <span class="player-name" data-pname="aggo">Aggo</span>
         <span class="player-score" id="duel-score-aggo">0</span>
         <div class="score-controls">
           <button class="score-btn" data-action="duel:point:dec" data-player="aggo">&minus;</button>
-          <button class="score-btn" data-action="duel:point:inc" data-player="aggo">+</button>
+          <button class="score-btn plus" data-action="duel:point:inc" data-player="aggo">+</button>
         </div>
         <div class="sets-row">
           <span class="sets-label">Sæt: <b id="duel-sets-aggo">0</b></span>
@@ -184,9 +209,8 @@
         </div>
       </div>
     </div>
-    <div class="row" style="margin-top: 14px; flex-wrap: wrap;">
+    <div class="row" style="margin-top: 12px;">
       <button class="btn" id="duel-new-set-btn">Nyt sæt (nulstil point)</button>
-      <a class="btn" href="/brovsbro/overlay?view=duel" target="_blank" rel="noreferrer" style="display: inline-block; text-decoration: none;">Åbn duel-overlay</a>
     </div>
   </div>
 
@@ -199,7 +223,7 @@
       <span class="name" id="current-name">—</span>
       <span class="round-pill" id="round-pill">Runde 1</span>
     </div>
-    <div class="row" style="margin-top: 14px;">
+    <div class="row" style="margin-top: 12px;">
       <input class="field" id="dyst-input" placeholder="Sæt dyst manuelt, fx Bowling" />
       <button class="btn" id="set-dyst-btn">Sæt</button>
     </div>
@@ -209,11 +233,11 @@
   <div class="card">
     <h2>Næste dyster</h2>
     <ul class="queue-list" id="queue-list"></ul>
-    <div class="row" style="margin-top: 14px;">
+    <div class="row" style="margin-top: 12px;">
       <input class="field" id="queue-input" placeholder="Tilføj dyst til køen" />
       <button class="btn" id="queue-add-btn">Tilføj</button>
     </div>
-    <button class="btn primary" id="next-btn" style="margin-top: 14px; width: 100%;">Start næste dyst i køen →</button>
+    <button class="btn accent" id="next-btn" style="margin-top: 12px; width: 100%;">Start næste dyst i køen →</button>
   </div>
 
   <div class="card">
@@ -245,12 +269,16 @@
   let token = localStorage.getItem("bvb-panel-key") || "";
   let requiresKey = false;
   let state = null;
+  const pending = { marcelo: undefined, aggo: undefined };
+  const dirty = { marcelo: false, aggo: false };
+  const DEFAULT_PLAYERS = {
+    marcelo: { name: "Marcelo", image: "/brovsbro/images/marcelo.png", color: "#123f6e" },
+    aggo: { name: "Aggo", image: "/brovsbro/images/aggo.png", color: "#d6d6d6" }
+  };
 
   const app = document.getElementById("app");
   const lock = document.getElementById("lock");
   const toast = document.getElementById("toast");
-
-  document.getElementById("overlay-url").textContent = location.origin + "/brovsbro/overlay";
 
   function showToast(msg, success) {
     toast.textContent = msg;
@@ -258,54 +286,109 @@
     toast.classList.add("show");
     setTimeout(() => toast.classList.remove("show"), 2200);
   }
+  function send(type, extra = {}) { socket.emit("panel:action", { type, token, ...extra }); }
+  function tryUnlock() { app.hidden = false; lock.hidden = true; }
+  function verify(candidate) { token = candidate; socket.emit("panel:action", { type: "ping", token }); }
 
-  function send(type, extra = {}) {
-    socket.emit("panel:action", { type, token, ...extra });
-  }
-
-  function tryUnlock() {
-    app.hidden = false;
-    lock.hidden = true;
-  }
-
-  function verify(candidateToken) {
-    token = candidateToken;
-    socket.emit("panel:action", { type: "ping", token });
-  }
-
-  document.getElementById("unlock-btn").addEventListener("click", () => {
-    verify(document.getElementById("key-input").value);
-  });
-  document.getElementById("key-input").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") document.getElementById("unlock-btn").click();
-  });
+  document.getElementById("unlock-btn").addEventListener("click", () => verify(document.getElementById("key-input").value));
+  document.getElementById("key-input").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("unlock-btn").click(); });
 
   socket.on("config", (cfg) => {
     requiresKey = cfg.requiresKey;
-    if (!requiresKey) { tryUnlock(); }
-    else if (token) { verify(token); }
+    if (!requiresKey) tryUnlock();
+    else if (token) verify(token);
   });
-
   socket.on("panel:denied", () => {
     showToast("Forkert panel-kode");
-    app.hidden = true;
-    lock.hidden = false;
+    app.hidden = true; lock.hidden = false;
     localStorage.removeItem("bvb-panel-key");
   });
-
   socket.on("panel:ok", () => {
     localStorage.setItem("bvb-panel-key", token);
     if (app.hidden) showToast("Adgang godkendt ✓", true);
     tryUnlock();
   });
+  socket.on("panel:error", (msg) => showToast(msg || "Noget gik galt"));
+  socket.on("state", (s) => { state = s; render(); });
 
-  socket.on("state", (s) => {
-    state = s;
-    render();
+  function initials(name) { return String(name || "?").trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase(); }
+  function paintPhoto(el, image, name) {
+    el.textContent = "";
+    if (image) { const img = new Image(); img.alt = ""; img.src = image; img.onerror = () => { el.textContent = initials(name); }; el.appendChild(img); }
+    else el.textContent = initials(name);
+  }
+
+  function renderPeople() {
+    const players = { ...DEFAULT_PLAYERS, ...(state.players || {}) };
+    ["marcelo", "aggo"].forEach((id) => {
+      const p = players[id];
+      document.querySelectorAll('[data-pname="' + id + '"]').forEach((el) => { el.textContent = p.name; });
+      document.documentElement.style.setProperty(id === "marcelo" ? "--left" : "--right", p.color);
+      if (dirty[id]) return;
+      document.getElementById("name-" + id).value = p.name;
+      document.getElementById("color-" + id).value = p.color;
+      paintPhoto(document.getElementById("photo-" + id), p.image, p.name);
+    });
+  }
+
+  function markDirty(id) { dirty[id] = true; }
+  function resizeImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const size = 320, canvas = document.createElement("canvas");
+          canvas.width = size; canvas.height = size;
+          const s = Math.min(img.width, img.height);
+          canvas.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  ["marcelo", "aggo"].forEach((id) => {
+    const nameEl = document.getElementById("name-" + id);
+    const colorEl = document.getElementById("color-" + id);
+    nameEl.addEventListener("input", () => markDirty(id));
+    nameEl.addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("save-" + id).click(); });
+    colorEl.addEventListener("input", () => { markDirty(id); document.getElementById("photo-" + id).parentElement.parentElement.style.setProperty("--pc", colorEl.value); });
+    document.getElementById("file-" + id).addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        pending[id] = await resizeImage(file);
+        markDirty(id);
+        paintPhoto(document.getElementById("photo-" + id), pending[id], nameEl.value);
+      } catch { showToast("Kunne ikke læse billedet"); }
+      e.target.value = "";
+    });
+    document.getElementById("noimg-" + id).addEventListener("click", () => {
+      pending[id] = "";
+      markDirty(id);
+      paintPhoto(document.getElementById("photo-" + id), "", nameEl.value);
+    });
+    document.getElementById("save-" + id).addEventListener("click", () => {
+      const payload = { player: id, name: nameEl.value, color: colorEl.value };
+      if (pending[id] !== undefined) payload.image = pending[id];
+      send("player:update", payload);
+      pending[id] = undefined;
+      dirty[id] = false;
+      showToast("Gemt ✓", true);
+    });
+  });
+  document.getElementById("players-reset-btn").addEventListener("click", () => {
+    if (confirm("Gendan standard-deltagerne (Marcelo og Aggo)?")) { dirty.marcelo = dirty.aggo = false; pending.marcelo = pending.aggo = undefined; send("players:reset"); }
   });
 
   function render() {
     if (!state) return;
+    renderPeople();
     document.getElementById("score-marcelo").textContent = state.scores.marcelo;
     document.getElementById("score-aggo").textContent = state.scores.aggo;
     document.getElementById("duel-score-marcelo").textContent = state.duel.points.marcelo;
@@ -317,11 +400,9 @@
 
     const presetRow = document.getElementById("preset-row");
     presetRow.innerHTML = "";
-    const presetNames = [...new Set(state.queue.map((d) => d.name))];
-    presetNames.forEach((name) => {
+    [...new Set(state.queue.map((d) => d.name))].forEach((name) => {
       const b = document.createElement("button");
-      b.className = "preset-btn";
-      if (state.current?.name === name) b.classList.add("active");
+      b.className = "preset-btn" + (state.current?.name === name ? " active" : "");
       b.textContent = name;
       b.addEventListener("click", () => send("dyst:setCurrent", { name }));
       presetRow.appendChild(b);
@@ -329,20 +410,22 @@
 
     const list = document.getElementById("queue-list");
     list.innerHTML = "";
-    if (state.queue.length === 0) {
+    if (!state.queue.length) {
       const li = document.createElement("li");
-      li.className = "empty";
-      li.textContent = "Køen er tom";
+      li.className = "empty"; li.textContent = "Køen er tom";
       list.appendChild(li);
     } else {
       state.queue.forEach((d, i) => {
         const li = document.createElement("li");
         li.className = "queue-item";
-        li.innerHTML = '<span><span class="pos">' + (i + 1) + '.</span> ' + d.name + "</span>";
+        const label = document.createElement("span");
+        const pos = document.createElement("span");
+        pos.className = "pos"; pos.textContent = (i + 1) + ".";
+        label.append(pos, document.createTextNode(d.name));
         const btn = document.createElement("button");
         btn.textContent = "✕";
         btn.addEventListener("click", () => send("queue:remove", { id: d.id }));
-        li.appendChild(btn);
+        li.append(label, btn);
         list.appendChild(li);
       });
     }
@@ -354,10 +437,9 @@
       div.className = "log-item";
       const t = document.createElement("time");
       t.textContent = new Date(entry.at).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
-      div.appendChild(t);
       const span = document.createElement("span");
       span.textContent = entry.entry;
-      div.appendChild(span);
+      div.append(t, span);
       log.appendChild(div);
     });
   }
@@ -365,33 +447,21 @@
   document.querySelectorAll(".score-btn[data-action]").forEach((btn) => {
     btn.addEventListener("click", () => send(btn.dataset.action, { player: btn.dataset.player }));
   });
-
   document.getElementById("duel-new-set-btn").addEventListener("click", () => send("duel:points:reset"));
-
   document.getElementById("set-dyst-btn").addEventListener("click", () => {
     const input = document.getElementById("dyst-input");
     if (input.value.trim()) { send("dyst:setCurrent", { name: input.value.trim() }); input.value = ""; }
   });
-  document.getElementById("dyst-input").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") document.getElementById("set-dyst-btn").click();
-  });
-
+  document.getElementById("dyst-input").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("set-dyst-btn").click(); });
   document.getElementById("queue-add-btn").addEventListener("click", () => {
     const input = document.getElementById("queue-input");
     if (input.value.trim()) { send("queue:add", { name: input.value.trim() }); input.value = ""; }
   });
-  document.getElementById("queue-input").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") document.getElementById("queue-add-btn").click();
-  });
-
+  document.getElementById("queue-input").addEventListener("keydown", (e) => { if (e.key === "Enter") document.getElementById("queue-add-btn").click(); });
   document.getElementById("clear-current-btn").addEventListener("click", () => send("dyst:clear"));
   document.getElementById("next-btn").addEventListener("click", () => send("dyst:next"));
-  document.getElementById("reset-scores-btn").addEventListener("click", () => {
-    if (confirm("Nulstil point for begge spillere?")) send("reset:scores");
-  });
-  document.getElementById("reset-all-btn").addEventListener("click", () => {
-    if (confirm("Nulstil ALT — point, runde og kø?")) send("reset:all");
-  });
+  document.getElementById("reset-scores-btn").addEventListener("click", () => { if (confirm("Nulstil point for begge spillere?")) send("reset:scores"); });
+  document.getElementById("reset-all-btn").addEventListener("click", () => { if (confirm("Nulstil ALT — point, runde og kø? (Deltagere beholdes)")) send("reset:all"); });
 </script>
 </body>
 </html>
