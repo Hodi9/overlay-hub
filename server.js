@@ -3,6 +3,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import brovsbroModule from "./apps/brovsbro/app.cjs";
+import brosvsbrosModule from "./apps/brosvsbros/app.cjs";
 import { createMinecraftApp } from "./apps/minecraft/app.js";
 import { createGearApp } from "./apps/gear/app.js";
 import { createGearBfApp } from "./apps/gear-bf/app.js";
@@ -17,6 +18,7 @@ import { createPokemonApp } from "./apps/pokemon/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
+const { createBrosvsbrosApp } = brosvsbrosModule;
 
 const app = express();
 app.disable("x-powered-by");
@@ -51,7 +53,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
   });
 })();</script>`;
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -94,6 +96,10 @@ app.use((req, res, next) => {
 const { router: brovsbroRouter, attachSocket } = createBrovsbroApp();
 app.use("/brovsbro", brovsbroRouter);
 attachSocket(server);
+
+const { router: brosvsbrosRouter, attachSocket: attachBrosvsbrosSocket } = createBrosvsbrosApp();
+app.use("/brosvsbros", brosvsbrosRouter);
+attachBrosvsbrosSocket(server);
 
 app.use("/minecraft", createMinecraftApp());
 app.use("/gear", createGearApp());
