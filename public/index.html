@@ -5,29 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Overlay Hub — dreamglow</title>
 <meta name="description" content="Browser sources og kontrolpaneler til OBS og Pogly, lavet af dreamglow.">
-<meta name="theme-color" content="#11201a">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2311201a'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%238ee6b1' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%238ee6b1'/%3E%3Cpath d='M24 51h16' stroke='%238ee6b1' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#1b1733">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231b1733'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%23b9a6ff' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%23b9a6ff'/%3E%3Cpath d='M24 51h16' stroke='%23b9a6ff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #eef1ec;
-    --paper: #fbfaf6;
-    --ink: #11201a;
-    --muted: #647069;
-    --line: #dae0da;
-    --mint: #8ee6b1;
-    --mint-soft: #d9f5e4;
-    --mint-dark: #17714c;
-    --shadow: 0 1px 0 rgba(17,32,26,.04), 0 8px 24px -12px rgba(17,32,26,.18);
+    --bg: #f2f0f8;
+    --paper: #fdfcff;
+    --ink: #1b1733;
+    --muted: #6b6784;
+    --line: #e2def0;
+    --mint: #b9a6ff;
+    --mint-soft: #ece6ff;
+    --mint-dark: #5b3fd9;
+    --shadow: 0 1px 0 rgba(27,23,51,.04), 0 8px 24px -12px rgba(27,23,51,.18);
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
     margin: 0;
     min-height: 100vh;
-    background: var(--bg);
+    background:
+      radial-gradient(900px 500px at 90% -10%, rgba(255,126,182,.16), transparent 60%),
+      radial-gradient(800px 500px at -10% 10%, rgba(124,92,255,.14), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
     color: var(--ink);
     font-family: "Schibsted Grotesk", system-ui, sans-serif;
     font-size: 15px;
@@ -60,7 +64,7 @@
     margin: 0; max-width: 16ch;
     font-size: clamp(36px, 6.5vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800;
   }
-  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--mint) 62%); padding: 0 .08em; }
+  .hero h1 em { font-style: normal; background: linear-gradient(90deg, #ff7eb6, #7c5cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
 
   /* Toolbar */
@@ -113,7 +117,7 @@
     background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 700; font-size: 14px;
     padding: 12px; border-radius: 12px;
   }
-  .control:hover { background: #1f3a2e; }
+  .control:hover { background: #342c5c; }
   .control svg { width: 15px; height: 15px; }
   .extra { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
   details { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; font-size: 13px; color: var(--muted); }
@@ -141,13 +145,13 @@
     display: inline-flex; align-items: center; gap: 8px;
     font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
     background: var(--mint); color: var(--ink); border: 2px solid var(--ink);
-    padding: 12px 18px; border-radius: 999px; box-shadow: 0 10px 30px -10px rgba(17,32,26,.45);
+    padding: 12px 18px; border-radius: 999px; box-shadow: 0 10px 30px -10px rgba(27,23,51,.45);
   }
   .contact-fab svg { width: 18px; height: 18px; }
   .popover {
     position: fixed; right: 20px; bottom: 84px; z-index: 21; width: min(340px, calc(100vw - 40px));
     background: var(--paper); border: 2px solid var(--ink); border-radius: 22px; padding: 20px;
-    box-shadow: 0 20px 50px -20px rgba(17,32,26,.5);
+    box-shadow: 0 20px 50px -20px rgba(27,23,51,.5);
     opacity: 0; transform: translateY(8px) scale(.98); pointer-events: none; transition: opacity .15s, transform .15s;
   }
   .popover.open { opacity: 1; transform: none; pointer-events: auto; }
@@ -184,7 +188,7 @@
   <div class="wrap">
     <header class="top">
       <a class="brand" href="/">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#11201a"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#8ee6b1" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#8ee6b1"/><path d="M24 51h16" stroke="#8ee6b1" stroke-width="4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#1b1733"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#b9a6ff" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#b9a6ff"/><path d="M24 51h16" stroke="#b9a6ff" stroke-width="4" stroke-linecap="round"/></svg>
         Overlay Hub
       </a>
       <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
