@@ -5,22 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Overlay Hub — dreamglow</title>
 <meta name="description" content="Browser sources og kontrolpaneler til OBS og Pogly, lavet af dreamglow.">
-<meta name="theme-color" content="#17131f">
+<meta name="theme-color" content="#0d0b12">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2317131f'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%23c7b6ff' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%23c7b6ff'/%3E%3Cpath d='M24 51h16' stroke='%23c7b6ff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #efeef3;
-    --paper: #fcfbfd;
-    --ink: #17131f;
-    --muted: #67637a;
-    --line: #dedbe6;
+    color-scheme: dark;
+    --bg: #0d0b12;
+    --paper: #16131e;
+    --ink: #f2f0f7;
+    --muted: #a39eb5;
+    --line: #2b2638;
     --mint: #c7b6ff;
-    --mint-soft: #eee9ff;
-    --mint-dark: #5a3fd0;
-    --shadow: 0 1px 0 rgba(27,23,51,.04), 0 8px 24px -12px rgba(27,23,51,.18);
+    --mint-soft: rgba(199,182,255,.13);
+    --mint-dark: #c7b6ff;
+    --on-accent: #16121f;
+    --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 30px -16px rgba(0,0,0,.7);
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -60,7 +62,7 @@
     margin: 0; max-width: 16ch;
     font-size: clamp(36px, 6.5vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800;
   }
-  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, var(--mint) 62%); padding: 0 .08em; }
+  .hero h1 em { font-style: normal; background: linear-gradient(transparent 64%, rgba(199,182,255,.38) 64%); padding: 0 .08em; }
   .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
 
   /* Toolbar */
@@ -78,7 +80,7 @@
     border: 1px solid var(--line); background: var(--paper); color: var(--ink);
     padding: 9px 14px; border-radius: 999px;
   }
-  .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip[aria-pressed="true"] { background: var(--mint); color: var(--on-accent); border-color: var(--mint); }
 
   /* Grid */
   .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
@@ -105,15 +107,15 @@
     border: 1px solid var(--line); background: var(--paper); color: var(--ink);
     padding: 7px 11px; border-radius: 9px; white-space: nowrap;
   }
-  .btn:hover { border-color: var(--ink); }
+  .btn:hover { border-color: var(--mint); }
   .btn svg { width: 14px; height: 14px; }
   .btn.copied { background: var(--mint-soft); border-color: var(--mint-dark); color: var(--mint-dark); }
   .control {
     margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;
-    background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 700; font-size: 14px;
+    background: var(--mint); color: var(--on-accent); text-decoration: none; font-weight: 700; font-size: 14px;
     padding: 12px; border-radius: 12px;
   }
-  .control:hover { background: #2c2440; }
+  .control:hover { background: #d8cbff; }
   .control svg { width: 15px; height: 15px; }
   .extra { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
   details { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; font-size: 13px; color: var(--muted); }
@@ -141,14 +143,14 @@
     position: fixed; right: 20px; bottom: 20px; z-index: 20;
     display: inline-flex; align-items: center; gap: 8px;
     font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
-    background: var(--mint); color: var(--ink); border: 2px solid var(--ink);
-    padding: 12px 18px; border-radius: 999px; box-shadow: 0 10px 30px -10px rgba(27,23,51,.45);
+    background: var(--mint); color: var(--on-accent); border: 2px solid var(--mint);
+    padding: 12px 18px; border-radius: 999px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.7);
   }
   .contact-fab svg { width: 18px; height: 18px; }
   .popover {
     position: fixed; right: 20px; bottom: 84px; z-index: 21; width: min(340px, calc(100vw - 40px));
-    background: var(--paper); border: 2px solid var(--ink); border-radius: 22px; padding: 20px;
-    box-shadow: 0 20px 50px -20px rgba(27,23,51,.5);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: 20px;
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,.8);
     opacity: 0; transform: translateY(8px) scale(.98); pointer-events: none; transition: opacity .15s, transform .15s;
   }
   .popover.open { opacity: 1; transform: none; pointer-events: auto; }
@@ -161,13 +163,13 @@
   .handle strong { font-family: "JetBrains Mono", monospace; font-size: 15px; }
   .pop-actions { display: grid; gap: 8px; margin-top: 10px; }
   .pop-actions a { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 700; padding: 12px; border-radius: 14px; }
-  .pop-actions .primary { background: var(--mint); }
+  .pop-actions .primary { background: var(--mint); color: var(--on-accent); }
   .pop-actions .secondary { border: 1px solid var(--line); }
   .pop-actions svg { width: 15px; height: 15px; }
 
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 30;
-    background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    background: var(--mint); color: var(--on-accent); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
     opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -185,10 +187,9 @@
   <div class="wrap">
     <header class="top">
       <a class="brand" href="/">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#17131f"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#c7b6ff" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#c7b6ff"/><path d="M24 51h16" stroke="#c7b6ff" stroke-width="4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#241e33"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#c7b6ff" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#c7b6ff"/><path d="M24 51h16" stroke="#c7b6ff" stroke-width="4" stroke-linecap="round"/></svg>
         Overlay Hub
       </a>
-      <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
     </header>
 
     <section class="hero">
@@ -384,23 +385,6 @@ document.addEventListener("click", e => { if (!pop.contains(e.target) && !fab.co
 document.getElementById("copy-discord").addEventListener("click", e =>
   copy(document.getElementById("discord-name").textContent, e.currentTarget, "Discord-navn kopieret"));
 
-// Server status
-async function checkServer() {
-  const el = document.getElementById("status"), txt = document.getElementById("status-text");
-  for (let i = 0; i < 4; i++) {
-    try {
-      const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 8000);
-      const r = await fetch("/health?t=" + Date.now(), { cache: "no-store", signal: ctrl.signal });
-      clearTimeout(t);
-      if (r.ok) { el.className = "status ok"; txt.textContent = "Server online"; return; }
-    } catch {}
-    txt.textContent = "Tjekker server…";
-    await new Promise(res => setTimeout(res, 2500));
-  }
-  el.className = "status down"; txt.textContent = "Server svarer ikke";
-}
-checkServer();
-setInterval(checkServer, 60000);
 </script>
 </body>
 </html>
