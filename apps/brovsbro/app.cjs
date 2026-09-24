@@ -10,6 +10,29 @@ function defaultDuel() {
   return { points: { marcelo: 0, aggo: 0 }, sets: { marcelo: 0, aggo: 0 } };
 }
 
+function defaultPlayers() {
+  return {
+    marcelo: { name: "Marcelo", image: "/brovsbro/images/marcelo.png", color: "#123f6e" },
+    aggo: { name: "Aggo", image: "/brovsbro/images/aggo.png", color: "#d6d6d6" },
+  };
+}
+
+const MAX_IMAGE_LENGTH = 400000;
+
+function cleanColor(value, fallback) {
+  const v = String(value || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(v) ? v : fallback;
+}
+
+function cleanImage(value) {
+  const v = String(value || "").trim();
+  if (!v) return "";
+  if (v.length > MAX_IMAGE_LENGTH) return null;
+  if (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v)) return v;
+  if (/^https:\/\/[^\s"'<>]+$/.test(v) || /^\/brovsbro\/images\/[\w.-]+$/.test(v)) return v;
+  return null;
+}
+
 function createBrovsbroApp() {
   const router = express.Router();
   const PANEL_KEY = process.env.BROVSBRO_PANEL_KEY || "";
@@ -19,6 +42,7 @@ function createBrovsbroApp() {
     try {
       const loaded = JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
       if (!loaded.duel) loaded.duel = defaultDuel();
+      if (!loaded.players) loaded.players = defaultPlayers();
       return loaded;
     } catch {
       return {
@@ -28,6 +52,7 @@ function createBrovsbroApp() {
         queue: DEFAULT_DYSTER.map((name) => ({ id: crypto.randomUUID(), name })),
         log: [],
         duel: defaultDuel(),
+        players: defaultPlayers(),
       };
     }
   }
@@ -37,6 +62,10 @@ function createBrovsbroApp() {
 
   function saveState() {
     fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2), () => {});
+  }
+
+  function playerName(p) {
+    return state.players?.[p]?.name || (p === "marcelo" ? "Marcelo" : "Aggo");
   }
 
   function pushLog(entry) {
@@ -83,7 +112,7 @@ function createBrovsbroApp() {
   }
 
   function attachSocket(server) {
-    io = new Server(server, { path: "/brovsbro/socket.io", cors: { origin: "*" } });
+    io = new Server(server, { path: "/brovsbro/socket.io", cors: { origin: "*" }, maxHttpBufferSize: 2e6 });
 
     io.on("connection", (socket) => {
       socket.emit("state", state);
@@ -105,7 +134,7 @@ function createBrovsbroApp() {
             const p = payload.player;
             if (p === "marcelo" || p === "aggo") {
               state.scores[p] = Math.max(0, state.scores[p] + 1);
-              pushLog(`${p === "marcelo" ? "Marcelo" : "Aggo"} +1 point`);
+              pushLog(`${playerName(p)} +1 point`);
             }
             break;
           }
@@ -113,8 +142,35 @@ function createBrovsbroApp() {
             const p = payload.player;
             if (p === "marcelo" || p === "aggo") {
               state.scores[p] = Math.max(0, state.scores[p] - 1);
-              pushLog(`${p === "marcelo" ? "Marcelo" : "Aggo"} -1 point`);
+              pushLog(`${playerName(p)} -1 point`);
             }
+            break;
+          }
+          case "player:update": {
+            const p = payload.player;
+            if (p !== "marcelo" && p !== "aggo") return;
+            const current = state.players[p] || defaultPlayers()[p];
+            const next = { ...current };
+            if (payload.name !== undefined) {
+              const name = String(payload.name || "").trim().slice(0, 32);
+              if (name) next.name = name;
+            }
+            if (payload.color !== undefined) next.color = cleanColor(payload.color, current.color);
+            if (payload.image !== undefined) {
+              const image = cleanImage(payload.image);
+              if (image === null) {
+                socket.emit("panel:error", "Billedet er for stort eller har et ukendt format.");
+                return;
+              }
+              next.image = image;
+            }
+            state.players[p] = next;
+            pushLog(`Deltager opdateret: ${next.name}`);
+            break;
+          }
+          case "players:reset": {
+            state.players = defaultPlayers();
+            pushLog("Deltagere nulstillet til standard");
             break;
           }
           case "round:set": {
@@ -190,7 +246,7 @@ function createBrovsbroApp() {
             const p = payload.player;
             if (p === "marcelo" || p === "aggo") {
               state.duel.sets[p] += 1;
-              pushLog(`${p === "marcelo" ? "Marcelo" : "Aggo"} vandt sæt ${state.duel.sets[p]}`);
+              pushLog(`${playerName(p)} vandt sæt ${state.duel.sets[p]}`);
             }
             break;
           }
@@ -214,6 +270,7 @@ function createBrovsbroApp() {
               queue: DEFAULT_DYSTER.map((name) => ({ id: crypto.randomUUID(), name })),
               log: [],
               duel: defaultDuel(),
+              players: state.players || defaultPlayers(),
             };
             pushLog("Alt nulstillet");
             break;
