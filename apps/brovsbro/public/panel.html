@@ -58,6 +58,8 @@
   .person-top { display: flex; align-items: center; gap: 12px; }
   .photo { width: 72px; height: 72px; border-radius: 14px; overflow: hidden; flex-shrink: 0; display: grid; place-items: center; font-weight: 800; font-size: 24px; color: #fff; background: var(--pc); }
   .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo { grid-template-columns: 100%; grid-template-rows: 100%; }
+  .photo img[src$="/marcelo.png"] { object-position: 50% 75%; }
   .person-side { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .photo-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   label.small-btn, button.small-btn { appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 6px 10px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
