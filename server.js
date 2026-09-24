@@ -41,7 +41,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
     b.type = "button";
     b.textContent = "Kopiér link til OBS";
     b.title = link;
-    b.setAttribute("style", "position:fixed;right:16px;bottom:16px;z-index:2147483647;font:600 14px/1 system-ui,sans-serif;padding:12px 16px;border-radius:999px;border:2px solid #11201a;background:#8ee6b1;color:#11201a;cursor:pointer;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)");
+    b.setAttribute("style", "position:fixed;right:16px;bottom:16px;z-index:2147483647;font:600 14px/1 system-ui,sans-serif;padding:12px 16px;border-radius:999px;border:2px solid #1b1733;background:#b9a6ff;color:#1b1733;cursor:pointer;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)");
     b.addEventListener("click", function(){
       var done = function(){ b.textContent = "Kopieret ✓"; setTimeout(function(){ b.textContent = "Kopiér link til OBS"; }, 1600); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, fallback); else fallback();
