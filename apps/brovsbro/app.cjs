@@ -112,7 +112,7 @@ function createBrovsbroApp() {
   }
 
   function attachSocket(server) {
-    io = new Server(server, { path: "/brovsbro/socket.io", cors: { origin: "*" }, maxHttpBufferSize: 2e6 });
+    io = new Server(server, { path: "/brovsbro/socket.io", cors: { origin: "*" }, maxHttpBufferSize: 2e6, destroyUpgrade: false });
 
     io.on("connection", (socket) => {
       socket.emit("state", state);
