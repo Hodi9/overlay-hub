@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RDR2 — Dødstæller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&display=swap">
+<style>
+  :root {
+    --parchment: #e8d9b3;
+    --parchment-deep: #cbb182;
+    --wood: #3b2412;
+    --ink: #2b1a0e;
+    --blood: #7a1f11;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  body { display: flex; align-items: flex-end; justify-content: center; height: 100vh; font-family: 'Special Elite', monospace; }
+  body.bg-preview { background: #141414; }
+
+  .counter {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 20px 46px 24px;
+    margin-bottom: 30px;
+    background: linear-gradient(160deg, var(--parchment), var(--parchment-deep) 88%);
+    border: 3px solid var(--wood);
+    border-radius: 4px;
+    box-shadow: 0 18px 34px rgba(0,0,0,.55), inset 0 0 0 6px rgba(59,36,18,.14);
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+  .counter.ready { opacity: 1; transform: translateY(0); }
+  .counter.pulse { animation: hit 480ms ease; }
+
+  .rivet { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ecd8a0, #6b4a1f 75%); box-shadow: 0 1px 2px rgba(0,0,0,.55); }
+  .rivet.tl { top: 8px; left: 8px; }
+  .rivet.tr { top: 8px; right: 8px; }
+  .rivet.bl { bottom: 8px; left: 8px; }
+  .rivet.br { bottom: 8px; right: 8px; }
+
+  .label { font-family: 'Rye', serif; font-size: 14px; letter-spacing: .32em; text-transform: uppercase; color: var(--ink); }
+  .rule { width: 60%; height: 1px; background: linear-gradient(90deg, transparent, var(--wood), transparent); margin: 3px 0; }
+  .count { font-family: 'Rye', serif; font-size: 62px; line-height: 1; color: var(--blood); text-shadow: 0 2px 0 rgba(0,0,0,.14); font-variant-numeric: tabular-nums; }
+  .sub { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); opacity: .68; }
+
+  @keyframes hit {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+<div class="counter" id="counter">
+  <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+  <div class="label">Dødsfald</div>
+  <div class="rule"></div>
+  <div class="count" id="count">0</div>
+  <div class="sub">Red Dead Redemption 2</div>
+</div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  if (params.get('bg') === 'black') document.body.classList.add('bg-preview');
+
+  var box = document.getElementById('counter');
+  var countEl = document.getElementById('count');
+  var lastCount = null;
+
+  function render(state){
+    box.classList.add('ready');
+    var count = typeof state.count === 'number' ? state.count : 0;
+    if (lastCount !== null && count > lastCount) {
+      box.classList.remove('pulse');
+      void box.offsetWidth;
+      box.classList.add('pulse');
+    }
+    lastCount = count;
+    countEl.textContent = count;
+  }
+
+  fetch('/rdr2-deaths/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+
+  var events = new EventSource('/rdr2-deaths/api/events');
+  events.onmessage = function(event){
+    try { render(JSON.parse(event.data)); } catch(e){}
+  };
+})();
+</script>
+</body>
+</html>
