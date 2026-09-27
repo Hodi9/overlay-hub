@@ -8,9 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 const defaultGames = () => [
-  { id: "fortnite", name: "Fortnite", color: "#2f7fe0", icon: "F", done: false, count: 0, deaths: 47, visible: true },
-  { id: "warzone", name: "Warzone", color: "#6f7a3f", icon: "WZ", done: false, count: 0, deaths: 34, visible: true },
-  { id: "minecraft", name: "Minecraft", color: "#96622f", icon: "creeper", done: false, count: 0, deaths: 1, visible: true },
+  { id: "fortnite", name: "Fortnite", color: "#2f7fe0", icon: "F", done: false, count: 0, deaths: 0, visible: true },
+  { id: "warzone", name: "Warzone", color: "#6f7a3f", icon: "WZ", done: false, count: 0, deaths: 0, visible: true },
+  { id: "minecraft", name: "Minecraft", color: "#96622f", icon: "creeper", done: false, count: 0, deaths: 0, visible: true },
   { id: "lol", name: "League of Legends", color: "#0aa8a0", icon: "LoL", done: false, count: 0, deaths: 0, visible: true },
   { id: "rocketleague", name: "Rocket League", color: "#e8631f", icon: "RL", done: false, count: 0, deaths: 0, visible: true }
 ];
