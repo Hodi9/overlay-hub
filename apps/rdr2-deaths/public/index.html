@@ -6,64 +6,65 @@
 <title>RDR2 — Dødstæller</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap">
 <style>
-  :root {
-    --parchment: #e8d9b3;
-    --parchment-deep: #cbb182;
-    --wood: #3b2412;
-    --ink: #2b1a0e;
-    --blood: #7a1f11;
-  }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
-  body { display: flex; align-items: flex-end; justify-content: center; height: 100vh; font-family: 'Special Elite', monospace; }
+  body { display: flex; align-items: flex-start; justify-content: flex-start; height: 100vh; font-family: 'Cinzel', serif; }
   body.bg-preview { background: #141414; }
 
-  .counter {
+  .banner {
     position: relative;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    padding: 20px 46px 24px;
-    margin-bottom: 30px;
-    background: linear-gradient(160deg, var(--parchment), var(--parchment-deep) 88%);
-    border: 3px solid var(--wood);
-    border-radius: 4px;
-    box-shadow: 0 18px 34px rgba(0,0,0,.55), inset 0 0 0 6px rgba(59,36,18,.14);
+    align-items: baseline;
+    gap: 14px;
+    margin: 30px;
+    padding: 16px 56px 18px;
+    border: 9px solid #0c0705;
+    clip-path: polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%);
+    background:
+      linear-gradient(90deg, rgba(12,5,3,.94), rgba(74,26,14,.58) 46%, rgba(10,4,2,.92)),
+      linear-gradient(0deg, rgba(6,2,1,.55), rgba(0,0,0,0) 62%);
+    box-shadow:
+      0 10px 20px rgba(0,0,0,.6),
+      inset 0 0 24px rgba(0,0,0,.7),
+      inset 0 2px 0 rgba(232,195,122,.32),
+      inset 0 -2px 0 rgba(232,195,122,.32);
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(-10px);
     transition: opacity .5s ease, transform .5s ease;
   }
-  .counter.ready { opacity: 1; transform: translateY(0); }
-  .counter.pulse { animation: hit 480ms ease; }
+  .banner.ready { opacity: 1; transform: translateY(0); }
+  .banner.pulse .value { animation: flash 520ms ease; }
 
-  .rivet { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ecd8a0, #6b4a1f 75%); box-shadow: 0 1px 2px rgba(0,0,0,.55); }
-  .rivet.tl { top: 8px; left: 8px; }
-  .rivet.tr { top: 8px; right: 8px; }
-  .rivet.bl { bottom: 8px; left: 8px; }
-  .rivet.br { bottom: 8px; right: 8px; }
+  .label {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #e9d59a;
+    text-shadow: 0 2px 1px #000, 0 0 9px rgba(227,179,77,.32);
+    white-space: nowrap;
+  }
+  .value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #f3d98e;
+    text-shadow: 0 2px 1px #000, 0 0 9px rgba(227,179,77,.4);
+    font-variant-numeric: tabular-nums;
+  }
 
-  .label { font-family: 'Rye', serif; font-size: 14px; letter-spacing: .32em; text-transform: uppercase; color: var(--ink); }
-  .rule { width: 60%; height: 1px; background: linear-gradient(90deg, transparent, var(--wood), transparent); margin: 3px 0; }
-  .count { font-family: 'Rye', serif; font-size: 62px; line-height: 1; color: var(--blood); text-shadow: 0 2px 0 rgba(0,0,0,.14); font-variant-numeric: tabular-nums; }
-  .sub { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); opacity: .68; }
-
-  @keyframes hit {
-    0% { transform: scale(1); }
-    30% { transform: scale(1.12); }
-    100% { transform: scale(1); }
+  @keyframes flash {
+    0% { text-shadow: 0 2px 1px #000, 0 0 9px rgba(227,179,77,.4); }
+    35% { text-shadow: 0 2px 1px #000, 0 0 22px rgba(255,90,60,.85), 0 0 34px rgba(255,90,60,.5); color: #ffb27a; }
+    100% { text-shadow: 0 2px 1px #000, 0 0 9px rgba(227,179,77,.4); }
   }
 </style>
 </head>
 <body>
-<div class="counter" id="counter">
-  <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
-  <div class="label">Dødsfald</div>
-  <div class="rule"></div>
-  <div class="count" id="count">0</div>
-  <div class="sub">Red Dead Redemption 2</div>
+<div class="banner" id="banner">
+  <span class="label">Dødsfald:</span>
+  <span class="value" id="count">0</span>
 </div>
 
 <script>
@@ -71,28 +72,39 @@
   var params = new URLSearchParams(location.search);
   if (params.get('bg') === 'black') document.body.classList.add('bg-preview');
 
-  var box = document.getElementById('counter');
+  var banner = document.getElementById('banner');
   var countEl = document.getElementById('count');
   var lastCount = null;
 
   function render(state){
-    box.classList.add('ready');
+    banner.classList.add('ready');
     var count = typeof state.count === 'number' ? state.count : 0;
     if (lastCount !== null && count > lastCount) {
-      box.classList.remove('pulse');
-      void box.offsetWidth;
-      box.classList.add('pulse');
+      banner.classList.remove('pulse');
+      void banner.offsetWidth;
+      banner.classList.add('pulse');
     }
     lastCount = count;
     countEl.textContent = count;
   }
 
-  fetch('/rdr2-deaths/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+  function start(channel){
+    var qs = '?channel=' + encodeURIComponent(channel);
+    fetch('/rdr2-deaths/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
+    var events = new EventSource('/rdr2-deaths/api/events' + qs);
+    events.onmessage = function(event){
+      try { render(JSON.parse(event.data)); } catch(e){}
+    };
+  }
 
-  var events = new EventSource('/rdr2-deaths/api/events');
-  events.onmessage = function(event){
-    try { render(JSON.parse(event.data)); } catch(e){}
-  };
+  var channel = params.get('channel');
+  if (channel) {
+    start(channel);
+  } else {
+    fetch('/rdr2-deaths/api/default-channel').then(function(r){ return r.json(); }).then(function(d){
+      if (d.channel) start(d.channel);
+    }).catch(function(){});
+  }
 })();
 </script>
 </body>

@@ -6,7 +6,7 @@
 <title>RDR2 Dødstæller — Control Panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@600;700&display=swap">
 <style>
   :root {
     --bg:#161109; --panel:#1f180e; --panel-2:#291f12; --line:#3a2c18;
@@ -16,10 +16,10 @@
   body { margin: 0; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', system-ui, sans-serif; padding: 32px 20px 60px; }
   .wrap { max-width: 640px; margin: 0 auto; }
   header { margin-bottom: 24px; }
-  h1 { font-family: 'Rye', serif; font-weight: 400; font-size: clamp(1.6rem, 5vw, 2.2rem); letter-spacing: .04em; margin: 0 0 6px; }
+  h1 { font-family: 'Cinzel', serif; font-weight: 700; font-size: clamp(1.6rem, 5vw, 2.2rem); letter-spacing: .04em; margin: 0 0 6px; }
   header p { margin: 0; color: var(--text-dim); font-size: .92rem; }
   section { margin-bottom: 26px; }
-  .section-label { font-family: 'Rye', serif; text-transform: uppercase; letter-spacing: .14em; font-size: .76rem; color: var(--text-dim); margin: 0 0 10px; }
+  .section-label { font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: .14em; font-size: .76rem; color: var(--text-dim); margin: 0 0 10px; }
 
   .box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
   .box .hint { margin: 0 0 12px; font-size: .82rem; color: var(--text-dim); }
@@ -39,14 +39,13 @@
   .status-msg.ok { color: var(--gold); }
 
   .count-display { display: flex; align-items: baseline; gap: 10px; }
-  .count-display .value { font-family: 'Rye', serif; font-size: 3rem; color: var(--gold); line-height: 1; }
+  .count-display .value { font-family: 'Cinzel', serif; font-size: 3rem; font-weight: 700; color: var(--gold); line-height: 1; }
   .count-display .buttons { display: flex; gap: 8px; margin-left: auto; }
 
-  .capture-box { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .capture-text { font-family: 'JetBrains Mono', monospace; font-size: .82rem; color: var(--text-dim); word-break: break-word; }
-  .capture-tag { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; flex: none; }
-  .capture-tag.matched { background: rgba(201,139,46,.2); color: var(--gold); }
-  .capture-tag.unmatched { background: rgba(192,87,74,.18); color: var(--rust); }
+  .chat-status { display: flex; align-items: center; gap: 8px; font-size: .88rem; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--rust); flex: none; }
+  .dot.on { background: #5fd15a; }
+  .trigger-text { font-family: 'JetBrains Mono', monospace; font-size: .82rem; color: var(--text-dim); margin: 8px 0 0; }
 
   code { color: var(--text); background: rgba(255,255,255,.06); padding: 1px 5px; border-radius: 4px; }
   footer { margin-top: 22px; color: var(--text-dim); font-size: .8rem; }
@@ -57,8 +56,20 @@
 <div class="wrap">
   <header>
     <h1>RDR2 Dødstæller</h1>
-    <p>Styr <a href="index.html" target="_blank">overlayet</a> manuelt, eller lad OCR-trackeren tælle op automatisk mens du spiller.</p>
+    <p>Styr <a href="index.html" id="overlay-link" target="_blank">overlayet</a> manuelt, eller lad mods/dig selv tælle op direkte fra Twitch-chatten.</p>
+    <p id="channel-line" style="margin-top:6px;font-size:.82rem;color:var(--text-dim);"></p>
   </header>
+
+  <details id="channel-details" style="margin-bottom:26px;">
+    <summary style="cursor:pointer;color:var(--text-dim);font-size:.82rem;">Styr en anden kanal</summary>
+    <div class="box" style="margin-top:10px;">
+      <p class="hint">Hver Twitch-kanal har sin egen dødstæller. Skift hertil for at styre en anden kanals tæller.</p>
+      <div class="field-row">
+        <input type="text" id="f-channel" placeholder="Twitch-brugernavn">
+        <button class="btn secondary" id="switch-channel-btn">Skift kanal</button>
+      </div>
+    </div>
+  </details>
 
   <section>
     <p class="section-label">Adgangskode</p>
@@ -92,15 +103,14 @@
   </section>
 
   <section>
-    <p class="section-label">Automatisk tracker (OCR)</p>
+    <p class="section-label">Twitch chat-kommando</p>
     <div class="box">
-      <p class="hint" id="tracker-hint">Tjekker status...</p>
-      <div class="capture-box">
-        <span>Seneste tekst læst af trackeren:</span>
-        <span id="capture-tag" class="capture-tag">—</span>
+      <p class="hint" id="chat-hint">Tjekker status...</p>
+      <div class="chat-status">
+        <span class="dot" id="chat-dot"></span>
+        <span id="chat-status-text">—</span>
       </div>
-      <p class="capture-text" id="capture-text" style="margin:8px 0 0;">Ingen data endnu.</p>
-      <p class="hint" style="margin-top:12px;">Kør <code>apps/rdr2-deaths/tracker/rdr2-deaths-ocr-tracker.ps1</code> på streame-pc'en mens du spiller. Første gang: kør scriptet med <code>-Calibrate</code> for at finde det rigtige skærmområde for dødsteksten, sæt det i <code>rdr2-deaths-tracker-config.json</code>, og bekræft med det du ser i feltet ovenfor at der matches korrekt — hvis ikke, så send mig præcis den tekst der står, så justerer vi ordlisten.</p>
+      <p class="trigger-text" id="trigger-text">Ingen aktivering endnu.</p>
     </div>
   </section>
 
@@ -109,11 +119,13 @@
 
 <script>
 (function(){
+  var params = new URLSearchParams(location.search);
+  var explicitChannel = params.get('channel') || '';
+
   var TOKEN_KEY = 'rdr2deaths-control-token';
   var tokenInput = document.getElementById('f-token');
   var saveTokenBtn = document.getElementById('save-token-btn');
   var tokenStatus = document.getElementById('token-status');
-  var globalStatus = document.getElementById('global-status');
   var countStatus = document.getElementById('count-status');
 
   function getToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
@@ -149,51 +161,70 @@
   function render(state){
     document.getElementById('count-value').textContent = state.count;
 
-    var trackerHint = document.getElementById('tracker-hint');
-    trackerHint.innerHTML = state.trackerConfigured
-      ? 'Trackeren er konfigureret (<code>RDR2DEATHS_TRACKER_KEY</code> er sat).'
-      : 'Trackeren er ikke konfigureret endnu — sæt <code>RDR2DEATHS_TRACKER_KEY</code> på serveren og i <code>rdr2-deaths-tracker-config.json</code> lokalt for at aktivere automatisk optælling.';
+    var chatHint = document.getElementById('chat-hint');
+    var dot = document.getElementById('chat-dot');
+    var statusText = document.getElementById('chat-status-text');
+    chatHint.innerHTML = 'Kommandoen <code>' + state.chatCommand + '</code> tæller +1, skrevet af broadcasteren selv eller en moderator i <code>#' + state.channel + '</code>. Andre i chatten kan ikke bruge den.';
+    dot.className = 'dot' + (state.chatConnected ? ' on' : '');
+    statusText.textContent = state.chatConnected ? 'Forbundet til Twitch-chat' : 'Forbinder...';
 
-    var captureTag = document.getElementById('capture-tag');
-    var captureText = document.getElementById('capture-text');
-    if (state.lastCapture) {
-      captureTag.textContent = state.lastCapture.matched ? 'Matchet (+1)' : 'Ingen match';
-      captureTag.className = 'capture-tag ' + (state.lastCapture.matched ? 'matched' : 'unmatched');
-      captureText.textContent = '"' + state.lastCapture.text + '" (' + new Date(state.lastCapture.atISO).toLocaleTimeString('da-DK') + ')';
+    var triggerText = document.getElementById('trigger-text');
+    if (state.lastTrigger) {
+      var t = state.lastTrigger;
+      var when = new Date(t.atISO).toLocaleTimeString('da-DK');
+      triggerText.textContent = t.via === 'chat'
+        ? 'Seneste: ' + t.username + ' skrev kommandoen (' + when + ')'
+        : 'Seneste: ændret manuelt fra kontrolpanelet (' + when + ')';
     } else {
-      captureTag.textContent = '—';
-      captureTag.className = 'capture-tag';
-      captureText.textContent = 'Ingen data endnu.';
+      triggerText.textContent = 'Ingen aktivering endnu.';
     }
   }
 
-  function loadState(){
-    return fetch('/rdr2-deaths/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+  function init(channel){
+    var qs = '?channel=' + encodeURIComponent(channel);
+
+    document.getElementById('overlay-link').href = 'index.html' + qs;
+    document.getElementById('channel-line').textContent = 'Styrer kanal: #' + channel;
+    document.getElementById('f-channel').value = channel;
+    document.getElementById('switch-channel-btn').addEventListener('click', function(){
+      var next = document.getElementById('f-channel').value.trim().toLowerCase().replace(/^#/, '');
+      if (!next) return;
+      location.href = 'control.html?channel=' + encodeURIComponent(next);
+    });
+
+    document.getElementById('inc-btn').addEventListener('click', function(){
+      apiCall('/rdr2-deaths/api/increment' + qs, { method: 'POST', headers: authHeaders() }).then(render);
+    });
+    document.getElementById('dec-btn').addEventListener('click', function(){
+      apiCall('/rdr2-deaths/api/decrement' + qs, { method: 'POST', headers: authHeaders() }).then(render);
+    });
+    document.getElementById('set-btn').addEventListener('click', function(){
+      var value = Number(document.getElementById('f-set').value);
+      if (!Number.isFinite(value) || value < 0) { setStatus(countStatus, 'Indtast et gyldigt tal.', 'error'); return; }
+      apiCall('/rdr2-deaths/api/state' + qs, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ count: value }) })
+        .then(function(state){ render(state); setStatus(countStatus, 'Gemt.', 'ok'); });
+    });
+    document.getElementById('reset-btn').addEventListener('click', function(){
+      if (!confirm('Nulstil dødstælleren til 0?')) return;
+      apiCall('/rdr2-deaths/api/reset' + qs, { method: 'POST', headers: authHeaders() }).then(render);
+    });
+
+    fetch('/rdr2-deaths/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
+
+    var events = new EventSource('/rdr2-deaths/api/events' + qs);
+    events.onmessage = function(event){
+      try { render(JSON.parse(event.data)); } catch(e){}
+    };
   }
 
-  document.getElementById('inc-btn').addEventListener('click', function(){
-    apiCall('/rdr2-deaths/api/increment', { method: 'POST', headers: authHeaders() }).then(render);
-  });
-  document.getElementById('dec-btn').addEventListener('click', function(){
-    apiCall('/rdr2-deaths/api/decrement', { method: 'POST', headers: authHeaders() }).then(render);
-  });
-  document.getElementById('set-btn').addEventListener('click', function(){
-    var value = Number(document.getElementById('f-set').value);
-    if (!Number.isFinite(value) || value < 0) { setStatus(countStatus, 'Indtast et gyldigt tal.', 'error'); return; }
-    apiCall('/rdr2-deaths/api/state', { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ count: value }) })
-      .then(function(state){ render(state); setStatus(countStatus, 'Gemt.', 'ok'); });
-  });
-  document.getElementById('reset-btn').addEventListener('click', function(){
-    if (!confirm('Nulstil dødstælleren til 0?')) return;
-    apiCall('/rdr2-deaths/api/reset', { method: 'POST', headers: authHeaders() }).then(render);
-  });
-
-  var events = new EventSource('/rdr2-deaths/api/events');
-  events.onmessage = function(event){
-    try { render(JSON.parse(event.data)); } catch(e){}
-  };
-
-  loadState();
+  if (explicitChannel) {
+    init(explicitChannel.toLowerCase().replace(/^#/, ''));
+  } else {
+    fetch('/rdr2-deaths/api/default-channel').then(function(r){ return r.json(); }).then(function(d){
+      if (d.channel) init(d.channel);
+      else document.getElementById('channel-line').textContent = 'Ingen kanal valgt — angiv en ovenfor under "Styr en anden kanal".';
+    }).catch(function(){});
+  }
 })();
 </script>
 </body>

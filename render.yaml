@@ -46,8 +46,8 @@ services:
         sync: false
       - key: RDR2DEATHS_CONTROL_PASSWORD
         sync: false
-      - key: RDR2DEATHS_TRACKER_KEY
-        generateValue: true
+      - key: RDR2DEATHS_TWITCH_CHANNEL
+        sync: false
       - key: NODE_VERSION
         value: 22
 

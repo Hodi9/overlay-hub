@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RDR2 Dødstæller — Opsætning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+  :root {
+    --bg:#161109; --panel:#1f180e; --panel-2:#291f12; --line:#3a2c18;
+    --text:#f2e8d4; --text-dim:#a9987f; --gold:#c98b2e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', system-ui, sans-serif; padding: 32px 20px 60px; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-family: 'Cinzel', serif; font-weight: 700; font-size: clamp(1.6rem, 5vw, 2.2rem); letter-spacing: .04em; margin: 0 0 6px; }
+  header p { margin: 0 0 24px; color: var(--text-dim); font-size: .92rem; }
+  section { margin-bottom: 22px; }
+  .section-label { font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: .14em; font-size: .76rem; color: var(--text-dim); margin: 0 0 10px; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  .box .hint { margin: 0 0 12px; font-size: .82rem; color: var(--text-dim); }
+  .field-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  input[type="text"] {
+    font-family: 'IBM Plex Sans', sans-serif; background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 7px; padding: 10px 12px; font-size: 1rem; flex: 1; min-width: 0;
+  }
+  .btn { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; background: var(--gold); color: #1c1004; border: none; border-radius: 7px; padding: 9px 16px; cursor: pointer; flex: none; font-size: .85rem; }
+  .btn:hover { filter: brightness(1.1); }
+  .btn.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); }
+  .url-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .url-row code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 9px 11px; font-family: 'JetBrains Mono', monospace; font-size: .78rem; color: var(--text); }
+  .status-msg { margin-top: 9px; font-size: .8rem; min-height: 1.1em; color: var(--gold); }
+  .preview { display: flex; align-items: center; justify-content: center; min-height: 140px; background: repeating-conic-gradient(#0c0c0c 0% 25%, #151515 0% 50%) 50% / 24px 24px; border-radius: 10px; overflow: hidden; }
+  .preview iframe { border: none; width: 620px; height: 140px; }
+  a { color: var(--gold); }
+  code.inline { color: var(--text); background: rgba(255,255,255,.06); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>RDR2 Dødstæller — Opsætning</h1>
+    <p>Skriv dit Twitch-brugernavn, og få dine egne overlay- og kontrolpanel-links. Alle med linket kan dele samme værktøj — hver kanal har sin egen, adskilte tæller.</p>
+  </header>
+
+  <section>
+    <p class="section-label">Dit Twitch-brugernavn</p>
+    <div class="box">
+      <div class="field-row">
+        <input type="text" id="f-channel" placeholder="fx dreamglowxd">
+      </div>
+      <p class="hint" style="margin-top:10px;">Kommandoen <code class="inline">!died</code>, skrevet af dig selv eller en moderator i din chat, tæller +1. Ingen andre i chatten kan ændre den.</p>
+    </div>
+  </section>
+
+  <section id="output" style="display:none;">
+    <p class="section-label">Overlay (browser source i OBS)</p>
+    <div class="box">
+      <div class="url-row">
+        <code id="overlay-url"></code>
+        <button class="btn secondary" data-copy-target="overlay-url">Kopiér</button>
+      </div>
+      <div class="status-msg" id="copy-status"></div>
+      <p class="hint" style="margin-top:12px;">Forhåndsvisning:</p>
+      <div class="preview"><iframe id="preview-frame" title="Forhåndsvisning"></iframe></div>
+    </div>
+  </section>
+
+  <section id="control-output" style="display:none;">
+    <p class="section-label">Kontrolpanel</p>
+    <div class="box">
+      <p class="hint">Beskyttet af en fælles adgangskode — spørg den der satte værktøjen op.</p>
+      <div class="url-row">
+        <code id="control-url"></code>
+        <button class="btn secondary" data-copy-target="control-url">Kopiér</button>
+      </div>
+      <div class="field-row" style="margin-top:12px;">
+        <a class="btn" id="open-control-btn" target="_blank">Åbn kontrolpanel</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var input = document.getElementById('f-channel');
+  var output = document.getElementById('output');
+  var controlOutput = document.getElementById('control-output');
+  var overlayUrl = document.getElementById('overlay-url');
+  var controlUrl = document.getElementById('control-url');
+  var previewFrame = document.getElementById('preview-frame');
+  var openControlBtn = document.getElementById('open-control-btn');
+  var copyStatus = document.getElementById('copy-status');
+
+  function sanitize(v){
+    return String(v || '').trim().toLowerCase().replace(/^#/, '').replace(/[^a-z0-9_]/g, '');
+  }
+
+  function update(){
+    var channel = sanitize(input.value);
+    if (!channel) { output.style.display = 'none'; controlOutput.style.display = 'none'; return; }
+
+    var base = location.origin + '/rdr2-deaths/';
+    var overlay = base + '?channel=' + encodeURIComponent(channel);
+    var control = base + 'control.html?channel=' + encodeURIComponent(channel);
+
+    overlayUrl.textContent = overlay;
+    controlUrl.textContent = control;
+    previewFrame.src = base + '?channel=' + encodeURIComponent(channel) + '&bg=black';
+    openControlBtn.href = control;
+
+    output.style.display = '';
+    controlOutput.style.display = '';
+  }
+
+  input.addEventListener('input', update);
+
+  var params = new URLSearchParams(location.search);
+  if (params.get('channel')) {
+    input.value = params.get('channel');
+    update();
+  }
+
+  document.querySelectorAll('[data-copy-target]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = document.getElementById(btn.getAttribute('data-copy-target')).textContent;
+      var done = function(){ copyStatus.textContent = 'Kopieret.'; setTimeout(function(){ copyStatus.textContent = ''; }, 2000); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+      } else {
+        var t = document.createElement('textarea');
+        t.value = text; document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        t.remove(); done();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
