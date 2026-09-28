@@ -7,16 +7,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@600;700&display=swap">
+<script src="https://unpkg.com/tmi.js@1.8.5/dist/tmi.min.js"></script>
 <style>
   :root{
     --bg:#111211; --panel:#191a19; --panel-2:#212221; --line:#2b2c2b;
     --text:#eef0ee; --text-dim:#98a098; --accent:#d98d3f; --rust:#c0574a; --current-btn:#3a2f22;
+    --green:#5fd15a; --yellow:#e0b93a;
   }
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;padding:32px 20px 60px;}
-  .wrap{max-width:780px;margin:0 auto;}
+  .wrap{max-width:1180px;margin:0 auto;}
   header{margin-bottom:24px;}
-  h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(1.8rem,5vw,2.4rem);letter-spacing:0.03em;text-transform:uppercase;margin:0 0 6px;}
+  h1{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(1.8rem,4vw,2.4rem);letter-spacing:0.03em;text-transform:uppercase;margin:0 0 6px;}
   header p{margin:0;color:var(--text-dim);font-size:0.92rem;}
   section{margin-bottom:26px;}
   .section-label{font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;font-size:0.76rem;color:var(--text-dim);margin:0 0 10px;}
@@ -38,6 +40,43 @@
   .status-msg.error{color:var(--rust);}
   .status-msg.ok{color:var(--accent);}
 
+  /* Two-column layout: status + Twitch chat on the left, missions on the right */
+  .layout{display:grid;gap:20px;grid-template-columns:1fr 1.1fr;align-items:start;}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr;} }
+  .col{display:flex;flex-direction:column;gap:20px;min-width:0;}
+
+  /* Status card */
+  .status-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .status-top .label{font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-dim);}
+  .status-top .percent{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.9rem;font-variant-numeric:tabular-nums;}
+  .bar-rail{margin-top:10px;height:12px;width:100%;border-radius:999px;background:var(--panel-2);overflow:hidden;}
+  .bar-fill{height:100%;border-radius:999px;background:var(--accent);width:0%;transition:width .5s ease;}
+  .count{margin-top:14px;font-family:'Oswald',sans-serif;font-weight:600;font-size:1.4rem;text-transform:uppercase;font-variant-numeric:tabular-nums;}
+  .section-loc{margin-top:2px;font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);}
+  .current-mission{margin-top:8px;font-size:0.98rem;font-weight:600;color:var(--accent);}
+  .status-actions{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;}
+  .status-actions .btn.reset{margin-left:auto;}
+
+  /* Twitch chat card */
+  .chat-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .chat-head h2{margin:0;font-family:'Oswald',sans-serif;font-size:1.05rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
+  .chat-status{display:flex;align-items:center;gap:6px;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dim);}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--text-dim);}
+  .dot.connecting{background:var(--yellow);animation:pulse 1.2s infinite;}
+  .dot.connected{background:var(--green);}
+  .dot.error{background:var(--rust);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  .cmd-box{margin-top:14px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);padding:10px 12px;}
+  .cmd-box p{margin:0 0 6px;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);}
+  .cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:0.78rem;color:var(--text-dim);}
+
+  .log{margin-top:12px;max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;}
+  .log-line{font-size:0.76rem;}
+  .log-line.ok{color:var(--green);}
+  .log-line.warn{color:var(--yellow);}
+  .log-line.info{color:var(--text-dim);}
+
   .capture-box{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
   .capture-text{font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--text-dim);word-break:break-word;}
   .capture-tag{font-family:'Oswald',sans-serif;font-weight:600;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:5px;flex:none;}
@@ -45,7 +84,8 @@
   .capture-tag.unmatched{background:rgba(192,87,74,0.18);color:var(--rust);}
   .quick-add{margin-top:10px;}
 
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-height:70vh;overflow-y:auto;padding:6px;}
+  /* Mission list */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-height:78vh;overflow-y:auto;padding:6px;}
   .chapter-group{margin-bottom:4px;}
   .chapter-head{position:sticky;top:0;z-index:1;background:var(--panel);padding:10px 10px 4px;}
   .chapter-head .chapter-name{font-family:'Oswald',sans-serif;font-weight:700;font-size:0.76rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);}
@@ -72,7 +112,7 @@
 <div class="wrap">
   <header>
     <h1>RDR2 Story Tracker</h1>
-    <p>Styr <a href="index.html" target="_blank" id="overlay-link">overlayet</a> manuelt, eller lad save-trackeren opdatere det automatisk mens du spiller.</p>
+    <p>Styr <a href="index.html" target="_blank" id="overlay-link">overlayet</a> manuelt, lad mods bruge Twitch chat, eller lad save-trackeren opdatere det automatisk mens du spiller.</p>
     <p id="profile-line" style="margin-top:6px;font-size:0.82rem;color:var(--text-dim);display:none;"></p>
   </header>
 
@@ -99,33 +139,77 @@
     </div>
   </section>
 
-  <section>
-    <p class="section-label">Automatisk tracker (save-fil)</p>
-    <div class="box">
-      <p class="hint" id="tracker-hint">Tjekker status...</p>
-      <div class="capture-box">
-        <span>Seneste save-titel læst af trackeren:</span>
-        <span id="capture-tag" class="capture-tag">—</span>
-      </div>
-      <p class="capture-text" id="capture-text" style="margin:8px 0 0;">Ingen data endnu.</p>
-      <div class="quick-add" id="quick-add" style="display:none;">
-        <button class="btn secondary" id="quick-add-btn">+ Tilføj som næste mission</button>
-      </div>
-    </div>
-  </section>
+  <div class="layout">
+    <div class="col">
+      <section style="margin-bottom:0;">
+        <p class="section-label">Fremgang</p>
+        <div class="box">
+          <div class="status-top">
+            <span class="label" id="status-label">Tracked Mission Progress</span>
+            <span class="percent" id="status-percent">0.0%</span>
+          </div>
+          <div class="bar-rail"><div class="bar-fill" id="status-bar"></div></div>
+          <div class="count" id="status-count">0 / 0 Missions</div>
+          <div class="section-loc" id="status-loc"></div>
+          <div class="current-mission" id="status-current"></div>
+          <div class="status-actions">
+            <button class="btn secondary" id="back-btn">← Back</button>
+            <button class="btn" id="advance-btn">Advance →</button>
+            <button class="btn secondary reset" id="reset-btn">Reset</button>
+          </div>
+        </div>
+      </section>
 
-  <section>
-    <p class="section-label">Missioner</p>
-    <p class="hint" style="margin:-4px 0 10px;color:var(--text-dim);font-size:0.82rem;">Klik en mission for at hoppe manuelt dertil. Alt før det markeres som gennemført. Grupperet i alle 8 kapitler (Kapitel 1-6 + Epilog 1-2).</p>
-    <div class="panel" id="panel"></div>
-  </section>
+      <section style="margin-bottom:0;">
+        <p class="section-label">Twitch chat</p>
+        <div class="box">
+          <div class="chat-head">
+            <h2>Mod-kommandoer</h2>
+            <span class="chat-status"><span class="dot" id="chat-dot"></span><span id="chat-status-text">Offline</span></span>
+          </div>
+          <div class="field-row">
+            <input type="text" id="f-channel" placeholder="twitch kanalnavn">
+            <button class="btn" id="chat-connect-btn">Lyt</button>
+          </div>
+          <div class="status-msg error" id="chat-error"></div>
+          <div class="cmd-box">
+            <p>Kommandoer (kun mods/broadcaster)</p>
+            <div class="cmd-grid">
+              <span><code>!next</code> / <code>!advance</code> — fremad</span>
+              <span><code>!back</code> / <code>!prev</code> — tilbage</span>
+              <span><code>!mission 42</code> — hop til mission</span>
+              <span><code>!chapter 3</code> — hop til kapitel</span>
+              <span><code>!reset</code> — nulstil til 0%</span>
+            </div>
+          </div>
+          <div class="log" id="chat-log"></div>
+        </div>
+      </section>
 
-  <section>
-    <div class="field-row">
-      <button class="btn" id="finish-btn">Marker som gennemført (100%)</button>
-      <button class="btn secondary" id="reset-btn">Nulstil til "ikke startet"</button>
+      <section style="margin-bottom:0;">
+        <p class="section-label">Automatisk tracker (save-fil)</p>
+        <div class="box">
+          <p class="hint" id="tracker-hint">Tjekker status...</p>
+          <div class="capture-box">
+            <span>Seneste save-titel læst af trackeren:</span>
+            <span id="capture-tag" class="capture-tag">—</span>
+          </div>
+          <p class="capture-text" id="capture-text" style="margin:8px 0 0;">Ingen data endnu.</p>
+          <div class="quick-add" id="quick-add" style="display:none;">
+            <button class="btn secondary" id="quick-add-btn">+ Tilføj som næste mission</button>
+          </div>
+        </div>
+      </section>
     </div>
-  </section>
+
+    <div class="col">
+      <section style="margin-bottom:0;">
+        <p class="section-label">Missioner</p>
+        <p class="hint" style="margin:-4px 0 10px;color:var(--text-dim);font-size:0.82rem;">Klik en mission for at hoppe manuelt dertil. Alt før det markeres som gennemført. Grupperet i alle 8 kapitler (Kapitel 1-6 + Epilog 1-2).</p>
+        <div class="panel" id="panel"></div>
+      </section>
+    </div>
+  </div>
 
   <footer id="global-status"></footer>
 </div>
@@ -186,10 +270,16 @@
     });
   }
 
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
   var latest = null;
 
   function jumpTo(index){
-    apiCall('/rdr2/api/current' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ index: index }) })
+    return apiCall('/rdr2/api/current' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ index: index }) })
       .then(render);
   }
 
@@ -199,8 +289,161 @@
       .then(render);
   }
 
+  function doReset(){
+    return apiCall('/rdr2/api/reset' + qs, { method:'POST', headers: authHeaders() }).then(render);
+  }
+
+  // ---- Twitch chat mod commands ----
+  var logEl = document.getElementById('chat-log');
+  var logId = 0;
+  function pushLog(text, kind){
+    var line = document.createElement('div');
+    line.className = 'log-line ' + (kind || 'info');
+    line.textContent = text;
+    logEl.insertBefore(line, logEl.firstChild);
+    while (logEl.children.length > 30) logEl.removeChild(logEl.lastChild);
+  }
+
+  var chatClient = null;
+  var chatDot = document.getElementById('chat-dot');
+  var chatStatusText = document.getElementById('chat-status-text');
+  var chatError = document.getElementById('chat-error');
+  var chatConnectBtn = document.getElementById('chat-connect-btn');
+  var channelInput = document.getElementById('f-channel');
+  var CHANNEL_KEY = 'rdr2-marathon-channel';
+
+  function setChatStatus(status, msg){
+    chatDot.className = 'dot' + (status ? ' ' + status : '');
+    chatStatusText.textContent = { idle:'Offline', connecting:'Connecting…', connected:'Live', error:'Error' }[status] || 'Offline';
+    chatError.textContent = msg || '';
+  }
+
+  function findChapterIndex(query){
+    if (!latest) return -1;
+    var q = query.trim().toLowerCase();
+    for (var i = 0; i < latest.chapters.length; i++){
+      var m = latest.chapters[i];
+      if ((m.part || '').toLowerCase() === q || (m.location || '').toLowerCase() === q) return i;
+    }
+    return -1;
+  }
+
+  function handleChatCommand(cmd, args, user, isPrivileged){
+    var known = ['next','advance','prev','back','mission','chapter','reset'];
+    if (known.indexOf(cmd) === -1) return;
+    if (!isPrivileged) { pushLog('Ignoreret !' + cmd + ' fra ' + user + ' (ikke mod)', 'warn'); return; }
+    if (!latest) return;
+
+    switch (cmd) {
+      case 'next':
+      case 'advance':
+        jumpTo(Math.min(latest.chapters.length, latest.currentIndex + 1));
+        pushLog(user + ': !' + cmd + ' → fremad', 'ok');
+        break;
+      case 'prev':
+      case 'back':
+        jumpTo(Math.max(0, latest.currentIndex - 1));
+        pushLog(user + ': !' + cmd + ' → tilbage', 'ok');
+        break;
+      case 'mission': {
+        var n = parseInt(args, 10);
+        if (Number.isFinite(n) && n >= 1 && n <= latest.chapters.length) {
+          jumpTo(n - 1);
+          pushLog(user + ': !mission ' + n, 'ok');
+        } else {
+          pushLog(user + ': !mission "' + args + '" ugyldig', 'warn');
+        }
+        break;
+      }
+      case 'chapter': {
+        var idx = findChapterIndex(args);
+        if (idx >= 0) { jumpTo(idx); pushLog(user + ': !chapter ' + args, 'ok'); }
+        else pushLog(user + ': !chapter "' + args + '" - intet match', 'warn');
+        break;
+      }
+      case 'reset':
+        doReset();
+        pushLog(user + ': !reset', 'ok');
+        break;
+    }
+  }
+
+  function connectChat(){
+    var name = channelInput.value.trim().toLowerCase().replace(/^#/, '');
+    if (!name) return;
+    try { localStorage.setItem(CHANNEL_KEY, name); } catch(e){}
+
+    if (chatClient) { try { chatClient.disconnect(); } catch(e){} chatClient = null; }
+    if (typeof tmi === 'undefined') { setChatStatus('error', 'tmi.js kunne ikke indlæses.'); return; }
+
+    setChatStatus('connecting');
+    chatClient = new tmi.Client({
+      options: { skipUpdatingEmotesets: true },
+      connection: { reconnect: true, secure: true },
+      channels: [name]
+    });
+
+    chatClient.on('connected', function(){ setChatStatus('connected'); pushLog('Lytter til #' + name, 'info'); });
+    chatClient.on('disconnected', function(){ setChatStatus('idle'); });
+    chatClient.on('message', function(channel, tags, message, self){
+      if (self) return;
+      var text = String(message).trim();
+      if (text[0] !== '!') return;
+      var parts = text.slice(1).split(/\s+/);
+      var command = parts.shift().toLowerCase();
+      var args = parts.join(' ').trim();
+      var badges = tags.badges || {};
+      var isPrivileged = tags.mod === true || badges.broadcaster === '1' || tags['user-type'] === 'mod' ||
+        (tags.username || '').toLowerCase() === name;
+      handleChatCommand(command, args, tags['display-name'] || tags.username || 'unknown', Boolean(isPrivileged));
+    });
+
+    chatClient.connect().catch(function(err){
+      setChatStatus('error', (err && err.message) || 'Kunne ikke forbinde til Twitch chat');
+    });
+
+    chatConnectBtn.textContent = 'Stop';
+    chatConnectBtn.onclick = disconnectChat;
+  }
+
+  function disconnectChat(){
+    if (chatClient) { try { chatClient.disconnect(); } catch(e){} chatClient = null; }
+    try { localStorage.removeItem(CHANNEL_KEY); } catch(e){}
+    setChatStatus('idle');
+    pushLog('Stoppede med at lytte', 'info');
+    chatConnectBtn.textContent = 'Lyt';
+    chatConnectBtn.onclick = connectChat;
+  }
+
+  chatConnectBtn.onclick = connectChat;
+  channelInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') connectChat(); });
+  (function restoreChannel(){
+    try {
+      var saved = localStorage.getItem(CHANNEL_KEY);
+      if (saved) { channelInput.value = saved; connectChat(); }
+    } catch(e){}
+  })();
+
+  // ---- Status card / mission list rendering ----
   function render(state){
     latest = state;
+
+    document.getElementById('status-label').textContent = 'Tracked Mission Progress';
+    document.getElementById('status-percent').textContent = (state.percent || 0).toFixed(1) + '%';
+    document.getElementById('status-bar').style.width = Math.max(0, Math.min(100, state.percent || 0)) + '%';
+    document.getElementById('status-count').textContent = (state.progress ? state.progress.completed : 0) + ' / ' + state.chapters.length + ' Missions';
+    var locEl = document.getElementById('status-loc');
+    var curEl = document.getElementById('status-current');
+    if (state.finished) {
+      locEl.textContent = 'Story Complete';
+      curEl.textContent = '';
+    } else if (state.current) {
+      locEl.textContent = [state.current.part, state.current.location].filter(Boolean).join(' · ');
+      curEl.textContent = state.current.day || '';
+    } else {
+      locEl.textContent = 'Ikke startet endnu';
+      curEl.textContent = '';
+    }
 
     var trackerHint = document.getElementById('tracker-hint');
     trackerHint.innerHTML = state.trackerConfigured
@@ -226,7 +469,7 @@
     panel.innerHTML = '';
 
     // Group consecutive missions by chapter (part) so all 8 chapters
-    // (Chapter 1-6 + Epilogue 1-2) show as their own sections, like before.
+    // (Chapter 1-6 + Epilogue 1-2) show as their own sections.
     var groups = [];
     state.chapters.forEach(function(m, i){
       var last = groups[groups.length - 1];
@@ -255,28 +498,28 @@
         var isDone = i < state.currentIndex;
         var isCurrent = i === state.currentIndex;
 
-        var row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'row' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
-        row.addEventListener('click', function(){ jumpTo(i); });
+        var rowBtn = document.createElement('button');
+        rowBtn.type = 'button';
+        rowBtn.className = 'row' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
+        rowBtn.addEventListener('click', function(){ jumpTo(i); });
 
         var idxEl = document.createElement('span');
         idxEl.className = 'row-idx';
         idxEl.textContent = i + 1;
-        row.appendChild(idxEl);
+        rowBtn.appendChild(idxEl);
 
         var markEl = document.createElement('span');
         markEl.className = 'row-mark ' + (isDone ? 'done' : isCurrent ? 'current' : 'todo');
         markEl.textContent = isDone ? '✓' : isCurrent ? '▶' : '○';
-        row.appendChild(markEl);
+        rowBtn.appendChild(markEl);
 
         var nameEl = document.createElement('span');
         nameEl.className = 'row-name';
         nameEl.textContent = m.day;
-        row.appendChild(nameEl);
+        rowBtn.appendChild(nameEl);
 
-        if (isCurrent) activeRow = row;
-        groupEl.appendChild(row);
+        if (isCurrent) activeRow = rowBtn;
+        groupEl.appendChild(rowBtn);
       });
 
       panel.appendChild(groupEl);
@@ -290,16 +533,17 @@
     };
   }
 
-  document.getElementById('finish-btn').addEventListener('click', function(){
+  document.getElementById('back-btn').addEventListener('click', function(){
     if (!latest) return;
-    if (!confirm('Marker hele playthrough\'et som gennemført (100%)?')) return;
-    apiCall('/rdr2/api/current' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ index: latest.chapters.length }) })
-      .then(render);
+    jumpTo(Math.max(0, latest.currentIndex - 1));
   });
-
+  document.getElementById('advance-btn').addEventListener('click', function(){
+    if (!latest) return;
+    jumpTo(Math.min(latest.chapters.length, latest.currentIndex + 1));
+  });
   document.getElementById('reset-btn').addEventListener('click', function(){
     if (!confirm('Nulstil playthrough-progressionen til "ikke startet"?')) return;
-    apiCall('/rdr2/api/reset' + qs, { method:'POST', headers: authHeaders() }).then(render);
+    doReset();
   });
 
   function loadState(){
