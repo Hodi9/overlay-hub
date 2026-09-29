@@ -58,25 +58,26 @@
     box.classList.add('ready');
     var chapters = state.chapters || [];
     var total = chapters.length;
-    var idx = typeof state.currentIndex === 'number' ? state.currentIndex : -1;
+    var completed = state.progress ? state.progress.completed : 0;
 
-    if (idx < 0){
+    if (!completed){
       content.innerHTML = '<div class="idle">Ikke startet endnu</div>';
       return;
     }
 
-    var completed = state.progress ? state.progress.completed : Math.max(0, idx);
     var percent = typeof state.percent === 'number' ? state.percent : (total ? Math.round((completed / total) * 1000) / 10 : 0);
 
+    // Missions aren't done in list order, so there's no single "current"
+    // mission — this shows the most recently completed one instead.
     var sectionHtml = '';
     var currentHtml = '';
     if (state.finished){
       sectionHtml = 'Story Complete';
       currentHtml = '<span class="bullet"></span><span class="text">Historien er fuldført</span>';
-    } else if (state.current){
-      var parts = [state.current.part, state.current.location].filter(Boolean);
+    } else if (state.lastCompleted){
+      var parts = [state.lastCompleted.part, state.lastCompleted.location].filter(Boolean);
       sectionHtml = parts.map(escapeHtml).join(' · ');
-      currentHtml = '<span class="bullet"></span><span class="text">' + escapeHtml(state.current.day || '') + '</span>';
+      currentHtml = '<span class="bullet"></span><span class="text">' + escapeHtml(state.lastCompleted.day || '') + '</span>';
     }
 
     content.innerHTML =

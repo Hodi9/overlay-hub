@@ -152,9 +152,10 @@
           <div class="count" id="status-count">0 / 0 Missions</div>
           <div class="section-loc" id="status-loc"></div>
           <div class="current-mission" id="status-current"></div>
+          <p class="hint" style="margin:10px 0 0;">Spillet er ikke lineært — % stiger kun for de missioner du faktisk markerer som færdige, uanset rækkefølge.</p>
           <div class="status-actions">
-            <button class="btn secondary" id="back-btn">← Back</button>
-            <button class="btn" id="advance-btn">Advance →</button>
+            <button class="btn secondary" id="back-btn">← Fortryd seneste</button>
+            <button class="btn" id="advance-btn">Marker næste ugjorte →</button>
             <button class="btn secondary reset" id="reset-btn">Reset</button>
           </div>
         </div>
@@ -175,10 +176,9 @@
           <div class="cmd-box">
             <p>Kommandoer (kun mods/broadcaster)</p>
             <div class="cmd-grid">
-              <span><code>!next</code> / <code>!advance</code> — fremad</span>
-              <span><code>!back</code> / <code>!prev</code> — tilbage</span>
-              <span><code>!mission 42</code> — hop til mission</span>
-              <span><code>!chapter 3</code> — hop til kapitel</span>
+              <span><code>!next</code> / <code>!advance</code> — marker næste ugjorte</span>
+              <span><code>!back</code> / <code>!prev</code> — fortryd seneste fuldførte</span>
+              <span><code>!mission 42</code> — skift status for mission 42</span>
               <span><code>!reset</code> — nulstil til 0%</span>
             </div>
           </div>
@@ -205,7 +205,7 @@
     <div class="col">
       <section style="margin-bottom:0;">
         <p class="section-label">Missioner</p>
-        <p class="hint" style="margin:-4px 0 10px;color:var(--text-dim);font-size:0.82rem;">Klik en mission for at hoppe manuelt dertil. Alt før det markeres som gennemført. Grupperet i alle 8 kapitler (Kapitel 1-6 + Epilog 1-2).</p>
+        <p class="hint" style="margin:-4px 0 10px;color:var(--text-dim);font-size:0.82rem;">Klik en mission for at markere den som færdig/ugjort — det påvirker kun den ene mission, ligegyldigt hvor den ligger på listen. Grupperet i alle 8 kapitler (Kapitel 1-6 + Epilog 1-2).</p>
         <div class="panel" id="panel"></div>
       </section>
     </div>
@@ -278,9 +278,34 @@
 
   var latest = null;
 
-  function jumpTo(index){
-    return apiCall('/rdr2/api/current' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ index: index }) })
+  // Toggles ONE mission's done/undone status. Never affects any other
+  // mission — the game isn't played in list order, so completing mission 80
+  // shouldn't silently mark 1-79 as done too.
+  function toggleMission(index, done){
+    var body = { index: index };
+    if (typeof done === 'boolean') body.done = done;
+    return apiCall('/rdr2/api/current' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify(body) })
       .then(render);
+  }
+
+  function markNextUndone(){
+    if (!latest) return;
+    var done = {};
+    latest.completed.forEach(function(i){ done[i] = true; });
+    for (var i = 0; i < latest.chapters.length; i++){
+      if (!done[i]) { toggleMission(i, true); return; }
+    }
+  }
+
+  function unmarkLastCompleted(){
+    if (!latest) return;
+    if (typeof latest.lastCompletedIndex === 'number' && latest.lastCompletedIndex >= 0) {
+      toggleMission(latest.lastCompletedIndex, false);
+      return;
+    }
+    if (latest.completed && latest.completed.length){
+      toggleMission(latest.completed[latest.completed.length - 1], false);
+    }
   }
 
   function addMission(name, part, location){
@@ -318,18 +343,8 @@
     chatError.textContent = msg || '';
   }
 
-  function findChapterIndex(query){
-    if (!latest) return -1;
-    var q = query.trim().toLowerCase();
-    for (var i = 0; i < latest.chapters.length; i++){
-      var m = latest.chapters[i];
-      if ((m.part || '').toLowerCase() === q || (m.location || '').toLowerCase() === q) return i;
-    }
-    return -1;
-  }
-
   function handleChatCommand(cmd, args, user, isPrivileged){
-    var known = ['next','advance','prev','back','mission','chapter','reset'];
+    var known = ['next','advance','prev','back','mission','reset'];
     if (known.indexOf(cmd) === -1) return;
     if (!isPrivileged) { pushLog('Ignoreret !' + cmd + ' fra ' + user + ' (ikke mod)', 'warn'); return; }
     if (!latest) return;
@@ -337,28 +352,22 @@
     switch (cmd) {
       case 'next':
       case 'advance':
-        jumpTo(Math.min(latest.chapters.length, latest.currentIndex + 1));
-        pushLog(user + ': !' + cmd + ' → fremad', 'ok');
+        markNextUndone();
+        pushLog(user + ': !' + cmd + ' → markerede næste ugjorte som færdig', 'ok');
         break;
       case 'prev':
       case 'back':
-        jumpTo(Math.max(0, latest.currentIndex - 1));
-        pushLog(user + ': !' + cmd + ' → tilbage', 'ok');
+        unmarkLastCompleted();
+        pushLog(user + ': !' + cmd + ' → fortrød seneste fuldførte', 'ok');
         break;
       case 'mission': {
         var n = parseInt(args, 10);
         if (Number.isFinite(n) && n >= 1 && n <= latest.chapters.length) {
-          jumpTo(n - 1);
+          toggleMission(n - 1);
           pushLog(user + ': !mission ' + n, 'ok');
         } else {
           pushLog(user + ': !mission "' + args + '" ugyldig', 'warn');
         }
-        break;
-      }
-      case 'chapter': {
-        var idx = findChapterIndex(args);
-        if (idx >= 0) { jumpTo(idx); pushLog(user + ': !chapter ' + args, 'ok'); }
-        else pushLog(user + ': !chapter "' + args + '" - intet match', 'warn');
         break;
       }
       case 'reset':
@@ -437,9 +446,9 @@
     if (state.finished) {
       locEl.textContent = 'Story Complete';
       curEl.textContent = '';
-    } else if (state.current) {
-      locEl.textContent = [state.current.part, state.current.location].filter(Boolean).join(' · ');
-      curEl.textContent = state.current.day || '';
+    } else if (state.lastCompleted) {
+      locEl.textContent = 'Seneste fuldførte: ' + [state.lastCompleted.part, state.lastCompleted.location].filter(Boolean).join(' · ');
+      curEl.textContent = state.lastCompleted.day || '';
     } else {
       locEl.textContent = 'Ikke startet endnu';
       curEl.textContent = '';
@@ -495,13 +504,14 @@
 
       group.items.forEach(function(i){
         var m = state.chapters[i];
-        var isDone = i < state.currentIndex;
-        var isCurrent = i === state.currentIndex;
+        var isDone = Boolean(m.done);
+        var isLast = i === state.lastCompletedIndex;
 
         var rowBtn = document.createElement('button');
         rowBtn.type = 'button';
-        rowBtn.className = 'row' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
-        rowBtn.addEventListener('click', function(){ jumpTo(i); });
+        rowBtn.className = 'row' + (isDone ? ' done' : '') + (isLast ? ' current' : '');
+        rowBtn.title = isDone ? 'Klik for at markere som ugjort' : 'Klik for at markere som færdig';
+        rowBtn.addEventListener('click', function(){ toggleMission(i); });
 
         var idxEl = document.createElement('span');
         idxEl.className = 'row-idx';
@@ -509,8 +519,8 @@
         rowBtn.appendChild(idxEl);
 
         var markEl = document.createElement('span');
-        markEl.className = 'row-mark ' + (isDone ? 'done' : isCurrent ? 'current' : 'todo');
-        markEl.textContent = isDone ? '✓' : isCurrent ? '▶' : '○';
+        markEl.className = 'row-mark ' + (isDone ? 'done' : 'todo');
+        markEl.textContent = isDone ? '✓' : '○';
         rowBtn.appendChild(markEl);
 
         var nameEl = document.createElement('span');
@@ -518,7 +528,7 @@
         nameEl.textContent = m.day;
         rowBtn.appendChild(nameEl);
 
-        if (isCurrent) activeRow = rowBtn;
+        if (isLast) activeRow = rowBtn;
         groupEl.appendChild(rowBtn);
       });
 
@@ -534,12 +544,10 @@
   }
 
   document.getElementById('back-btn').addEventListener('click', function(){
-    if (!latest) return;
-    jumpTo(Math.max(0, latest.currentIndex - 1));
+    unmarkLastCompleted();
   });
   document.getElementById('advance-btn').addEventListener('click', function(){
-    if (!latest) return;
-    jumpTo(Math.min(latest.chapters.length, latest.currentIndex + 1));
+    markNextUndone();
   });
   document.getElementById('reset-btn').addEventListener('click', function(){
     if (!confirm('Nulstil playthrough-progressionen til "ikke startet"?')) return;
