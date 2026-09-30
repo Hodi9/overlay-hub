@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
-import { DEFAULT_MISSIONS } from "./missions.js";
+import { DEFAULT_MISSIONS, MISSION_ADDITIONS, MISSION_ADDITIONS_VERSION } from "./missions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -56,6 +56,26 @@ function cleanMission(input) {
     location: String((input && input.location) ?? "").trim().slice(0, 60),
     part: (input && (input.chapter ?? input.part)) || null
   };
+}
+
+// Missing story missions were added to DEFAULT_MISSIONS after some profiles had
+// already been saved. Progress is stored by position, so a plain edit of the
+// default list would shift saved progress onto the wrong missions. Instead,
+// splice each new mission into the saved list and shift the saved positions.
+function applyMissionAdditions(state) {
+  let changed = false;
+  for (const add of MISSION_ADDITIONS) {
+    if (state.chapters.some((c) => c.day === add.name)) continue;
+    const def = DEFAULT_MISSIONS.find((m) => m.name === add.name);
+    if (!def) continue;
+    const anchor = state.chapters.findIndex((c) => c.day === add.after);
+    const at = anchor >= 0 ? anchor + 1 : state.chapters.length;
+    state.chapters.splice(at, 0, cleanMission(def));
+    state.completed = new Set(Array.from(state.completed, (i) => (i >= at ? i + 1 : i)));
+    if (state.lastCompletedIndex >= at) state.lastCompletedIndex += 1;
+    changed = true;
+  }
+  return changed;
 }
 
 // Save headers only contain the mission title, so match on that alone
@@ -133,7 +153,8 @@ export function createRdr2App() {
       chapters: DEFAULT_MISSIONS.map((m) => cleanMission({ day: m.name, location: m.location, part: m.chapter })),
       completed: new Set(),
       lastCompletedIndex: -1,
-      lastCapture: null
+      lastCapture: null,
+      additionsVersion: MISSION_ADDITIONS_VERSION
     };
   }
 
@@ -154,8 +175,14 @@ export function createRdr2App() {
               chapters,
               completed: new Set(completedRaw.filter((n) => Number.isInteger(n) && n >= 0 && n < chapters.length)),
               lastCompletedIndex: Number.isInteger(saved.lastCompletedIndex) ? saved.lastCompletedIndex : -1,
-              lastCapture: null
+              lastCapture: null,
+              additionsVersion: Number.isInteger(saved.additionsVersion) ? saved.additionsVersion : 0
             };
+            if (state.additionsVersion < MISSION_ADDITIONS_VERSION) {
+              applyMissionAdditions(state);
+              state.additionsVersion = MISSION_ADDITIONS_VERSION;
+              await persist(profileId, state);
+            }
           }
         } catch (error) {
           console.error(`${ENV_PREFIX} profile "${profileId}" load failed; using defaults.`, error);
@@ -184,7 +211,8 @@ export function createRdr2App() {
         JSON.stringify({
           chapters: state.chapters,
           completed: Array.from(state.completed),
-          lastCompletedIndex: state.lastCompletedIndex
+          lastCompletedIndex: state.lastCompletedIndex,
+          additionsVersion: state.additionsVersion
         })
       ]
     );
@@ -349,6 +377,7 @@ export function createRdr2App() {
       if (!list || !list.length) return response.status(400).json({ error: "chapters skal være en ikke-tom liste." });
 
       state.chapters = list.map((c) => cleanMission(c));
+      state.additionsVersion = MISSION_ADDITIONS_VERSION;
       state.completed = new Set(Array.from(state.completed).filter((i) => i < state.chapters.length));
       if (state.lastCompletedIndex >= state.chapters.length) state.lastCompletedIndex = -1;
 

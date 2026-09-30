@@ -22,6 +22,7 @@ export const DEFAULT_MISSIONS = [
   { name: "Paying a Social Call", chapter: "Chapter 2", location: "Horseshoe Overlook" },
   { name: "A Quiet Time", chapter: "Chapter 2", location: "Horseshoe Overlook" },
   { name: "Blessed Are the Meek?", chapter: "Chapter 2", location: "Horseshoe Overlook" },
+  { name: "Good, Honest, Snake Oil", chapter: "Chapter 2", location: "Horseshoe Overlook" },
   { name: "We Loved Once and True I", chapter: "Chapter 2", location: "Horseshoe Overlook" },
   { name: "We Loved Once and True II", chapter: "Chapter 2", location: "Horseshoe Overlook" },
   { name: "We Loved Once and True III", chapter: "Chapter 2", location: "Horseshoe Overlook" },
@@ -38,6 +39,7 @@ export const DEFAULT_MISSIONS = [
   // Chapter 3: Clemens Point
   { name: "Further Questions of Female Suffrage", chapter: "Chapter 3", location: "Clemens Point" },
   { name: "The New South", chapter: "Chapter 3", location: "Clemens Point" },
+  { name: "Money Lending and Other Sins IV", chapter: "Chapter 3", location: "Clemens Point" },
   { name: "The Course of True Love I", chapter: "Chapter 3", location: "Clemens Point" },
   { name: "The Course of True Love II", chapter: "Chapter 3", location: "Clemens Point" },
   { name: "The Course of True Love III", chapter: "Chapter 3", location: "Clemens Point" },
@@ -58,13 +60,18 @@ export const DEFAULT_MISSIONS = [
   // Chapter 4: Saint Denis
   { name: "The Joys of Civilization", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Angelo Bronte, a Man of Honor", chapter: "Chapter 4", location: "Saint Denis" },
+  { name: "Help a Brother Out", chapter: "Chapter 4", location: "Saint Denis" },
+  { name: "Brothers and Sisters, One and All", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "No, No and Thrice, No", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Fatherhood and Other Dreams I", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Fatherhood and Other Dreams II", chapter: "Chapter 4", location: "Saint Denis" },
+  { name: "Money Lending and Other Sins V", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "The Gilded Cage", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "A Fine Night of Debauchery", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Horsemen, Apocalypses", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Urban Pleasures", chapter: "Chapter 4", location: "Saint Denis" },
+  { name: "American Fathers I", chapter: "Chapter 4", location: "Saint Denis" },
+  { name: "American Fathers II", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Country Pursuits", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Revenge Is a Dish Best Eaten", chapter: "Chapter 4", location: "Saint Denis" },
   { name: "Banking, the Old American Art", chapter: "Chapter 4", location: "Saint Denis" },
@@ -76,6 +83,9 @@ export const DEFAULT_MISSIONS = [
   { name: "A Kind and Benevolent Despot", chapter: "Chapter 5", location: "Guarma" },
   { name: "Paradise Mercifully Departed", chapter: "Chapter 5", location: "Guarma" },
   { name: "Dear Uncle Tacitus", chapter: "Chapter 5", location: "Guarma" },
+  { name: "Fleeting Joy", chapter: "Chapter 5", location: "Guarma" },
+  { name: "A Fork in the Road", chapter: "Chapter 5", location: "Guarma" },
+  { name: "That's Murfee Country", chapter: "Chapter 5", location: "Guarma" },
 
   // Chapter 6: Beaver Hollow
   { name: "Icarus and Friends", chapter: "Chapter 6", location: "Beaver Hollow" },
@@ -127,4 +137,22 @@ export const DEFAULT_MISSIONS = [
   { name: "A Really Big Bastard", chapter: "Epilogue 2", location: "Beecher's Hope" },
   { name: "A New Future Imagined", chapter: "Epilogue 2", location: "Beecher's Hope" },
   { name: "American Venom", chapter: "Epilogue 2", location: "Beecher's Hope" },
+]
+
+// Missions added after profiles were first saved. Saved profiles keep their own
+// copy of the list (stored by position), so each of these is spliced in right
+// after `after` and saved progress is shifted to match — see applyMissionAdditions
+// in app.js. Order matters: an `after` may name an earlier entry in this list.
+export const MISSION_ADDITIONS_VERSION = 1
+export const MISSION_ADDITIONS = [
+  { name: "Good, Honest, Snake Oil", after: "Blessed Are the Meek?" },
+  { name: "Money Lending and Other Sins IV", after: "The New South" },
+  { name: "Help a Brother Out", after: "Angelo Bronte, a Man of Honor" },
+  { name: "Brothers and Sisters, One and All", after: "Help a Brother Out" },
+  { name: "Money Lending and Other Sins V", after: "Fatherhood and Other Dreams II" },
+  { name: "American Fathers I", after: "Urban Pleasures" },
+  { name: "American Fathers II", after: "American Fathers I" },
+  { name: "Fleeting Joy", after: "Dear Uncle Tacitus" },
+  { name: "A Fork in the Road", after: "Fleeting Joy" },
+  { name: "That's Murfee Country", after: "A Fork in the Road" },
 ]
