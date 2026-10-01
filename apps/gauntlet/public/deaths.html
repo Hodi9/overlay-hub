@@ -46,7 +46,7 @@
       card.style.setProperty('--game', g.color);
       card.innerHTML =
         '<div class="death-body">' +
-          '<span class="death-label">Deaths</span>' +
+          '<span class="death-label">' + (g.id === 'lol' || g.id === 'rocketleague' ? 'Losses' : 'Deaths') + '</span>' +
           '<span class="death-number">' + (g.deaths || 0) + '</span>' +
         '</div>';
       deathsEl.appendChild(card);
