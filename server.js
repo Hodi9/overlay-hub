@@ -17,6 +17,7 @@ import { createPerfektMatchApp } from "./apps/perfektmatch/app.js";
 import { createPokemonApp } from "./apps/pokemon/app.js";
 import { createRdr2DeathsApp } from "./apps/rdr2-deaths/app.js";
 import { createRdr2App } from "./apps/rdr2/app.js";
+import { createSubcountApp } from "./apps/subcount/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -55,7 +56,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
   });
 })();</script>`;
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subcount"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -116,6 +117,7 @@ app.use("/perfektmatch", createPerfektMatchApp());
 app.use("/pokemon", createPokemonApp());
 app.use("/rdr2-deaths", createRdr2DeathsApp());
 app.use("/rdr2", createRdr2App());
+app.use("/subcount", createSubcountApp());
 
 app.use(express.static(path.join(__dirname, "public")));
 

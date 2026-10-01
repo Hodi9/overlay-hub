@@ -52,6 +52,16 @@ services:
         sync: false
       - key: RDR2DEATHS_TWITCH_CHANNEL
         sync: false
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
+      - key: SUBCOUNT_CONTROL_PASSWORD
+        sync: false
+      - key: SUBCOUNT_REFRESH_TOKEN
+        sync: false
+      - key: SUBCOUNT_DEFAULT_GOAL
+        sync: false
       - key: NODE_VERSION
         value: 22
 
