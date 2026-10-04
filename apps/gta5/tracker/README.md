@@ -23,21 +23,29 @@ powershell -File gta5-save-tracker.ps1 -Once -DryRun
 
 Prints the mission name/percent from your most recent save without sending anything.
 
-## The mission list is a short starter, by design
+## How progress is tracked
 
-`apps/gta5/missions.js` only ships with the early-game missions this was
-built with real confidence about (plus a couple confirmed against actual
-save files). GTA V has around 69 story missions with some choice-dependent
-branching, which is too much to safely guess from memory in exact order and
-wording — a wrong guess here just means "no match," not a Real Problem, but
-it's not worth pretending the list is complete.
+Like the RDR2 tracker, GTA V progress is a *set* of ticked-off missions. Each
+save the tracker reads is matched against the **whole** mission list and that
+one mission is marked done — so it works wherever you are in the game when
+you start the tracker (it does not need to start from mission 1). The control
+panel shows the full list with checkmarks and updates live.
 
-Instead: while you play, every save the tracker reads (matched or not) shows
+Joined mid-playthrough? The story is mostly linear, so use **Fyld ud til
+seneste** in the control panel to mark everything before the latest matched
+mission as done in one click. From then on the tracker keeps adding missions
+by itself.
+
+## The mission list
+
+`apps/gta5/missions.js` covers the main story (56 rows; heist approach
+variants are collapsed into one row each). Strangers & Freaks, Lester's
+assassinations, family missions and Dr. Friedlander sessions are not
+included. While you play, every save the tracker reads (matched or not) shows
 up live in the control panel under "Automatisk tracker (save-fil)". When it
-says "Ingen match," click **+ Tilføj som næste mission** to append the exact
-text straight from your own save file — guaranteed correct because it's your
-actual game data, not a guess. A few sessions of doing that and the list
-will be complete and accurate for your playthrough.
+says "Ingen match," click **+ Tilføj som ny mission** to append the exact
+text straight from your own save file — guaranteed to match because it's your
+actual game data.
 
 ## Running it for more than one person
 

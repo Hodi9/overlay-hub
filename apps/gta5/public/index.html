@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap">
 <style>
-  :root{ --accent:#5fd15a; }
+  :root{ --accent:#5fd15a; --bar:#3fdc4f; }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
   body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-start;height:100vh;padding:40px;}
@@ -21,7 +21,7 @@
   .label{margin-top:4px;font-size:0.875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.16em;color:rgba(255,255,255,.75);}
 
   .bar-rail{margin-top:12px;height:16px;width:100%;border-radius:3px;border:2px solid #fff;padding:3px;}
-  .bar-fill{height:100%;border-radius:1px;border-right:2px solid #fff;background:rgba(255,255,255,.2);width:0%;transition:width .7s ease;}
+  .bar-fill{height:100%;border-radius:1px;border-right:2px solid #fff;background:var(--bar);width:0%;transition:width .7s ease;}
 
   .count{margin-top:12px;font-size:2.25rem;font-weight:700;text-transform:uppercase;letter-spacing:-0.025em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
   .section{margin-top:4px;font-size:1.25rem;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,.85);min-height:1.5em;}
@@ -58,24 +58,25 @@
     box.classList.add('ready');
     var chapters = state.chapters || [];
     var total = chapters.length;
-    var idx = typeof state.currentIndex === 'number' ? state.currentIndex : -1;
+    var completed = state.progress ? state.progress.completed : 0;
 
-    if (idx < 0){
+    if (!completed){
       content.innerHTML = '<div class="idle">Ikke startet endnu</div>';
       return;
     }
 
-    var completed = state.progress ? state.progress.completed : Math.max(0, idx);
     var percent = typeof state.percent === 'number' ? state.percent : (total ? Math.round((completed / total) * 1000) / 10 : 0);
 
+    // Missions are ticked off individually, so there's no single "current"
+    // mission — this shows the most recently completed one instead.
     var sectionHtml = '';
     var currentHtml = '';
     if (state.finished){
       sectionHtml = 'Gennemført';
       currentHtml = '<span class="bullet"></span><span class="text">Historien er fuldført</span>';
-    } else if (state.current){
-      sectionHtml = state.current.part ? escapeHtml(state.current.part) : '';
-      currentHtml = '<span class="bullet"></span><span class="text">' + escapeHtml(state.current.day || '') + '</span>';
+    } else if (state.lastCompleted){
+      sectionHtml = state.lastCompleted.part ? escapeHtml(state.lastCompleted.part) : '';
+      currentHtml = '<span class="bullet"></span><span class="text">' + escapeHtml(state.lastCompleted.day || '') + '</span>';
     }
 
     content.innerHTML =
