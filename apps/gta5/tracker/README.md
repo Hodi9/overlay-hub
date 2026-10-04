@@ -38,10 +38,21 @@ by itself.
 
 ## The mission list
 
-`apps/gta5/missions.js` covers the main story (56 rows; heist approach
-variants are collapsed into one row each). Strangers & Freaks, Lester's
-assassinations, family missions and Dr. Friedlander sessions are not
-included. While you play, every save the tracker reads (matched or not) shows
+`apps/gta5/missions.js` covers the main story: 57 required rows (heist
+finale approaches are collapsed into one row each) plus 16 rows marked
+**valgfri** — heist preparation missions (Carbine Rifles, Bugstars Equipment,
+BZ Gas Grenades, Minisub, Cargobob, Boiler Suits, Masks, Trash Truck, Tow
+Truck, Fire Truck, Stingers, Sidetracked, Gauntlet, Driller) and the extra
+family missions (Doting Dad, Parenting 101). Which preps you play depends on
+the approach you choose, so optional rows are auto-matched and ticked off from
+your save but do **not** count toward the percentage; otherwise 100% would be
+unreachable. "Fyld ud til seneste" and "Marker næste ugjorte" skip them too.
+
+Strangers & Freaks, Lester's other assassinations and Dr. Friedlander sessions
+are not included. Existing profiles are migrated once on load: exact duplicate
+rows are removed and any missing default missions are inserted at the right
+place without moving your checkmarks. Missions you remove afterwards stay
+removed. While you play, every save the tracker reads (matched or not) shows
 up live in the control panel under "Automatisk tracker (save-fil)". When it
 says "Ingen match," click **+ Tilføj som ny mission** to append the exact
 text straight from your own save file — guaranteed to match because it's your

@@ -57,7 +57,8 @@
   function render(state){
     box.classList.add('ready');
     var chapters = state.chapters || [];
-    var total = chapters.length;
+    // Optional rows (heist preps, family missions) are not part of the total.
+    var total = state.progress ? state.progress.total : chapters.length;
     var completed = state.progress ? state.progress.completed : 0;
 
     if (!completed){

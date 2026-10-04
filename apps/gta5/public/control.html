@@ -78,6 +78,8 @@
   .row-char.trevor{background:#e0a13a;}
   .row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .row.done .row-name{color:var(--text-dim);text-decoration:line-through;}
+  .row.optional .row-name{color:var(--text-dim);}
+  .row-opt{flex:none;font-family:'Oswald',sans-serif;font-weight:600;font-size:0.64rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border:1px solid var(--line);border-radius:4px;padding:1px 6px;}
   .row-remove{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.95rem;line-height:1;padding:6px 8px;margin-right:4px;border-radius:6px;flex:none;opacity:0;}
   .row:hover .row-remove, .row-remove:focus{opacity:1;}
   .row-remove:hover{color:var(--rust);background:var(--panel);}
@@ -134,6 +136,7 @@
           </div>
           <div class="bar-rail"><div class="bar-fill" id="status-bar"></div></div>
           <div class="count" id="status-count">0 / 0 Missions</div>
+          <div class="section-loc" id="status-optional"></div>
           <div class="section-loc" id="status-loc"></div>
           <div class="current-mission" id="status-current"></div>
           <p class="hint" style="margin:10px 0 0;">Trackeren krydser den mission af, som din seneste save matcher — uanset hvor på listen den ligger. Startede du midt i spillet, kan du bruge "Fyld ud til seneste" til at markere alt før den som færdigt.</p>
@@ -166,7 +169,7 @@
     <div class="col">
       <section style="margin-bottom:0;">
         <p class="section-label">Missioner</p>
-        <p class="hint" style="margin:-4px 0 10px;color:var(--text-dim);font-size:0.82rem;">Klik en mission for at markere den som færdig/ugjort — det påvirker kun den ene mission. Farvestregen viser hvem der spiller den (blå Michael, grøn Franklin, gul Trevor). Mangler der en mission, så brug "+ Tilføj som ny mission" når trackeren siger "Ingen match", eller tilføj den nederst.</p>
+        <p class="hint" style="margin:-4px 0 10px;color:var(--text-dim);font-size:0.82rem;">Klik en mission for at markere den som færdig/ugjort — det påvirker kun den ene mission. Farvestregen viser hvem der spiller den (blå Michael, grøn Franklin, gul Trevor). Rækker mærket "valgfri" (heist-forberedelser og ekstra familiemissioner) krydses af automatisk, men tæller ikke med i procenten, fordi du kun spiller nogle af dem. Mangler der en mission, så brug "+ Tilføj som ny mission" når trackeren siger "Ingen match", eller tilføj den nederst.</p>
         <div class="panel" id="panel"></div>
         <div class="add-row">
           <input type="text" id="new-name" placeholder="Missionsnavn">
@@ -248,12 +251,14 @@
     return patchCurrent({ index: index });
   }
 
+  // Skips optional rows (heist preps, family missions) — those are ticked
+  // individually, since you only play some of them.
   function markNextUndone(){
     if (!latest) return;
     var done = {};
     latest.completed.forEach(function(i){ done[i] = true; });
     for (var i = 0; i < latest.chapters.length; i++){
-      if (!done[i]) { patchCurrent({ index: i, done: true }); return; }
+      if (!done[i] && !latest.chapters[i].optional) { patchCurrent({ index: i, done: true }); return; }
     }
   }
 
@@ -295,7 +300,9 @@
 
     document.getElementById('status-percent').textContent = (state.percent || 0).toFixed(1) + '%';
     document.getElementById('status-bar').style.width = Math.max(0, Math.min(100, state.percent || 0)) + '%';
-    document.getElementById('status-count').textContent = (state.progress ? state.progress.completed : 0) + ' / ' + state.chapters.length + ' Missions';
+    document.getElementById('status-count').textContent = (state.progress ? state.progress.completed : 0) + ' / ' + (state.progress ? state.progress.total : state.chapters.length) + ' Missions';
+    var optionalDone = state.progress ? state.progress.optionalCompleted : 0;
+    document.getElementById('status-optional').textContent = optionalDone ? '+ ' + optionalDone + ' valgfri' + (optionalDone === 1 ? '' : 'e') + ' gennemført' : '';
     var locEl = document.getElementById('status-loc');
     var curEl = document.getElementById('status-current');
     if (state.finished) {
@@ -338,7 +345,7 @@
       var isLast = i === state.lastCompletedIndex;
 
       var row = document.createElement('div');
-      row.className = 'row' + (isDone ? ' done' : '') + (isLast ? ' current' : '');
+      row.className = 'row' + (isDone ? ' done' : '') + (isLast ? ' current' : '') + (m.optional ? ' optional' : '');
 
       var main = document.createElement('button');
       main.type = 'button';
@@ -365,6 +372,14 @@
       nameEl.className = 'row-name';
       nameEl.textContent = m.day;
       main.appendChild(nameEl);
+
+      if (m.optional) {
+        var optEl = document.createElement('span');
+        optEl.className = 'row-opt';
+        optEl.textContent = 'valgfri';
+        optEl.title = 'Tæller ikke med i procenten';
+        main.appendChild(optEl);
+      }
 
       row.appendChild(main);
 

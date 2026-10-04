@@ -28,8 +28,11 @@ function normalize(text) {
     .trim();
 }
 
-// Scores how well a normalized capture matches a mission's title: exact or
-// substring matches score highest, otherwise a word-overlap ratio.
+// Scores how well a normalized capture matches a mission's title: exact
+// matches score highest, then substring matches, then a word-overlap ratio.
+// The overlap score is capped below the substring score so a partial match
+// can never tie with — and, by list order, beat — an exact title (e.g. the
+// capture "Trevor Philips Industries" must not match "Mr. Philips").
 function scoreMatch(capturedNormalized, targetNormalized) {
   if (!capturedNormalized || !targetNormalized) return 0;
   if (capturedNormalized === targetNormalized) return 1;
@@ -39,7 +42,7 @@ function scoreMatch(capturedNormalized, targetNormalized) {
   const targetWords = targetNormalized.split(" ").filter((w) => w.length >= 3);
   if (!targetWords.length) return 0;
   const hits = targetWords.filter((w) => capturedWords.has(w)).length;
-  return hits / targetWords.length;
+  return Math.min(hits / targetWords.length, 0.89);
 }
 
 function sanitizeProfileId(raw) {
@@ -50,16 +53,78 @@ function sanitizeProfileId(raw) {
   return cleaned || DEFAULT_PROFILE;
 }
 
+// Bump when DEFAULT_MISSIONS gains rows that existing saved lists should get.
+// A saved list below this version is migrated once on load (see
+// migrateSavedList) — deduplicated and topped up with missing defaults —
+// and then stamped, so missions the user later removes stay removed.
+const LIST_VERSION = 2;
+
 // `part` holds the playable character (michael/franklin/trevor) and is only
-// used for the colour tag in the control panel.
+// used for the colour tag in the control panel. `optional` rows (heist preps,
+// family missions) can be ticked off but don't count toward the percentage.
 function cleanMission(input) {
   const character = input?.character ?? input?.part;
   return {
     id: (input && input.id) || crypto.randomUUID(),
     day: String((input && input.name) ?? (input && input.day) ?? "").trim().slice(0, 80),
     location: "",
-    part: CHARACTERS.has(character) ? character : null
+    part: CHARACTERS.has(character) ? character : null,
+    optional: Boolean(input?.optional)
   };
+}
+
+// Brings a saved list up to LIST_VERSION: drops exact-duplicate titles (e.g.
+// the same mission added twice through "Tilføj som ny mission"), then inserts
+// any default mission the list doesn't have yet right after the nearest
+// preceding default it does have. Completion and "latest" are carried over by
+// mission id, so no checkmark moves.
+export function migrateSavedList(chapters, completed, lastCompletedIndex) {
+  const doneIds = new Set();
+  let lastId = null;
+  chapters.forEach((c, i) => {
+    if (completed.has(i)) doneIds.add(c.id);
+    if (i === lastCompletedIndex) lastId = c.id;
+  });
+
+  const firstByTitle = new Map(); // normalized title -> kept chapter
+  const merged = [];
+  for (const chapter of chapters) {
+    const key = normalize(missionMatchText(chapter));
+    const kept = firstByTitle.get(key);
+    if (kept) {
+      // A duplicate that was ticked off ticks off the one we keep.
+      if (doneIds.has(chapter.id)) doneIds.add(kept.id);
+      if (chapter.id === lastId) lastId = kept.id;
+      continue;
+    }
+    firstByTitle.set(key, chapter);
+    merged.push(chapter);
+  }
+
+  const defaults = DEFAULT_MISSIONS.map((m) => cleanMission(m));
+  const present = new Set(merged.map((c) => normalize(missionMatchText(c))));
+  defaults.forEach((d, k) => {
+    const key = normalize(missionMatchText(d));
+    if (present.has(key)) return;
+    let insertAt = 0;
+    for (let p = k - 1; p >= 0; p--) {
+      const at = merged.findIndex((c) => normalize(missionMatchText(c)) === normalize(missionMatchText(defaults[p])));
+      if (at !== -1) {
+        insertAt = at + 1;
+        break;
+      }
+    }
+    merged.splice(insertAt, 0, d);
+    present.add(key);
+  });
+
+  const newCompleted = new Set();
+  let newLast = -1;
+  merged.forEach((c, i) => {
+    if (doneIds.has(c.id)) newCompleted.add(i);
+    if (lastId !== null && c.id === lastId) newLast = i;
+  });
+  return { chapters: merged, completed: newCompleted, lastCompletedIndex: newLast };
 }
 
 // Save headers only contain the mission title, so match on that alone.
@@ -157,6 +222,10 @@ export function createGta5App() {
     } else if (completed.size) {
       lastCompletedIndex = Math.max(...completed);
     }
+    if ((Number.isInteger(saved.listVersion) ? saved.listVersion : 0) < LIST_VERSION) {
+      const migrated = migrateSavedList(chapters, completed, lastCompletedIndex);
+      return { ...migrated, lastCapture: null, migrated: true };
+    }
     return { chapters, completed, lastCompletedIndex, lastCapture: null };
   }
 
@@ -175,6 +244,15 @@ export function createGta5App() {
           }
         } catch (error) {
           console.error(`${ENV_PREFIX} profile "${profileId}" load failed; using defaults.`, error);
+        }
+        if (state.migrated) {
+          // Stamp the migrated list right away so it only ever runs once.
+          delete state.migrated;
+          try {
+            await persist(profileId, state);
+          } catch (error) {
+            console.error(`${ENV_PREFIX} profile "${profileId}" migration save failed.`, error);
+          }
         }
       }
       profiles.set(profileId, state);
@@ -198,6 +276,7 @@ export function createGta5App() {
       [
         dbRowId(profileId),
         JSON.stringify({
+          listVersion: LIST_VERSION,
           chapters: state.chapters,
           completed: Array.from(state.completed),
           lastCompletedIndex: state.lastCompletedIndex
@@ -206,9 +285,27 @@ export function createGta5App() {
     );
   }
 
+  // Progress only counts required (non-optional) missions; ticked-off optional
+  // ones (heist preps, family missions) are reported separately.
+  function progressOf(state) {
+    let total = 0;
+    let completed = 0;
+    let optionalCompleted = 0;
+    state.chapters.forEach((c, i) => {
+      const done = state.completed.has(i);
+      if (c.optional) {
+        if (done) optionalCompleted++;
+      } else {
+        total++;
+        if (done) completed++;
+      }
+    });
+    return { completed, total, optionalCompleted };
+  }
+
   function payload(state) {
     const total = state.chapters.length;
-    const completedCount = state.completed.size;
+    const progress = progressOf(state);
     const lastCompleted =
       state.lastCompletedIndex >= 0 && state.lastCompletedIndex < total ? state.chapters[state.lastCompletedIndex] : null;
 
@@ -217,9 +314,9 @@ export function createGta5App() {
       completed: Array.from(state.completed).sort((a, b) => a - b),
       lastCompletedIndex: state.lastCompletedIndex,
       lastCompleted,
-      finished: total > 0 && completedCount >= total,
-      progress: { completed: completedCount, total },
-      percent: total ? Math.round((completedCount / total) * 1000) / 10 : 0,
+      finished: progress.total > 0 && progress.completed >= progress.total,
+      progress,
+      percent: progress.total ? Math.round((progress.completed / progress.total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
       passwordRequired: Boolean(controlPassword),
       trackerConfigured: Boolean(trackerKey),
@@ -318,7 +415,7 @@ export function createGta5App() {
         ok: true,
         matched,
         matchedChapter: matched ? state.chapters[bestIndex] : null,
-        progress: { completed: state.completed.size, total: state.chapters.length }
+        progress: progressOf(state)
       });
     } catch (error) {
       next(error);
@@ -326,9 +423,10 @@ export function createGta5App() {
   });
 
   // Toggles ONE mission's done/undone status. With `through: true` (and
-  // done != false) it also marks every mission before it as done — handy for
-  // catching up after joining mid-playthrough, since GTA V's story is
-  // mostly linear.
+  // done != false) it also marks every required mission before it as done —
+  // handy for catching up after joining mid-playthrough, since GTA V's story
+  // is mostly linear. Optional rows (heist preps, family missions) are left
+  // alone because you only play some of them.
   router.patch("/api/current", requireControlAuth, async (request, response, next) => {
     try {
       const profileId = profileFromRequest(request);
@@ -343,10 +441,11 @@ export function createGta5App() {
 
       if (done) {
         if (request.body?.through === true) {
-          for (let i = 0; i <= index; i++) state.completed.add(i);
-        } else {
-          state.completed.add(index);
+          for (let i = 0; i < index; i++) {
+            if (!state.chapters[i].optional) state.completed.add(i);
+          }
         }
+        state.completed.add(index);
         state.lastCompletedIndex = index;
       } else {
         state.completed.delete(index);
