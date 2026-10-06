@@ -2,14 +2,19 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { aggregate, floorHour, isValidTimeZone, parseWhen } from "./stats.js";
+import { aggregate, aggregateEmotes, aggregateEvents, floorHour, isValidTimeZone, parseWhen } from "./stats.js";
 import { createCollector, connectChat, parseList } from "./collector.js";
 import { createStore } from "./store.js";
+import { createSevenTv } from "./sevenTv.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CHANNEL_RE = /^[a-z0-9_]{2,25}$/;
 const FLUSH_MS = 5000;
 const MAX_ROWS = 2000;
+// The event this page is for. Chat outside the window is neither recorded nor shown.
+// Override with SUBATHON_START / SUBATHON_END ("YYYY-MM-DDTHH:mm", in SUBATHON_TZ).
+const DEFAULT_START = "2026-10-11T15:00";
+const DEFAULT_END = "2026-10-25T22:00";
 
 function safeEqual(a, b) {
   const bufA = Buffer.from(String(a));
@@ -32,11 +37,15 @@ export function createSubathonApp() {
   }
 
   const tz = isValidTimeZone(process.env.SUBATHON_TZ || "") ? process.env.SUBATHON_TZ : "Europe/Copenhagen";
+  const startText = parseWhen(process.env.SUBATHON_START, tz) != null ? process.env.SUBATHON_START.trim() : DEFAULT_START;
+  const endText = parseWhen(process.env.SUBATHON_END, tz) != null ? process.env.SUBATHON_END.trim() : DEFAULT_END;
+  const win = { startMs: parseWhen(startText, tz), endMs: parseWhen(endText, tz) };
   const store = createStore({ channel, databaseUrl: process.env.DATABASE_URL });
   const collector = createCollector({
     channel,
     exclude: parseList(process.env.SUBATHON_EXCLUDE),
     staff: parseList(process.env.SUBATHON_STAFF),
+    window: win,
     countCommands: process.env.SUBATHON_COUNT_COMMANDS === "1"
   });
   const state = { connected: false, startedAt: new Date().toISOString(), lastFlushAt: null, lastFlushError: null };
@@ -49,14 +58,16 @@ export function createSubathonApp() {
 
   async function flush() {
     await ready;
-    const rows = collector.drain();
-    if (!rows.length) return;
+    const batch = collector.drain();
+    if (!batch.chat.length && !batch.events.length && !batch.emotes.length) return;
     try {
-      await store.add(rows);
+      await store.addChat(batch.chat);
+      await store.addEvents(batch.events);
+      await store.addEmotes(batch.emotes);
       state.lastFlushAt = new Date().toISOString();
       state.lastFlushError = null;
     } catch (error) {
-      collector.requeue(rows);
+      collector.requeue(batch);
       state.lastFlushError = String(error.message || error);
       console.error("subathon: failed to save chat counts, will retry.", error);
     }
@@ -64,7 +75,8 @@ export function createSubathonApp() {
   setInterval(flush, FLUSH_MS).unref();
   for (const sig of ["SIGTERM", "SIGINT"]) process.once(sig, () => { flush().finally(() => process.exit(0)); });
 
-  connectChat({ channel, collector, onStatus: (ok) => { state.connected = ok; } });
+  const sevenTv = createSevenTv();
+  connectChat({ channel, collector, sevenTv, onStatus: (ok) => { state.connected = ok; } });
 
   router.use((_req, res, next) => {
     res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
@@ -79,24 +91,38 @@ export function createSubathonApp() {
     next();
   }
 
+  const windowInfo = { start: startText, end: endText, startMs: win.startMs, endMs: win.endMs };
+
   async function compute(query) {
-    const fromMs = parseWhen(query.from, tz);
-    const toMs = parseWhen(query.to, tz, { end: true });
-    if ((query.from && fromMs == null) || (query.to && toMs == null)) return { error: "Invalid date" };
+    let fromMs = query.from ? parseWhen(query.from, tz) : win.startMs;
+    let toMs = query.to ? parseWhen(query.to, tz, { end: true }) : win.endMs;
+    if (fromMs == null || toMs == null) return { error: "Invalid date" };
+    // Always stay inside the subathon window.
+    fromMs = Math.max(fromMs, win.startMs);
+    toMs = Math.min(toMs, win.endMs);
     await flush();
-    const rows = await store.rows(fromMs == null ? null : floorHour(fromMs), toMs);
-    const result = aggregate(rows, { fromMs, toMs, tz });
-    return { fromMs, toMs, result };
+    const nowMs = Date.now();
+    const [chatRows, eventRows, emoteRows] = await Promise.all([
+      store.chatRows(floorHour(fromMs), toMs),
+      store.eventRows(floorHour(fromMs), toMs),
+      store.emoteRows(floorHour(fromMs), toMs)
+    ]);
+    const result = aggregate(chatRows, { fromMs, toMs, tz });
+    const events = aggregateEvents(eventRows, { fromMs, toMs, tz, nowMs });
+    const emotes = aggregateEmotes(emoteRows, { fromMs, toMs });
+    return { fromMs, toMs, result, events, emotes };
   }
 
   router.get("/api/status", requireAuth, (_req, res) => {
     res.json({
       channel, tz,
+      window: windowInfo,
       connected: state.connected,
       persistent: store.persistent,
       startedAt: state.startedAt,
       lastFlushAt: state.lastFlushAt,
       lastFlushError: state.lastFlushError,
+      sevenTv: sevenTv.status,
       skipped: collector.stats
     });
   });
@@ -105,12 +131,19 @@ export function createSubathonApp() {
     try {
       const out = await compute(req.query);
       if (out.error) return res.status(400).json({ error: out.error });
-      const { result } = out;
+      const { result, events } = out;
+      const roles = new Map(result.staff.map((c) => [c.username, c.role]));
+      const tagRole = (list) => list.slice(0, 10).map((c) => ({ ...c, role: roles.get(c.username) || "" }));
       res.json({
         channel, tz,
+        window: windowInfo,
         from: out.fromMs == null ? null : new Date(out.fromMs).toISOString(),
         to: out.toMs == null ? null : new Date(out.toMs).toISOString(),
         totals: result.totals,
+        busiest: result.busiest,
+        overview: { subs: events.subs, bits: events.bits, today: events.today, bestDay: events.bestDay, avgPerDay: events.avgPerDay, days: events.days },
+        gifters: tagRole(events.gifters),
+        emotes: out.emotes,
         timeline: result.timeline,
         truncated: result.chatters.length > MAX_ROWS,
         chatters: result.chatters.slice(0, MAX_ROWS),

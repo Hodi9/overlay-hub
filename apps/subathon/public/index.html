@@ -50,6 +50,28 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
 .hint { color:var(--mute); font-size:13px; margin:10px 0 0; max-width:75ch; }
 .err { color:var(--bad); min-height:1.2em; margin-top:8px; }
 [hidden] { display:none !important; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-bottom:16px; }
+.tile { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:16px 18px; box-shadow:var(--shadow); min-width:0; }
+.tile .k { font-size:13px; font-weight:600; color:var(--mute); }
+.tile .v { font:500 34px/1.15 "JetBrains Mono",monospace; color:var(--accent); margin:6px 0 2px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.tile .n { font-size:12px; color:var(--mute); min-height:1.2em; }
+.boards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); gap:16px; margin-bottom:16px; }
+.board { background:var(--panel); border:1px solid var(--line); border-radius:22px; box-shadow:var(--shadow); overflow:hidden; min-width:0; display:flex; flex-direction:column; }
+.board header { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); }
+.board h2 { margin:0; font-size:15px; letter-spacing:-.01em; }
+.ico { width:30px; height:30px; border-radius:9px; background:var(--soft); color:var(--accent); display:grid; place-items:center; flex:none; font:700 14px "JetBrains Mono",monospace; }
+.ico svg { width:17px; height:17px; }
+.lb { list-style:none; margin:0; padding:0; max-height:468px; overflow-y:auto; }
+.lb li { display:flex; align-items:center; gap:12px; padding:7px 16px; min-height:46px; min-width:0; }
+.lb li:nth-child(even) { background:rgba(231,220,203,.28); }
+.lb .r { width:22px; flex:none; font:500 13px "JetBrains Mono",monospace; color:var(--mute); }
+.lb li:nth-child(1) .r { color:#c98a00; font-weight:700; }
+.lb li:nth-child(3) .r { color:#b4561b; font-weight:700; }
+.lb img { width:32px; height:32px; flex:none; object-fit:contain; }
+.lb .nm { flex:1; min-width:0; font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lb .ct { font:500 13px "JetBrains Mono",monospace; color:var(--mute); font-variant-numeric:tabular-nums; }
+.lb .empty { color:var(--mute); font-size:13px; justify-content:center; }
+.board .hint { padding:0 16px 14px; margin:10px 0 0; }
 @media (max-width:520px) { .row > div { flex:1 1 100%; } }
 </style>
 </head>
@@ -80,21 +102,39 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
         <div><label for="from">From</label><input id="from" type="datetime-local"></div>
         <div><label for="to">To</label><input id="to" type="datetime-local"></div>
         <button class="primary" type="submit">Update</button>
-        <button type="button" id="all">Everything</button>
+        <button type="button" id="all">Whole subathon</button>
         <button type="button" id="csv">Download CSV</button>
         <div style="flex:1;min-width:160px"><label for="q">Find a chatter</label><input id="q" type="search" placeholder="username" style="width:100%"></div>
       </form>
-      <div class="hint">Times are in <span id="tz"></span>. Data is grouped by hour, so a range snaps to whole hours.</div>
+      <div class="hint">Times are in <span id="tz"></span>. Only the subathon itself is tracked (<span id="win"></span>). Data is grouped by hour, so a range snaps to whole hours.</div>
       <div id="err" class="err" role="alert"></div>
     </section>
 
-    <div class="cards" id="cards"></div>
+    <div class="tiles" id="tiles"></div>
 
     <section class="panel">
       <label>Messages over time</label>
       <svg id="chart" role="img" aria-label="Messages over time"></svg>
       <div class="hint" id="chartHint"></div>
     </section>
+
+    <div class="boards">
+      <section class="board">
+        <header><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8h14v-8M7.5 8a2.5 2.5 0 1 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 1 1 0 5"/></svg></span><h2>Top 10 gifters</h2></header>
+        <ol class="lb" id="gifters"></ol>
+        <p class="hint">Subs gifted, mass gifts included. Anonymous gifters can't be identified.</p>
+      </section>
+      <section class="board">
+        <header><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg></span><h2>Top Twitch emotes</h2></header>
+        <ol class="lb" id="twEmotes"></ol>
+        <p class="hint">Global emotes and the channel's subscriber emotes.</p>
+      </section>
+      <section class="board">
+        <header><span class="ico seven">7</span><h2>Top 7TV emotes</h2></header>
+        <ol class="lb" id="tvEmotes"></ol>
+        <p class="hint">From the channel's 7TV set and 7TV's global set.</p>
+      </section>
+    </div>
 
     <section class="panel">
       <label>Viewers</label>
@@ -129,7 +169,7 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
   const base = location.pathname.replace(/\/+$/, "");
   let key = "";
   try { key = sessionStorage.getItem("subathon-key") || ""; } catch (e) {}
-  let data = null, sortBy = "score", sortDir = -1;
+  let win = null, whole = true, data = null, sortBy = "score", sortDir = -1;
   const fmt = (n) => Number(n).toLocaleString();
 
   async function api(path, params) {
@@ -145,10 +185,16 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     const s = await (await api("status")).json();
     $("chan").textContent = "Chat activity for twitch.tv/" + s.channel + ".";
     $("tz").textContent = s.tz;
+    win = s.window;
+    const fmtW = (t) => new Date(t).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: s.tz });
+    $("win").textContent = fmtW(win.startMs) + " → " + fmtW(win.endMs);
+    $("from").min = $("to").min = win.start; $("from").max = $("to").max = win.end;
+    if (whole && !$("from").value) { $("from").value = win.start; $("to").value = win.end; }
     $("connDot").className = "dot" + (s.connected ? " on" : "");
     $("connText").textContent = s.connected ? "Listening to chat" : "Not connected to chat";
     $("status").innerHTML = "Tracking since " + new Date(s.startedAt).toLocaleString() + "." +
       (s.persistent ? "" : ' <span class="warn">No database: counts reset on restart.</span>') +
+      (s.sevenTv && s.sevenTv.lastError ? ' <span class="warn">7TV emotes not loaded yet: ' + s.sevenTv.lastError.replace(/</g, "&lt;") + "</span>" : "") +
       (s.lastFlushError ? ' <span class="warn">Save error: ' + s.lastFlushError.replace(/</g, "&lt;") + "</span>" : "");
   }
 
@@ -162,13 +208,48 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
 
   function render() {
     const t = data.totals;
-    $("cards").innerHTML = [["Viewers", t.chatters], ["Mods & VIPs", t.staff], ["Messages", t.messages], ["Words", t.words], ["Emotes", t.emotes]]
-      .map(([l, v]) => '<div class="card"><b>' + fmt(v) + "</b><span>" + l + "</span></div>").join("");
+    overview();
     const q = $("q").value.trim().toLowerCase();
     table(data.chatters, "head", "body", q, false);
     table(data.staff, "head2", "body2", q, true);
     $("staffNote").textContent = "(" + data.staff.length + ")";
     chart();
+    extras();
+  }
+
+  // 7TV emotes are stored as "7tv:<id>", everything else is a Twitch emote id.
+  const emoteUrl = (id) => String(id).startsWith("7tv:")
+    ? "https://cdn.7tv.app/emote/" + encodeURIComponent(String(id).slice(4)) + "/2x.webp"
+    : "https://static-cdn.jtvnw.net/emoticons/v2/" + encodeURIComponent(id) + "/default/light/2.0";
+  const num = (n) => Number(n).toLocaleString();
+  const dayLabel = (k) => new Date(k + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+
+  function overview() {
+    const o = data.overview, t = data.totals, b = data.busiest;
+    const tiles = [
+      ["New subs in range", num(o.subs.total), num(o.subs.new) + " new · " + num(o.subs.resub) + " resubs · " + num(o.subs.gifted) + " gifted"],
+      ["Today's subs", num(o.today), "Since midnight (" + data.tz + ")"],
+      ["Most subs in a single day", o.bestDay ? num(o.bestDay.subs) : "–", o.bestDay ? dayLabel(o.bestDay.day) : "No subs yet"],
+      ["Avg daily new subs", num(o.avgPerDay), "Over " + o.days + (o.days === 1 ? " day" : " days")],
+      ["Bits cheered", num(o.bits), "In chat"],
+      ["Chat messages", num(t.messages), num(t.chatters) + " viewers · " + num(t.staff) + " mods & VIPs"],
+      ["Emotes used", num(data.emotes.total), num(data.emotes.distinct) + " different"],
+      ["Busiest hour", b ? num(b.messages) : "–", b ? b.label + " · messages" : "No chat yet"]
+    ];
+    $("tiles").innerHTML = tiles.map((x) => '<div class="tile"><div class="k">' + esc(x[0]) + '</div><div class="v">' + esc(x[1]) + '</div><div class="n">' + esc(x[2]) + "</div></div>").join("");
+  }
+
+  function extras() {
+    const empty = '<li class="empty">Nothing recorded yet.</li>';
+    const board = (id, list, withImg, label) => {
+      $(id).innerHTML = list.length ? list.map((x, i) =>
+        '<li><span class="r">' + (i + 1) + "</span>" + (withImg ? '<img src="' + emoteUrl(x.id) + '" alt="" loading="lazy">' : "") +
+        '<span class="nm" title="' + esc(label(x)) + '">' + esc(label(x)) + (x.role ? ' <small class="tag">' + (x.role === "mod" ? "MOD" : "VIP") + "</small>" : "") + "</span>" +
+        '<span class="ct">' + num(x.count != null ? x.count : x.gifted) + "</span></li>").join("") : empty;
+    };
+    board("gifters", data.gifters, false, (x) => x.display);
+    board("twEmotes", data.emotes.twitch, true, (x) => x.name);
+    board("tvEmotes", data.emotes.sevenTv, true, (x) => x.name);
   }
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -207,7 +288,7 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
   async function enter() {
     try { await loadStatus(); } catch (e) { return logout(e.auth ? (key ? e.message : "") : e.message); }
     $("login").hidden = true; $("app").hidden = false;
-    load(); setInterval(() => { loadStatus().catch(() => {}); if (!$("from").value && !$("to").value) load(); }, 30000);
+    load(); setInterval(() => { loadStatus().catch(() => {}); if (whole) load(); }, 30000);
   }
 
   $("loginForm").addEventListener("submit", (e) => {
@@ -215,8 +296,16 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     try { sessionStorage.setItem("subathon-key", key); } catch (err) {}
     enter();
   });
-  $("range").addEventListener("submit", (e) => { e.preventDefault(); load(); });
-  $("all").addEventListener("click", () => { $("from").value = ""; $("to").value = ""; load(); });
+  $("range").addEventListener("submit", (e) => {
+    e.preventDefault();
+    whole = !!win && $("from").value === win.start && $("to").value === win.end;
+    load();
+  });
+  $("all").addEventListener("click", () => {
+    whole = true;
+    if (win) { $("from").value = win.start; $("to").value = win.end; }
+    load();
+  });
   $("q").addEventListener("input", () => data && render());
   for (const id of ["head", "head2"]) $(id).addEventListener("click", (e) => {
     const k = e.target.dataset.k; if (!k) return;

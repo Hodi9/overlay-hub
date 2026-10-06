@@ -157,10 +157,89 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
     points = [...buckets].map(([label, messages]) => ({ label, messages }));
   }
 
+  let busiest = null;
+  for (const [h, n] of timeline) if (!busiest || n > busiest.messages) busiest = { hour: h, label: hourLabel(h, tz), messages: n };
+
   return {
     totals: { ...total, chatters: viewers.length, staff: staff.length },
     chatters: viewers,
     staff,
+    busiest,
     timeline: { unit, points }
+  };
+}
+
+const SUB_KINDS = new Set(["sub", "resub", "gift"]);
+
+// rows: [{ hour, kind: "sub"|"resub"|"gift"|"bits", username, display, amount }]
+// "gift" amounts are subs gifted by that user, "bits" are bits cheered.
+export function aggregateEvents(rows, { fromMs, toMs, tz, nowMs = Date.now() }) {
+  const lo = fromMs == null ? -Infinity : floorHour(fromMs);
+  const hi = toMs == null ? Infinity : toMs;
+  const subs = { total: 0, new: 0, resub: 0, gifted: 0 };
+  const perDay = new Map();
+  const gifters = new Map();
+  let bits = 0, firstHour = Infinity;
+
+  for (const r of rows) {
+    if (r.hour < lo || r.hour >= hi) continue;
+    if (SUB_KINDS.has(r.kind)) {
+      subs.total += r.amount;
+      if (r.kind === "sub") subs.new += r.amount;
+      else if (r.kind === "resub") subs.resub += r.amount;
+      else subs.gifted += r.amount;
+      const day = dayKey(r.hour, tz);
+      perDay.set(day, (perDay.get(day) || 0) + r.amount);
+      if (r.hour < firstHour) firstHour = r.hour;
+    }
+    if (r.kind === "gift") {
+      const u = gifters.get(r.username) || { username: r.username, display: r.display || r.username, amount: 0 };
+      u.display = r.display || u.display;
+      u.amount += r.amount;
+      gifters.set(r.username, u);
+    }
+    if (r.kind === "bits") bits += r.amount;
+  }
+
+  let bestDay = null;
+  for (const [day, n] of perDay) if (!bestDay || n > bestDay.subs) bestDay = { day, subs: n };
+
+  // Average over the days that have actually happened (from the start of the range until now / its end).
+  const startMs = fromMs ?? (firstHour === Infinity ? nowMs : firstHour);
+  const endMs = Math.min(toMs ?? nowMs, nowMs);
+  const dayNum = (ms) => Date.parse(`${dayKey(ms, tz)}T00:00:00Z`) / 86400_000;
+  const days = Math.max(1, dayNum(Math.max(endMs, startMs)) - dayNum(startMs) + 1);
+
+  const rank = (m) => [...m.values()].sort((a, b) => b.amount - a.amount || a.username.localeCompare(b.username)).map((u) => ({ username: u.username, display: u.display, gifted: u.amount }));
+  return {
+    subs,
+    bits,
+    today: perDay.get(dayKey(nowMs, tz)) || 0,
+    bestDay,
+    avgPerDay: Math.round((subs.total / days) * 10) / 10,
+    days,
+    gifters: rank(gifters)
+  };
+}
+
+// rows: [{ hour, emote, emoteId, count }]. 7TV emotes have ids like "7tv:<id>".
+// Returns separate rankings for Twitch emotes and 7TV emotes.
+export function aggregateEmotes(rows, { fromMs, toMs }, limit = 25) {
+  const lo = fromMs == null ? -Infinity : floorHour(fromMs);
+  const hi = toMs == null ? Infinity : toMs;
+  const byName = new Map();
+  for (const r of rows) {
+    if (r.hour < lo || r.hour >= hi) continue;
+    const e = byName.get(r.emote) || { name: r.emote, id: r.emoteId, count: 0 };
+    e.count += r.count;
+    byName.set(r.emote, e);
+  }
+  const all = [...byName.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const is7tv = (e) => String(e.id).startsWith("7tv:");
+  return {
+    total: all.reduce((n, e) => n + e.count, 0),
+    distinct: all.length,
+    twitch: all.filter((e) => !is7tv(e)).slice(0, limit),
+    sevenTv: all.filter(is7tv).slice(0, limit)
   };
 }
