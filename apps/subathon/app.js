@@ -133,7 +133,7 @@ export function createSubathonApp() {
       if (out.error) return res.status(400).json({ error: out.error });
       const { result, events } = out;
       const roles = new Map(result.staff.map((c) => [c.username, c.role]));
-      const tagRole = (list) => list.slice(0, 100).map((c) => ({ ...c, role: roles.get(c.username) || "" }));
+      const tagRole = (list) => list.slice(0, 10).map((c) => ({ ...c, role: roles.get(c.username) || "" }));
       res.json({
         channel, tz,
         window: windowInfo,
@@ -143,7 +143,6 @@ export function createSubathonApp() {
         busiest: result.busiest,
         overview: { subs: events.subs, bits: events.bits, today: events.today, bestDay: events.bestDay, avgPerDay: events.avgPerDay, days: events.days },
         gifters: tagRole(events.gifters),
-        cheerers: tagRole(events.cheerers),
         emotes: out.emotes,
         timeline: result.timeline,
         truncated: result.chatters.length > MAX_ROWS,

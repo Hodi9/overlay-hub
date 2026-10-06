@@ -179,7 +179,6 @@ export function aggregateEvents(rows, { fromMs, toMs, tz, nowMs = Date.now() }) 
   const subs = { total: 0, new: 0, resub: 0, gifted: 0 };
   const perDay = new Map();
   const gifters = new Map();
-  const cheerers = new Map();
   let bits = 0, firstHour = Infinity;
 
   for (const r of rows) {
@@ -193,12 +192,11 @@ export function aggregateEvents(rows, { fromMs, toMs, tz, nowMs = Date.now() }) 
       perDay.set(day, (perDay.get(day) || 0) + r.amount);
       if (r.hour < firstHour) firstHour = r.hour;
     }
-    const bucket = r.kind === "gift" ? gifters : r.kind === "bits" ? cheerers : null;
-    if (bucket) {
-      const u = bucket.get(r.username) || { username: r.username, display: r.display || r.username, amount: 0 };
+    if (r.kind === "gift") {
+      const u = gifters.get(r.username) || { username: r.username, display: r.display || r.username, amount: 0 };
       u.display = r.display || u.display;
       u.amount += r.amount;
-      bucket.set(r.username, u);
+      gifters.set(r.username, u);
     }
     if (r.kind === "bits") bits += r.amount;
   }
@@ -212,7 +210,7 @@ export function aggregateEvents(rows, { fromMs, toMs, tz, nowMs = Date.now() }) 
   const dayNum = (ms) => Date.parse(`${dayKey(ms, tz)}T00:00:00Z`) / 86400_000;
   const days = Math.max(1, dayNum(Math.max(endMs, startMs)) - dayNum(startMs) + 1);
 
-  const rank = (m, key) => [...m.values()].sort((a, b) => b.amount - a.amount || a.username.localeCompare(b.username)).map((u) => ({ username: u.username, display: u.display, [key]: u.amount }));
+  const rank = (m) => [...m.values()].sort((a, b) => b.amount - a.amount || a.username.localeCompare(b.username)).map((u) => ({ username: u.username, display: u.display, gifted: u.amount }));
   return {
     subs,
     bits,
@@ -220,13 +218,13 @@ export function aggregateEvents(rows, { fromMs, toMs, tz, nowMs = Date.now() }) 
     bestDay,
     avgPerDay: Math.round((subs.total / days) * 10) / 10,
     days,
-    gifters: rank(gifters, "gifted"),
-    cheerers: rank(cheerers, "bits")
+    gifters: rank(gifters)
   };
 }
 
-// rows: [{ hour, emote, emoteId, count }]
-export function aggregateEmotes(rows, { fromMs, toMs }, limit = 12) {
+// rows: [{ hour, emote, emoteId, count }]. 7TV emotes have ids like "7tv:<id>".
+// Returns separate rankings for Twitch emotes and 7TV emotes.
+export function aggregateEmotes(rows, { fromMs, toMs }, limit = 25) {
   const lo = fromMs == null ? -Infinity : floorHour(fromMs);
   const hi = toMs == null ? Infinity : toMs;
   const byName = new Map();
@@ -237,5 +235,11 @@ export function aggregateEmotes(rows, { fromMs, toMs }, limit = 12) {
     byName.set(r.emote, e);
   }
   const all = [...byName.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-  return { total: all.reduce((n, e) => n + e.count, 0), distinct: all.length, top: all.slice(0, limit) };
+  const is7tv = (e) => String(e.id).startsWith("7tv:");
+  return {
+    total: all.reduce((n, e) => n + e.count, 0),
+    distinct: all.length,
+    twitch: all.filter((e) => !is7tv(e)).slice(0, limit),
+    sevenTv: all.filter(is7tv).slice(0, limit)
+  };
 }

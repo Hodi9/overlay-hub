@@ -110,7 +110,7 @@ test("mass gifts are counted once, not again per recipient", () => {
   assert.equal(c.isMassGiftPart({ "msg-param-origin-id": "other" }), false);
 });
 
-test("aggregateEvents totals subs, finds the best day and ranks gifters and cheerers", () => {
+test("aggregateEvents totals subs, finds the best day and ranks gifters", () => {
   const d1 = Date.UTC(2026, 9, 11, 14), d2 = d1 + 24 * H, d3 = d2 + 24 * H;
   const ev = (hour, kind, username, amount) => ({ hour, kind, username, display: username, amount });
   const rows = [
@@ -125,17 +125,19 @@ test("aggregateEvents totals subs, finds the best day and ranks gifters and chee
   assert.equal(out.avgPerDay, 15.3);
   assert.equal(out.today, 0);
   assert.deepEqual(out.gifters.map((g) => [g.username, g.gifted]), [["gifty", 15], ["other", 6]]);
-  assert.deepEqual(out.cheerers.map((g) => [g.username, g.bits]), [["cheery", 600]]);
   const narrow = aggregateEvents(rows, { fromMs: d2, toMs: d3, tz: TZ, nowMs: d3 });
   assert.equal(narrow.subs.total, 31);
 });
 
 test("aggregateEmotes ranks by count inside the range", () => {
   const t = Date.UTC(2026, 9, 12, 10);
-  const rows = [{ hour: t, emote: "Kappa", emoteId: "25", count: 3 }, { hour: t + H, emote: "Kappa", emoteId: "25", count: 4 }, { hour: t, emote: "LUL", emoteId: "425618", count: 5 }, { hour: t + 50 * H, emote: "PogChamp", emoteId: "1", count: 99 }];
+  const rows = [{ hour: t, emote: "Kappa", emoteId: "25", count: 3 }, { hour: t + H, emote: "Kappa", emoteId: "25", count: 4 }, { hour: t, emote: "LUL", emoteId: "425618", count: 5 },
+    { hour: t, emote: "ICANT", emoteId: "7tv:ABC", count: 9 }, { hour: t + 50 * H, emote: "PogChamp", emoteId: "1", count: 99 }];
   const out = aggregateEmotes(rows, { fromMs: t, toMs: t + 10 * H });
-  assert.deepEqual(out.top.map((e) => [e.name, e.count]), [["Kappa", 7], ["LUL", 5]]);
-  assert.equal(out.total, 12);
+  assert.deepEqual(out.twitch.map((e) => [e.name, e.count]), [["Kappa", 7], ["LUL", 5]]);
+  assert.deepEqual(out.sevenTv.map((e) => [e.name, e.count]), [["ICANT", 9]]);
+  assert.equal(out.total, 21);
+  assert.equal(out.distinct, 3);
 });
 
 test("7TV emotes are loaded from the channel and global sets and matched by name", async () => {
