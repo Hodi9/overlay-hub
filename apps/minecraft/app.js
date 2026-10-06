@@ -25,6 +25,19 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+const statKeys = ["longest", "nether", "end"];
+
+// Accepts milliseconds or "mm:ss" / "h:mm:ss" text; empty/invalid -> null (no run yet).
+function parseDuration(value) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "number") return Number.isFinite(value) && value >= 0 ? Math.round(value) : null;
+  const parts = String(value).trim().split(":");
+  if (parts.length < 2 || parts.length > 3 || parts.some((part) => !/^\d+(\.\d+)?$/.test(part))) return null;
+  const nums = parts.map(Number);
+  while (nums.length < 3) nums.unshift(0);
+  return Math.round(((nums[0] * 60 + nums[1]) * 60 + nums[2]) * 1000);
+}
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -48,6 +61,11 @@ export function createMinecraftApp() {
       deathCommand: String(variableDefaults.deathCommand || "!death"),
       chatEnabled: toBool(variableDefaults.chatEnabled, true),
       modOnly: toBool(variableDefaults.modOnly, true),
+      runStats: {
+        longest: { label: "Longest Run", ms: null, attempt: null },
+        nether: { label: "Fastest Nether Entre", ms: null, attempt: null },
+        end: { label: "Fastest End Entre", ms: null, attempt: null }
+      },
       bosses: Object.fromEntries(
         bossKeys.map((key) => [
           key,
@@ -81,6 +99,19 @@ export function createMinecraftApp() {
       deathCommand: String(input?.deathCommand ?? base.deathCommand).trim().slice(0, 40) || "!death",
       bosses: {}
     };
+
+    next.runStats = {};
+    for (const key of statKeys) {
+      const source = input?.runStats?.[key] || {};
+      const fallback = base.runStats[key];
+      const attempt = source.attempt === null || source.attempt === "" ? null : Math.round(toNumber(source.attempt, NaN));
+      next.runStats[key] = {
+        label: String(source.label ?? fallback.label).trim().slice(0, 40) || fallback.label,
+        ms: Object.hasOwn(source, "ms") ? parseDuration(source.ms) : null,
+        attempt: Number.isFinite(attempt) && attempt > 0 ? attempt : null
+      };
+    }
+    next.showRunStatsIcons = toBool(input?.showRunStatsIcons, true);
 
     for (const key of bossKeys) {
       const source = input?.bosses?.[key] || {};
@@ -204,6 +235,10 @@ export function createMinecraftApp() {
     for (const key of bossKeys) {
       if (patch.bosses?.[key]) next.bosses[key] = { ...next.bosses[key], ...patch.bosses[key] };
     }
+    for (const key of statKeys) {
+      if (patch.runStats?.[key]) next.runStats[key] = { ...next.runStats[key], ...patch.runStats[key] };
+    }
+    if (Object.hasOwn(patch, "showRunStatsIcons")) next.showRunStatsIcons = patch.showRunStatsIcons;
     return next;
   }
 
@@ -325,6 +360,59 @@ export function createMinecraftApp() {
 </html>`;
   }
 
+  function statsOverlayDocument(previewBg) {
+    return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Minecraft Run Stats Overlay</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: transparent; font-family: Inter, "Segoe UI", system-ui, sans-serif; }
+    ${previewBg === "black" ? "html, body { background: #000 !important; }" : ""}
+    .stats { width: 340px; display: flex; flex-direction: column; gap: 10px; padding: 6px; }
+    .stat { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px;
+      background: rgba(20, 22, 24, .92); border: 1px solid rgba(255, 255, 255, .06); }
+    .stat svg { flex: none; width: 40px; height: 40px; image-rendering: pixelated; border-radius: 4px; }
+    .stats.no-icons svg { display: none; }
+    .label { margin: 0 0 4px; color: #e8e8e8; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .value { margin: 0; color: #fff; font-size: 18px; font-weight: 900; letter-spacing: .01em; text-transform: uppercase; white-space: nowrap; }
+    .value.empty { font-size: 19px; }
+  </style>
+</head>
+<body>
+  <div class="stats" id="stats">
+    <div class="stat"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect width="8" height="8" fill="#6d4a2b"/><rect width="8" height="3" fill="#5fae3a"/><rect y="3" width="1" height="1" fill="#5fae3a"/><rect x="3" y="3" width="2" height="1" fill="#5fae3a"/><rect x="7" y="3" width="1" height="1" fill="#5fae3a"/><rect x="1" y="1" width="1" height="1" fill="#4b8f2c"/><rect x="5" y="2" width="1" height="1" fill="#4b8f2c"/><rect x="2" y="5" width="1" height="1" fill="#57391f"/><rect x="6" y="6" width="1" height="1" fill="#57391f"/><rect x="4" y="4" width="1" height="1" fill="#7d5a38"/></svg><div><p class="label" data-label="longest"></p><p class="value" data-value="longest"></p></div></div>
+    <div class="stat"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect width="8" height="8" fill="#12111d"/><rect x="1" y="0" width="6" height="1" fill="#1d1830"/><rect x="2" y="1" width="4" height="6" fill="#6a2fd6"/><rect x="3" y="2" width="2" height="4" fill="#a45cff"/><rect x="0" y="0" width="1" height="8" fill="#1d1830"/><rect x="7" y="0" width="1" height="8" fill="#1d1830"/></svg><div><p class="label" data-label="nether"></p><p class="value" data-value="nether"></p></div></div>
+    <div class="stat"><svg viewBox="0 0 8 8" shape-rendering="crispEdges"><rect width="8" height="8" fill="#121614"/><rect x="2" y="1" width="4" height="6" fill="#2f7a4a"/><rect x="1" y="2" width="6" height="4" fill="#2f7a4a"/><rect x="2" y="2" width="4" height="4" fill="#58b878"/><rect x="3" y="3" width="2" height="2" fill="#0d1a12"/><rect x="3" y="3" width="1" height="1" fill="#d6ffe2"/></svg><div><p class="label" data-label="end"></p><p class="value" data-value="end"></p></div></div>
+  </div>
+  <script>
+    function fmt(ms) {
+      const total = Math.floor(ms / 1000);
+      const pad = (n) => String(n).padStart(2, "0");
+      return pad(Math.floor(total / 3600)) + ":" + pad(Math.floor(total / 60) % 60) + ":" + pad(total % 60);
+    }
+    function sync(state) {
+      if (!state || !state.runStats) return;
+      document.getElementById("stats").classList.toggle("no-icons", state.showRunStatsIcons === false);
+      for (const key of ["longest", "nether", "end"]) {
+        const stat = state.runStats[key];
+        document.querySelector('[data-label="' + key + '"]').textContent = stat.label;
+        const value = document.querySelector('[data-value="' + key + '"]');
+        value.textContent = stat.ms === null
+          ? "No run yet"
+          : fmt(stat.ms) + (stat.attempt ? " (Attempt " + stat.attempt + ")" : "");
+      }
+    }
+    fetch("/minecraft/api/state", { cache: "no-store" }).then((r) => r.json()).then(sync).catch(() => {});
+    const events = new EventSource("/minecraft/api/events");
+    events.onmessage = (event) => { try { sync(JSON.parse(event.data)); } catch (_) {} };
+  </script>
+</body>
+</html>`;
+  }
+
   router.use(express.json({ limit: "64kb" }));
   router.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
@@ -340,6 +428,11 @@ export function createMinecraftApp() {
   router.get("/wither-overlay", (request, response) => {
     response.set("Cache-Control", "no-store");
     response.type("html").send(witherOverlayDocument(request.query.bg));
+  });
+
+  router.get("/stats-overlay", (request, response) => {
+    response.set("Cache-Control", "no-store");
+    response.type("html").send(statsOverlayDocument(request.query.bg));
   });
 
   router.get("/api/state", (_request, response) => {
@@ -390,7 +483,9 @@ export function createMinecraftApp() {
         if (!bossKeys.includes(boss)) return response.status(400).json({ error: "Ukendt boss." });
         nextState.bosses[boss].defeated = eventType === "boss_defeated";
       } else if (eventType === "reset") {
+        const keepStats = nextState.runStats;
         Object.assign(nextState, initialState());
+        nextState.runStats = keepStats;
       } else {
         return response.status(400).json({ error: "Ukendt event-type." });
       }

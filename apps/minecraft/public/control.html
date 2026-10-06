@@ -52,6 +52,10 @@
     input[type=range] { accent-color:var(--lime); }
     .footer-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
     .saved { margin-left:auto; align-self:center; color:var(--muted); font-size:12px; }
+    .stats-grid { display:grid; gap:12px; }
+    .stat-row { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 90px auto; gap:10px; align-items:end; }
+    .stat-row .field { margin:0; }
+    @media (max-width:760px) { .stat-row { grid-template-columns:1fr 1fr; } }
     @media (max-width:760px) { .top-grid,.boss-grid { grid-template-columns:1fr; } header { align-items:flex-start; } .status { text-align:right; } }
     @media (max-width:470px) { .login-row,.boss-actions { grid-template-columns:1fr; display:grid; } .death-control { gap:7px; } .round { width:46px; height:46px; } }
   </style>
@@ -108,6 +112,13 @@
         </article>
       </div>
 
+      <article class="panel" style="margin-top:18px">
+        <p class="section-title">Run Stats <a class="button" href="/minecraft/stats-overlay" target="_blank" rel="noreferrer" style="float:right;font-size:11px;padding:4px 8px;">Åbn overlay</a></p>
+        <div class="stats-grid" id="stats-grid"></div>
+        <label class="switch" style="margin-top:14px"><input id="stats-icons" type="checkbox"> Vis ikoner</label>
+        <p class="hint" style="color:var(--muted);font-size:12px;margin:10px 0 0">Tid som <code>mm:ss</code> eller <code>t:mm:ss</code>. Tom tid = "No run yet".</p>
+      </article>
+
       <div class="boss-grid" id="boss-grid"></div>
 
       <div class="footer-actions">
@@ -147,8 +158,32 @@
       </article>`;
     }
 
+    const statKeys = ["longest", "nether", "end"];
+    const fmtMs = (ms) => {
+      if (ms === null || ms === undefined) return "";
+      const t = Math.floor(ms / 1000), p = (n) => String(n).padStart(2, "0");
+      return p(Math.floor(t / 3600)) + ":" + p(Math.floor(t / 60) % 60) + ":" + p(t % 60);
+    };
+
+    function renderStats() {
+      const grid = document.getElementById("stats-grid");
+      // Don't clobber a field the user is typing in.
+      if (grid.contains(document.activeElement)) return;
+      grid.innerHTML = statKeys.map((key) => {
+        const s = state.runStats[key];
+        return `<div class="stat-row" data-stat="${key}">
+          <label class="field">Titel<input type="text" class="stat-label" maxlength="40" value="${s.label.replace(/"/g, "&quot;")}"></label>
+          <label class="field">Tid<input type="text" class="stat-time" placeholder="00:13:26" value="${fmtMs(s.ms)}"></label>
+          <label class="field">Attempt<input type="number" class="stat-attempt" min="1" value="${s.attempt ?? ""}"></label>
+          <button class="button stat-clear">Ryd</button>
+        </div>`;
+      }).join("");
+      document.getElementById("stats-icons").checked = state.showRunStatsIcons !== false;
+    }
+
     function render() {
       if (!state) return;
+      renderStats();
       document.getElementById("death-count").textContent = state.deaths;
       document.getElementById("wither-count").textContent = state.witherSkulls;
       document.getElementById("scale").value = state.overlayScale;
@@ -233,6 +268,23 @@
       const key = event.target.closest("[data-boss]").dataset.boss;
       patch({ bosses:{ [key]:{ show:event.target.checked } } });
     });
+    const statsGrid = document.getElementById("stats-grid");
+    statsGrid.addEventListener("change", (event) => {
+      const row = event.target.closest("[data-stat]");
+      if (!row) return;
+      const read = () => ({
+        label: row.querySelector(".stat-label").value,
+        ms: row.querySelector(".stat-time").value.trim(),
+        attempt: row.querySelector(".stat-attempt").value
+      });
+      patch({ runStats:{ [row.dataset.stat]:read() } }).catch((e) => { savedEl.textContent = e.message; });
+    });
+    statsGrid.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-stat]");
+      if (!row || !event.target.closest(".stat-clear")) return;
+      patch({ runStats:{ [row.dataset.stat]:{ ms:null, attempt:null } } });
+    });
+    document.getElementById("stats-icons").addEventListener("change", (event) => patch({ showRunStatsIcons:event.target.checked }));
     document.getElementById("reset").addEventListener("click", async () => {
       if (!confirm("Vil du nulstille dødsfald og alle bosser?")) return;
       state = await request("/api/event", { method:"POST", body:JSON.stringify({ type:"reset" }) });
