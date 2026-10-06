@@ -112,7 +112,7 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     <section class="panel">
       <label>Most used emotes <span id="emoteNote"></span></label>
       <div class="emotes" id="emotes"></div>
-      <div class="hint">Twitch emotes only (global and the channel's own). Third-party emotes like 7TV or BTTV aren't visible to Twitch and aren't counted.</div>
+      <div class="hint">Twitch emotes and the channel's 7TV emotes (7TV's own global set included). BTTV and FFZ emotes aren't counted.</div>
     </section>
 
     <div class="two">
@@ -186,6 +186,7 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     $("connText").textContent = s.connected ? "Listening to chat" : "Not connected to chat";
     $("status").innerHTML = "Tracking since " + new Date(s.startedAt).toLocaleString() + "." +
       (s.persistent ? "" : ' <span class="warn">No database: counts reset on restart.</span>') +
+      (s.sevenTv && s.sevenTv.lastError ? ' <span class="warn">7TV emotes not loaded yet: ' + s.sevenTv.lastError.replace(/</g, "&lt;") + "</span>" : "") +
       (s.lastFlushError ? ' <span class="warn">Save error: ' + s.lastFlushError.replace(/</g, "&lt;") + "</span>" : "");
   }
 
@@ -208,6 +209,10 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     extras();
   }
 
+  // 7TV emotes are stored as "7tv:<id>", everything else is a Twitch emote id.
+  const emoteUrl = (id) => String(id).startsWith("7tv:")
+    ? "https://cdn.7tv.app/emote/" + encodeURIComponent(String(id).slice(4)) + "/2x.webp"
+    : "https://static-cdn.jtvnw.net/emoticons/v2/" + encodeURIComponent(id) + "/default/light/2.0";
   const num = (n) => Number(n).toLocaleString();
   const dayLabel = (k) => new Date(k + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 
@@ -230,7 +235,7 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     const e = data.emotes;
     $("emoteNote").textContent = "(" + num(e.total) + " uses)";
     $("emotes").innerHTML = e.top.length ? e.top.map((x) =>
-      '<div class="emote"><img src="https://static-cdn.jtvnw.net/emoticons/v2/' + encodeURIComponent(x.id) + '/default/light/2.0" alt="" loading="lazy"><div style="min-width:0"><b>' + esc(x.name) + "</b><span>" + num(x.count) + "×</span></div></div>").join("")
+      '<div class="emote"><img src="' + emoteUrl(x.id) + '" alt="" loading="lazy"><div style="min-width:0"><b>' + esc(x.name) + "</b><span>" + num(x.count) + "×</span></div></div>").join("")
       : '<p class="hint" style="margin:0">No emotes used yet.</p>';
 
     const rows = (list, key) => list.slice(0, 15).map((c, i) =>

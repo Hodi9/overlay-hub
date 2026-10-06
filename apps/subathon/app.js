@@ -5,6 +5,7 @@ import express from "express";
 import { aggregate, aggregateEmotes, aggregateEvents, floorHour, isValidTimeZone, parseWhen } from "./stats.js";
 import { createCollector, connectChat, parseList } from "./collector.js";
 import { createStore } from "./store.js";
+import { createSevenTv } from "./sevenTv.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CHANNEL_RE = /^[a-z0-9_]{2,25}$/;
@@ -74,7 +75,8 @@ export function createSubathonApp() {
   setInterval(flush, FLUSH_MS).unref();
   for (const sig of ["SIGTERM", "SIGINT"]) process.once(sig, () => { flush().finally(() => process.exit(0)); });
 
-  connectChat({ channel, collector, onStatus: (ok) => { state.connected = ok; } });
+  const sevenTv = createSevenTv();
+  connectChat({ channel, collector, sevenTv, onStatus: (ok) => { state.connected = ok; } });
 
   router.use((_req, res, next) => {
     res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
@@ -120,6 +122,7 @@ export function createSubathonApp() {
       startedAt: state.startedAt,
       lastFlushAt: state.lastFlushAt,
       lastFlushError: state.lastFlushError,
+      sevenTv: sevenTv.status,
       skipped: collector.stats
     });
   });

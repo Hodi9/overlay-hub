@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { aggregate, aggregateEmotes, aggregateEvents, parseWhen, dayKey } from "../apps/subathon/stats.js";
 import { createCollector, extractEmotes, parseList } from "../apps/subathon/collector.js";
+import { createSevenTv } from "../apps/subathon/sevenTv.js";
 
 const TZ = "Europe/Copenhagen";
 const H = 3600_000;
@@ -135,4 +136,33 @@ test("aggregateEmotes ranks by count inside the range", () => {
   const out = aggregateEmotes(rows, { fromMs: t, toMs: t + 10 * H });
   assert.deepEqual(out.top.map((e) => [e.name, e.count]), [["Kappa", 7], ["LUL", 5]]);
   assert.equal(out.total, 12);
+});
+
+test("7TV emotes are loaded from the channel and global sets and matched by name", async () => {
+  const calls = [];
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    const body = url.endsWith("/emote-sets/global")
+      ? { emotes: [{ id: "G1", name: "Clap" }, { id: "G2", name: "Shared" }] }
+      : { emote_set: { emotes: [{ id: "C1", name: "OMEGALUL7" }, { id: "C2", name: "Shared" }] } };
+    return { ok: true, json: async () => body };
+  };
+  const tv = createSevenTv({ fetchImpl, log: {} });
+  assert.deepEqual(tv.match("OMEGALUL7"), [], "nothing before load");
+  tv.start("12345");
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(calls.some((u) => u.endsWith("/users/twitch/12345")));
+  assert.equal(tv.status.count, 3);
+  assert.deepEqual(tv.match("hi OMEGALUL7 OMEGALUL7 Clap omegalul7"), [
+    { id: "7tv:C1", name: "OMEGALUL7" }, { id: "7tv:C1", name: "OMEGALUL7" }, { id: "7tv:G1", name: "Clap" }]);
+  assert.deepEqual(tv.match("Shared"), [{ id: "7tv:C2", name: "Shared" }], "channel set wins over global");
+  assert.deepEqual(tv.match("Clap", new Set(["Clap"])), [], "already counted as a Twitch emote");
+});
+
+test("a failing 7TV request is recorded and does not throw", async () => {
+  const tv = createSevenTv({ fetchImpl: async () => { throw new Error("offline"); }, log: {} });
+  tv.start("1");
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(tv.status.loaded, false);
+  assert.match(tv.status.lastError, /Request failed|offline|users\/twitch/);
 });

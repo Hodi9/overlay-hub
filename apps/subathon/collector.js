@@ -125,16 +125,18 @@ function roleOf(tags) {
 // Anonymous, read-only Twitch IRC connection: no account or OAuth needed.
 // Subs, gifts and cheers are announced to every chat client, so they are
 // tracked from here too.
-export function connectChat({ channel, collector, onStatus = () => {} }) {
+export function connectChat({ channel, collector, sevenTv = null, onStatus = () => {} }) {
   const client = new tmi.Client({ connection: { reconnect: true, secure: true }, channels: [channel] });
   const who = (tags, fallback) => ({ username: (tags?.login || fallback || "").toLowerCase(), display: tags?.["display-name"] || fallback });
 
   client.on("connected", () => onStatus(true));
   client.on("disconnected", () => onStatus(false));
+  client.on("roomstate", (_c, state) => { if (sevenTv && state?.["room-id"]) sevenTv.start(state["room-id"]); });
 
   client.on("message", (_chan, tags, message, self) => {
     if (self || tags["message-type"] === "whisper") return;
     const emoteList = extractEmotes(message, tags.emotes);
+    if (sevenTv) emoteList.push(...sevenTv.match(message, new Set(emoteList.map((e) => e.name))));
     collector.record({ username: tags.username, display: tags["display-name"], text: message, emoteList, role: roleOf(tags) });
   });
 
