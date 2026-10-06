@@ -79,6 +79,7 @@ tbody tr:nth-child(-n+3) td:first-child { color:var(--accent); font-weight:700; 
     </section>
 
     <section class="panel">
+      <label>Viewers</label>
       <div class="tablewrap">
         <table>
           <thead><tr id="head"></tr></thead>
@@ -86,6 +87,17 @@ tbody tr:nth-child(-n+3) td:first-child { color:var(--accent); font-weight:700; 
         </table>
       </div>
       <div class="hint">Score = messages + 5 × active hours, so spamming alone doesn't win. Click a column to sort. Bots, the streamer, "!commands" and repeated identical messages are not counted.</div>
+    </section>
+
+    <section class="panel">
+      <label>Mods &amp; VIPs <span id="staffNote"></span></label>
+      <div class="tablewrap">
+        <table>
+          <thead><tr id="head2"></tr></thead>
+          <tbody id="body2"></tbody>
+        </table>
+      </div>
+      <div class="hint">Moderators and VIPs are ranked separately and left out of the viewer list above. Role is taken from their chat badge as of their latest message in the range.</div>
     </section>
   </div>
 </main>
@@ -132,20 +144,28 @@ tbody tr:nth-child(-n+3) td:first-child { color:var(--accent); font-weight:700; 
 
   function render() {
     const t = data.totals;
-    $("cards").innerHTML = [["Chatters", t.chatters], ["Messages", t.messages], ["Words", t.words], ["Emotes", t.emotes]]
+    $("cards").innerHTML = [["Viewers", t.chatters], ["Mods & VIPs", t.staff], ["Messages", t.messages], ["Words", t.words], ["Emotes", t.emotes]]
       .map(([l, v]) => '<div class="card"><b>' + fmt(v) + "</b><span>" + l + "</span></div>").join("");
-    $("head").innerHTML = COLS.map(([l, k]) => '<th data-k="' + (k || "") + '" class="' + (k === sortBy ? "sorted" : "") + '">' + l + (k === sortBy ? (sortDir < 0 ? " ▼" : " ▲") : "") + "</th>").join("");
     const q = $("q").value.trim().toLowerCase();
-    const rank = new Map(data.chatters.slice().sort((a, b) => b.score - a.score || b.messages - a.messages).map((c, i) => [c.username, i + 1]));
-    const rows = data.chatters.filter((c) => !q || c.username.includes(q) || c.display.toLowerCase().includes(q))
-      .sort((a, b) => (typeof a[sortBy] === "string" ? a[sortBy].localeCompare(b[sortBy]) : a[sortBy] - b[sortBy]) * sortDir);
-    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-    $("body").innerHTML = rows.slice(0, 300).map((c) =>
-      "<tr><td>" + rank.get(c.username) + "</td><td>" + esc(c.display) + "</td><td>" + fmt(c.score) + "</td><td>" + fmt(c.messages) + "</td><td>" + fmt(c.activeHours) +
-      "</td><td>" + fmt(c.activeDays) + "</td><td>" + fmt(c.streak) + "</td><td>" + fmt(c.words) + "</td><td>" + c.avgWords + "</td><td>" + fmt(c.emotes) + "</td></tr>").join("") ||
-      '<tr><td colspan="10" style="text-align:center;color:var(--mute)">No chat recorded in this range yet.</td></tr>';
-    $("body").insertAdjacentHTML("beforeend", rows.length > 300 ? '<tr><td colspan="10" style="text-align:center;color:var(--mute)">Showing 300 of ' + rows.length + " — use search or CSV for the rest.</td></tr>" : "");
+    table(data.chatters, "head", "body", q, false);
+    table(data.staff, "head2", "body2", q, true);
+    $("staffNote").textContent = "(" + data.staff.length + ")";
     chart();
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function table(list, headId, bodyId, q, showRole) {
+    $(headId).innerHTML = COLS.map(([l, k]) => '<th data-k="' + (k || "") + '" class="' + (k === sortBy ? "sorted" : "") + '">' + l + (k === sortBy ? (sortDir < 0 ? " ▼" : " ▲") : "") + "</th>").join("");
+    const rank = new Map(list.slice().sort((a, b) => b.score - a.score || b.messages - a.messages).map((c, i) => [c.username, i + 1]));
+    const rows = list.filter((c) => !q || c.username.includes(q) || c.display.toLowerCase().includes(q))
+      .sort((a, b) => (typeof a[sortBy] === "string" ? a[sortBy].localeCompare(b[sortBy]) : a[sortBy] - b[sortBy]) * sortDir);
+    const tag = (c) => showRole ? ' <small style="color:var(--mute)">' + (c.role === "mod" ? "MOD" : "VIP") + "</small>" : "";
+    $(bodyId).innerHTML = rows.slice(0, 300).map((c) =>
+      "<tr><td>" + rank.get(c.username) + "</td><td>" + esc(c.display) + tag(c) + "</td><td>" + fmt(c.score) + "</td><td>" + fmt(c.messages) + "</td><td>" + fmt(c.activeHours) +
+      "</td><td>" + fmt(c.activeDays) + "</td><td>" + fmt(c.streak) + "</td><td>" + fmt(c.words) + "</td><td>" + c.avgWords + "</td><td>" + fmt(c.emotes) + "</td></tr>").join("") ||
+      '<tr><td colspan="10" style="text-align:center;color:var(--mute)">Nobody recorded in this range yet.</td></tr>';
+    if (rows.length > 300) $(bodyId).insertAdjacentHTML("beforeend", '<tr><td colspan="10" style="text-align:center;color:var(--mute)">Showing 300 of ' + rows.length + " — use search or CSV for the rest.</td></tr>");
   }
 
   function chart() {
@@ -180,7 +200,7 @@ tbody tr:nth-child(-n+3) td:first-child { color:var(--accent); font-weight:700; 
   $("range").addEventListener("submit", (e) => { e.preventDefault(); load(); });
   $("all").addEventListener("click", () => { $("from").value = ""; $("to").value = ""; load(); });
   $("q").addEventListener("input", () => data && render());
-  $("head").addEventListener("click", (e) => {
+  for (const id of ["head", "head2"]) $(id).addEventListener("click", (e) => {
     const k = e.target.dataset.k; if (!k) return;
     if (k === sortBy) sortDir = -sortDir; else { sortBy = k; sortDir = k === "display" ? 1 : -1; }
     render();

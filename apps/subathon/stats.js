@@ -103,10 +103,12 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
     if (r.hour < lo || r.hour >= hi) continue;
     let u = users.get(r.username);
     if (!u) {
-      u = { username: r.username, display: r.display || r.username, messages: 0, words: 0, chars: 0, emotes: 0, hours: 0, days: new Set(), first: Infinity, last: -Infinity };
+      u = { username: r.username, display: r.display || r.username, role: "", roleAt: -Infinity, messages: 0, words: 0, chars: 0, emotes: 0, hours: 0, days: new Set(), first: Infinity, last: -Infinity };
       users.set(r.username, u);
     }
     u.display = r.display || u.display;
+    // Role as of the most recent hour in range (people get modded/VIP'd mid-event).
+    if (r.hour >= u.roleAt) { u.roleAt = r.hour; u.role = r.role || ""; }
     u.messages += r.messages; u.words += r.words; u.chars += r.chars; u.emotes += r.emotes;
     u.hours += 1;
     u.days.add(dayOf(r.hour));
@@ -121,6 +123,7 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
   const list = [...users.values()].map((u) => ({
     username: u.username,
     display: u.display,
+    role: u.role,
     messages: u.messages,
     words: u.words,
     chars: u.chars,
@@ -134,6 +137,10 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
     score: u.messages * SCORE_WEIGHTS.message + u.hours * SCORE_WEIGHTS.hour
   }));
   list.sort((a, b) => b.score - a.score || b.messages - a.messages || a.username.localeCompare(b.username));
+
+  // Mods and VIPs get their own bracket so they don't compete with viewers.
+  const staff = list.filter((c) => c.role);
+  const viewers = list.filter((c) => !c.role);
 
   // Timeline: hourly for short ranges, daily for long ones. Gaps are filled
   // with zeros so offline stretches are visible.
@@ -151,8 +158,9 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
   }
 
   return {
-    totals: { ...total, chatters: list.length },
-    chatters: list,
+    totals: { ...total, chatters: viewers.length, staff: staff.length },
+    chatters: viewers,
+    staff,
     timeline: { unit, points }
   };
 }

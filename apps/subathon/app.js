@@ -36,6 +36,7 @@ export function createSubathonApp() {
   const collector = createCollector({
     channel,
     exclude: parseList(process.env.SUBATHON_EXCLUDE),
+    staff: parseList(process.env.SUBATHON_STAFF),
     countCommands: process.env.SUBATHON_COUNT_COMMANDS === "1"
   });
   const state = { connected: false, startedAt: new Date().toISOString(), lastFlushAt: null, lastFlushError: null };
@@ -112,7 +113,8 @@ export function createSubathonApp() {
         totals: result.totals,
         timeline: result.timeline,
         truncated: result.chatters.length > MAX_ROWS,
-        chatters: result.chatters.slice(0, MAX_ROWS)
+        chatters: result.chatters.slice(0, MAX_ROWS),
+        staff: result.staff.slice(0, MAX_ROWS)
       });
     } catch (error) {
       console.error("subathon: stats failed.", error);
@@ -129,9 +131,11 @@ export function createSubathonApp() {
         if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // keep spreadsheets from running usernames as formulas
         return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
       };
-      const cols = ["rank", "username", "display", "score", "messages", "activeHours", "activeDays", "streak", "words", "avgWords", "emotes", "firstSeen", "lastSeen"];
+      const cols = ["rank", "role", "username", "display", "score", "messages", "activeHours", "activeDays", "streak", "words", "avgWords", "emotes", "firstSeen", "lastSeen"];
       const lines = [cols.join(",")];
-      out.result.chatters.forEach((c, i) => lines.push([i + 1, ...cols.slice(1).map((k) => c[k])].map(esc).join(",")));
+      const line = (rank, c) => [rank, ...cols.slice(1).map((k) => c[k])].map(esc).join(",");
+      out.result.chatters.forEach((c, i) => lines.push(line(i + 1, { ...c, role: "viewer" })));
+      out.result.staff.forEach((c, i) => lines.push(line(i + 1, c))); // ranked within their own bracket
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader("Content-Disposition", `attachment; filename="${channel}-chat-stats.csv"`);
       res.send(lines.join("\n"));

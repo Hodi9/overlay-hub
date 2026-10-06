@@ -18,6 +18,7 @@ export function createStore({ channel, databaseUrl }) {
           hour TIMESTAMPTZ NOT NULL,
           username TEXT NOT NULL,
           display TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT '',
           messages INT NOT NULL DEFAULT 0,
           words INT NOT NULL DEFAULT 0,
           chars INT NOT NULL DEFAULT 0,
@@ -25,16 +26,18 @@ export function createStore({ channel, databaseUrl }) {
           PRIMARY KEY (channel, hour, username)
         )
       `);
+      await db.query(`ALTER TABLE subathon_hourly ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT ''`);
     },
     async add(rows) {
       if (!rows.length) return;
       await db.query(
-        `INSERT INTO subathon_hourly (channel, hour, username, display, messages, words, chars, emotes)
-         SELECT $1::text, t.hour, t.username, t.display, t.messages, t.words, t.chars, t.emotes
-         FROM unnest($2::timestamptz[], $3::text[], $4::text[], $5::int[], $6::int[], $7::int[], $8::int[])
-           AS t(hour, username, display, messages, words, chars, emotes)
+        `INSERT INTO subathon_hourly (channel, hour, username, display, role, messages, words, chars, emotes)
+         SELECT $1::text, t.hour, t.username, t.display, t.role, t.messages, t.words, t.chars, t.emotes
+         FROM unnest($2::timestamptz[], $3::text[], $4::text[], $5::text[], $6::int[], $7::int[], $8::int[], $9::int[])
+           AS t(hour, username, display, role, messages, words, chars, emotes)
          ON CONFLICT (channel, hour, username) DO UPDATE SET
            display = EXCLUDED.display,
+           role = EXCLUDED.role,
            messages = subathon_hourly.messages + EXCLUDED.messages,
            words = subathon_hourly.words + EXCLUDED.words,
            chars = subathon_hourly.chars + EXCLUDED.chars,
@@ -44,6 +47,7 @@ export function createStore({ channel, databaseUrl }) {
           rows.map((r) => new Date(r.hour).toISOString()),
           rows.map((r) => r.username),
           rows.map((r) => r.display),
+          rows.map((r) => r.role || ""),
           rows.map((r) => r.messages),
           rows.map((r) => r.words),
           rows.map((r) => r.chars),
@@ -53,7 +57,7 @@ export function createStore({ channel, databaseUrl }) {
     },
     async rows(fromHourMs, toMs) {
       const result = await db.query(
-        `SELECT (EXTRACT(EPOCH FROM hour) * 1000)::float8 AS hour, username, display, messages, words, chars, emotes
+        `SELECT (EXTRACT(EPOCH FROM hour) * 1000)::float8 AS hour, username, display, role, messages, words, chars, emotes
          FROM subathon_hourly
          WHERE channel = $1
            AND ($2::timestamptz IS NULL OR hour >= $2)
@@ -77,6 +81,7 @@ function createMemoryStore() {
         const cur = data.get(key);
         if (!cur) { data.set(key, { ...r }); continue; }
         cur.display = r.display;
+        cur.role = r.role || "";
         cur.messages += r.messages; cur.words += r.words; cur.chars += r.chars; cur.emotes += r.emotes;
       }
     },

@@ -38,6 +38,29 @@ test("aggregate ranks users, filters the range and counts days, hours and streak
   assert.equal(dayKey(t0, TZ), "2026-07-01");
 });
 
+test("mods and VIPs are split into their own bracket by their latest role", () => {
+  const t0 = Date.UTC(2026, 6, 1, 10);
+  const row = (hour, username, role, messages) => ({ hour, username, display: username, role, messages, words: messages, chars: messages, emotes: 0 });
+  const out = aggregate([
+    row(t0, "viewer", "", 50), row(t0, "modder", "mod", 500), row(t0, "vippy", "vip", 100),
+    row(t0, "promoted", "", 10), row(t0 + H, "promoted", "vip", 10)
+  ], { fromMs: t0, toMs: t0 + 5 * H, tz: TZ });
+  assert.deepEqual(out.chatters.map((c) => c.username), ["viewer"]);
+  assert.deepEqual(out.staff.map((c) => c.username), ["modder", "vippy", "promoted"]);
+  assert.equal(out.totals.chatters, 1);
+  assert.equal(out.totals.staff, 3);
+  assert.equal(out.totals.messages, 670);
+});
+
+test("collector records badges and honours the forced staff list", () => {
+  const c = createCollector({ channel: "streamer", staff: ["friend"] });
+  const at = Date.UTC(2026, 6, 1, 10);
+  c.record({ username: "a", text: "hi", role: "mod", at });
+  c.record({ username: "friend", text: "hi", at });
+  const roles = Object.fromEntries(c.drain().map((r) => [r.username, r.role]));
+  assert.deepEqual(roles, { a: "mod", friend: "mod" });
+});
+
 test("collector skips bots, the streamer, commands and repeated spam", () => {
   const c = createCollector({ channel: "streamer", exclude: parseList("@MyBot") });
   const at = Date.UTC(2026, 6, 1, 10, 0, 0);
