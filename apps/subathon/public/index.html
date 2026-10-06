@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Subathon chat stats</title>
+<style>
+:root { --bg:#17131f; --panel:#221c2e; --line:#352c47; --text:#f1ecfb; --mute:#a99fc0; --accent:#c7b6ff; --good:#7ee0a8; --bad:#ff8a8a; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { max-width:1100px; margin:0 auto; padding:24px 16px 64px; }
+h1 { font-size:22px; margin:0 0 4px; }
+.sub { color:var(--mute); margin:0 0 20px; }
+.panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:16px; }
+label { display:block; font-size:12px; color:var(--mute); margin-bottom:4px; }
+input, button { font:inherit; color:var(--text); background:#17131f; border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
+input:focus-visible, button:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+button { cursor:pointer; }
+button.primary { background:var(--accent); color:#17131f; border-color:var(--accent); font-weight:700; }
+.row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; }
+.card b { display:block; font-size:24px; }
+.card span { color:var(--mute); font-size:12px; }
+.status { font-size:13px; color:var(--mute); display:flex; flex-wrap:wrap; gap:6px 16px; }
+.dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; background:var(--bad); }
+.dot.on { background:var(--good); }
+.warn { color:#ffd479; }
+.tablewrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:720px; }
+th, td { padding:8px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+th:nth-child(1), td:nth-child(1), th:nth-child(2), td:nth-child(2) { text-align:left; }
+th { color:var(--mute); font-size:12px; font-weight:600; cursor:pointer; user-select:none; position:sticky; top:0; background:var(--panel); }
+th.sorted { color:var(--accent); }
+tbody tr:nth-child(-n+3) td:first-child { color:var(--accent); font-weight:700; }
+#chart { width:100%; height:140px; display:block; }
+.hint { color:var(--mute); font-size:12px; margin-top:8px; }
+.err { color:var(--bad); min-height:1.2em; margin-top:8px; }
+[hidden] { display:none !important; }
+@media (max-width:520px) { .row > div { flex:1 1 100%; } }
+</style>
+</head>
+<body>
+<main>
+  <section id="login" class="panel" style="max-width:380px;margin:12vh auto 0">
+    <h1>Private</h1>
+    <p class="sub">Enter the password to continue.</p>
+    <form id="loginForm" class="row">
+      <div style="flex:1"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" style="width:100%" autofocus></div>
+      <button class="primary" type="submit">Open</button>
+    </form>
+    <div id="loginErr" class="err" role="alert"></div>
+  </section>
+
+  <div id="app" hidden>
+    <h1>Subathon chat stats <span id="chan" class="sub"></span></h1>
+    <p id="status" class="status sub"></p>
+
+    <section class="panel">
+      <form id="range" class="row">
+        <div><label for="from">From</label><input id="from" type="datetime-local"></div>
+        <div><label for="to">To</label><input id="to" type="datetime-local"></div>
+        <button class="primary" type="submit">Update</button>
+        <button type="button" id="all">Everything</button>
+        <button type="button" id="csv">Download CSV</button>
+        <div style="flex:1;min-width:160px"><label for="q">Find a chatter</label><input id="q" type="search" placeholder="username" style="width:100%"></div>
+      </form>
+      <div class="hint">Times are in <span id="tz"></span>. Data is grouped by hour, so a range snaps to whole hours.</div>
+      <div id="err" class="err" role="alert"></div>
+    </section>
+
+    <div class="cards" id="cards"></div>
+
+    <section class="panel">
+      <label>Messages over time</label>
+      <svg id="chart" role="img" aria-label="Messages over time"></svg>
+      <div class="hint" id="chartHint"></div>
+    </section>
+
+    <section class="panel">
+      <div class="tablewrap">
+        <table>
+          <thead><tr id="head"></tr></thead>
+          <tbody id="body"></tbody>
+        </table>
+      </div>
+      <div class="hint">Score = messages + 5 × active hours, so spamming alone doesn't win. Click a column to sort. Bots, the streamer, "!commands" and repeated identical messages are not counted.</div>
+    </section>
+  </div>
+</main>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const COLS = [
+    ["#", null], ["Chatter", "display"], ["Score", "score"], ["Messages", "messages"], ["Active hours", "activeHours"],
+    ["Active days", "activeDays"], ["Best streak", "streak"], ["Words", "words"], ["Avg words", "avgWords"], ["Emotes", "emotes"]
+  ];
+  const base = location.pathname.replace(/\/+$/, "");
+  let key = "";
+  try { key = sessionStorage.getItem("subathon-key") || ""; } catch (e) {}
+  let data = null, sortBy = "score", sortDir = -1;
+  const fmt = (n) => Number(n).toLocaleString();
+
+  async function api(path, params) {
+    const qs = new URLSearchParams(params || {}).toString();
+    const res = await fetch(base + "/api/" + path + (qs ? "?" + qs : ""), { headers: { "x-subathon-key": key } });
+    if (res.status === 401) throw Object.assign(new Error("Wrong password"), { auth: true });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Request failed");
+    return res;
+  }
+  const params = () => { const p = {}; if ($("from").value) p.from = $("from").value; if ($("to").value) p.to = $("to").value; return p; };
+
+  async function loadStatus() {
+    const s = await (await api("status")).json();
+    $("chan").textContent = "· #" + s.channel;
+    $("tz").textContent = s.tz;
+    $("status").innerHTML =
+      '<span><i class="dot ' + (s.connected ? "on" : "") + '"></i>' + (s.connected ? "Listening to chat" : "Not connected to chat") + "</span>" +
+      "<span>Tracking since " + new Date(s.startedAt).toLocaleString() + "</span>" +
+      (s.persistent ? "" : '<span class="warn">No database: counts reset on restart</span>') +
+      (s.lastFlushError ? '<span class="warn">Save error: ' + s.lastFlushError.replace(/</g, "&lt;") + "</span>" : "");
+  }
+
+  async function load() {
+    $("err").textContent = "";
+    try {
+      data = await (await api("stats", params())).json();
+      render();
+    } catch (e) { if (e.auth) return logout(e.message); $("err").textContent = e.message; }
+  }
+
+  function render() {
+    const t = data.totals;
+    $("cards").innerHTML = [["Chatters", t.chatters], ["Messages", t.messages], ["Words", t.words], ["Emotes", t.emotes]]
+      .map(([l, v]) => '<div class="card"><b>' + fmt(v) + "</b><span>" + l + "</span></div>").join("");
+    $("head").innerHTML = COLS.map(([l, k]) => '<th data-k="' + (k || "") + '" class="' + (k === sortBy ? "sorted" : "") + '">' + l + (k === sortBy ? (sortDir < 0 ? " ▼" : " ▲") : "") + "</th>").join("");
+    const q = $("q").value.trim().toLowerCase();
+    const rank = new Map(data.chatters.slice().sort((a, b) => b.score - a.score || b.messages - a.messages).map((c, i) => [c.username, i + 1]));
+    const rows = data.chatters.filter((c) => !q || c.username.includes(q) || c.display.toLowerCase().includes(q))
+      .sort((a, b) => (typeof a[sortBy] === "string" ? a[sortBy].localeCompare(b[sortBy]) : a[sortBy] - b[sortBy]) * sortDir);
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    $("body").innerHTML = rows.slice(0, 300).map((c) =>
+      "<tr><td>" + rank.get(c.username) + "</td><td>" + esc(c.display) + "</td><td>" + fmt(c.score) + "</td><td>" + fmt(c.messages) + "</td><td>" + fmt(c.activeHours) +
+      "</td><td>" + fmt(c.activeDays) + "</td><td>" + fmt(c.streak) + "</td><td>" + fmt(c.words) + "</td><td>" + c.avgWords + "</td><td>" + fmt(c.emotes) + "</td></tr>").join("") ||
+      '<tr><td colspan="10" style="text-align:center;color:var(--mute)">No chat recorded in this range yet.</td></tr>';
+    $("body").insertAdjacentHTML("beforeend", rows.length > 300 ? '<tr><td colspan="10" style="text-align:center;color:var(--mute)">Showing 300 of ' + rows.length + " — use search or CSV for the rest.</td></tr>" : "");
+    chart();
+  }
+
+  function chart() {
+    const svg = $("chart"), pts = data.timeline.points;
+    svg.innerHTML = "";
+    $("chartHint").textContent = pts.length ? "Per " + data.timeline.unit + ", " + pts[0].label + " → " + pts[pts.length - 1].label : "";
+    if (!pts.length) return;
+    const W = 1000, H = 140, max = Math.max.apply(null, pts.map((p) => p.messages)) || 1, bw = W / pts.length;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.innerHTML = pts.map((p, i) => {
+      const h = Math.max(p.messages ? 2 : 0, (p.messages / max) * (H - 4));
+      return '<rect x="' + (i * bw + bw * 0.1).toFixed(2) + '" y="' + (H - h).toFixed(2) + '" width="' + (bw * 0.8).toFixed(2) + '" height="' + h.toFixed(2) + '" fill="#c7b6ff"><title>' + p.label + ": " + p.messages + " messages</title></rect>";
+    }).join("");
+  }
+
+  function logout(msg) {
+    try { sessionStorage.removeItem("subathon-key"); } catch (e) {}
+    key = ""; $("app").hidden = true; $("login").hidden = false; $("loginErr").textContent = msg || "";
+  }
+  async function enter() {
+    try { await loadStatus(); } catch (e) { return logout(e.auth ? (key ? e.message : "") : e.message); }
+    $("login").hidden = true; $("app").hidden = false;
+    load(); setInterval(() => { loadStatus().catch(() => {}); if (!$("from").value && !$("to").value) load(); }, 30000);
+  }
+
+  $("loginForm").addEventListener("submit", (e) => {
+    e.preventDefault(); key = $("pw").value;
+    try { sessionStorage.setItem("subathon-key", key); } catch (err) {}
+    enter();
+  });
+  $("range").addEventListener("submit", (e) => { e.preventDefault(); load(); });
+  $("all").addEventListener("click", () => { $("from").value = ""; $("to").value = ""; load(); });
+  $("q").addEventListener("input", () => data && render());
+  $("head").addEventListener("click", (e) => {
+    const k = e.target.dataset.k; if (!k) return;
+    if (k === sortBy) sortDir = -sortDir; else { sortBy = k; sortDir = k === "display" ? 1 : -1; }
+    render();
+  });
+  $("csv").addEventListener("click", async () => {
+    try {
+      const blob = await (await api("export.csv", params())).blob();
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "chat-stats.csv"; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (e) { $("err").textContent = e.message; }
+  });
+
+  if (key) enter();
+})();
+</script>
+</body>
+</html>

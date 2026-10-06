@@ -17,6 +17,7 @@ import { createPerfektMatchApp } from "./apps/perfektmatch/app.js";
 import { createPokemonApp } from "./apps/pokemon/app.js";
 import { createRdr2DeathsApp } from "./apps/rdr2-deaths/app.js";
 import { createRdr2App } from "./apps/rdr2/app.js";
+import { createSubathonApp } from "./apps/subathon/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -116,6 +117,10 @@ app.use("/perfektmatch", createPerfektMatchApp());
 app.use("/pokemon", createPokemonApp());
 app.use("/rdr2-deaths", createRdr2DeathsApp());
 app.use("/rdr2", createRdr2App());
+
+// Private, password-gated chat stats for the subathon. Deliberately not listed on
+// the public index page and not in OVERLAY_PREFIXES (no OBS copy-link button).
+app.use(process.env.SUBATHON_PATH || "/subathon", createSubathonApp());
 
 app.use(express.static(path.join(__dirname, "public")));
 
