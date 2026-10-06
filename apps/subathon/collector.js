@@ -2,23 +2,50 @@ import tmi from "tmi.js";
 import { floorHour } from "./stats.js";
 
 const DEFAULT_BOTS = ["nightbot", "streamelements", "streamlabs", "moobot", "fossabot", "wizebot", "sery_bot", "soundalerts", "pokemoncommunitygame"];
+const ANON_GIFTER = "ananonymousgifter";
 
 export function parseList(raw) {
   return String(raw || "").split(/[,\s]+/).map((s) => s.trim().toLowerCase().replace(/^@/, "")).filter(Boolean);
 }
 
-// Turns individual chat messages into hourly per-user counters. Message text
-// is only inspected, never stored.
-export function createCollector({ channel, exclude = [], staff = [], countCommands = false, duplicateWindowMs = 10_000, now = () => Date.now() }) {
+// Twitch gives emote positions as code-point ranges ("0-4"), so slice by code
+// points, not UTF-16 units, or emoji earlier in the message shift the names.
+export function extractEmotes(message, emotesTag) {
+  if (!emotesTag) return [];
+  const chars = Array.from(String(message));
+  const out = [];
+  for (const [id, ranges] of Object.entries(emotesTag)) {
+    for (const range of Array.isArray(ranges) ? ranges : []) {
+      const [from, to] = String(range).split("-").map(Number);
+      const name = chars.slice(from, to + 1).join("");
+      if (name) out.push({ id, name });
+    }
+  }
+  return out;
+}
+
+function merge(map, key, make, add) {
+  const cur = map.get(key);
+  if (!cur) map.set(key, make());
+  else add(cur);
+}
+
+// Turns individual chat messages and sub/gift/cheer events into hourly
+// counters. Message text is only inspected, never stored.
+export function createCollector({ channel, exclude = [], staff = [], countCommands = false, duplicateWindowMs = 10_000, window = null, now = () => Date.now() }) {
   const forcedStaff = new Set(staff);
   const excluded = new Set([...DEFAULT_BOTS, channel, ...exclude]);
-  const pending = new Map(); // "hour|user" -> bucket
+  const pending = { chat: new Map(), events: new Map(), emotes: new Map() };
   const lastByUser = new Map(); // user -> { text, at }
-  const stats = { counted: 0, skippedBot: 0, skippedCommand: 0, skippedDuplicate: 0 };
+  const massGiftIds = new Set();
+  const stats = { counted: 0, skippedBot: 0, skippedCommand: 0, skippedDuplicate: 0, skippedOutsideWindow: 0 };
 
-  function record({ username, display, text, emotes = 0, role = "", at = now() }) {
+  const inWindow = (at) => !window || (at >= window.startMs && at < window.endMs);
+
+  function record({ username, display, text, emotes = 0, emoteList = [], role = "", at = now() }) {
     const user = String(username || "").toLowerCase();
     if (!user) return false;
+    if (!inWindow(at)) { stats.skippedOutsideWindow++; return false; }
     if (excluded.has(user)) { stats.skippedBot++; return false; }
     const body = String(text || "").trim();
     if (!body) return false;
@@ -33,35 +60,59 @@ export function createCollector({ channel, exclude = [], staff = [], countComman
 
     const hour = floorHour(at);
     const key = `${hour}|${user}`;
-    let b = pending.get(key);
-    if (!b) { b = { hour, username: user, display: display || user, role: "", messages: 0, words: 0, chars: 0, emotes: 0 }; pending.set(key, b); }
+    let b = pending.chat.get(key);
+    if (!b) { b = { hour, username: user, display: display || user, role: "", messages: 0, words: 0, chars: 0, emotes: 0 }; pending.chat.set(key, b); }
     b.display = display || b.display;
     b.role = forcedStaff.has(user) ? "mod" : role;
     b.messages += 1;
     b.words += body.split(/\s+/).length;
     b.chars += body.length;
-    b.emotes += emotes;
+    b.emotes += emotes || emoteList.length;
+    for (const e of emoteList) {
+      merge(pending.emotes, `${hour}|${e.name}`, () => ({ hour, emote: e.name, emoteId: e.id, count: 1 }), (x) => { x.count += 1; });
+    }
     stats.counted++;
     return true;
   }
 
+  // kind: "sub" | "resub" | "gift" (subs gifted) | "bits"
+  function recordEvent({ kind, username, display, amount = 1, at = now() }) {
+    const user = String(username || "").toLowerCase();
+    const n = Math.trunc(Number(amount));
+    if (!user || !(n > 0) || !inWindow(at)) return false;
+    const hour = floorHour(at);
+    merge(pending.events, `${hour}|${kind}|${user}`,
+      () => ({ hour, kind, username: user, display: display || user, amount: n }),
+      (x) => { x.amount += n; x.display = display || x.display; });
+    return true;
+  }
+
+  // A mass gift is announced once ("X gifted 5 subs") and then once more per
+  // recipient. Count the announcement and skip the per-recipient events.
+  function rememberMassGift(id) {
+    if (!id) return;
+    massGiftIds.add(String(id));
+    if (massGiftIds.size > 500) massGiftIds.delete(massGiftIds.values().next().value);
+  }
+  const isMassGiftPart = (tags) => Boolean(tags && (tags["msg-param-community-gift-id"] || massGiftIds.has(String(tags["msg-param-origin-id"]))));
+
   function drain() {
-    const rows = [...pending.values()];
-    pending.clear();
-    return rows;
+    const out = { chat: [...pending.chat.values()], events: [...pending.events.values()], emotes: [...pending.emotes.values()] };
+    pending.chat.clear(); pending.events.clear(); pending.emotes.clear();
+    return out;
   }
 
-  function requeue(rows) {
-    for (const r of rows) {
-      const key = `${r.hour}|${r.username}`;
-      const b = pending.get(key);
-      if (!b) { pending.set(key, r); continue; }
-      b.role = r.role || b.role;
-      b.messages += r.messages; b.words += r.words; b.chars += r.chars; b.emotes += r.emotes;
+  function requeue(batch) {
+    for (const r of batch.chat || []) {
+      merge(pending.chat, `${r.hour}|${r.username}`, () => r, (b) => {
+        b.role = r.role || b.role; b.messages += r.messages; b.words += r.words; b.chars += r.chars; b.emotes += r.emotes;
+      });
     }
+    for (const r of batch.events || []) merge(pending.events, `${r.hour}|${r.kind}|${r.username}`, () => r, (b) => { b.amount += r.amount; });
+    for (const r of batch.emotes || []) merge(pending.emotes, `${r.hour}|${r.emote}`, () => r, (b) => { b.count += r.count; });
   }
 
-  return { record, drain, requeue, stats, peek: () => [...pending.values()] };
+  return { record, recordEvent, rememberMassGift, isMassGiftPart, drain, requeue, stats, inWindow, peek: () => ({ chat: [...pending.chat.values()], events: [...pending.events.values()], emotes: [...pending.emotes.values()] }) };
 }
 
 // Moderators and VIPs carry a badge on every message they send.
@@ -71,22 +122,42 @@ function roleOf(tags) {
   return "";
 }
 
-function countEmotes(emotes) {
-  if (!emotes) return 0;
-  let n = 0;
-  for (const ranges of Object.values(emotes)) n += Array.isArray(ranges) ? ranges.length : 0;
-  return n;
-}
-
 // Anonymous, read-only Twitch IRC connection: no account or OAuth needed.
+// Subs, gifts and cheers are announced to every chat client, so they are
+// tracked from here too.
 export function connectChat({ channel, collector, onStatus = () => {} }) {
   const client = new tmi.Client({ connection: { reconnect: true, secure: true }, channels: [channel] });
+  const who = (tags, fallback) => ({ username: (tags?.login || fallback || "").toLowerCase(), display: tags?.["display-name"] || fallback });
+
   client.on("connected", () => onStatus(true));
   client.on("disconnected", () => onStatus(false));
+
   client.on("message", (_chan, tags, message, self) => {
     if (self || tags["message-type"] === "whisper") return;
-    collector.record({ username: tags.username, display: tags["display-name"], text: message, emotes: countEmotes(tags.emotes), role: roleOf(tags) });
+    const emoteList = extractEmotes(message, tags.emotes);
+    collector.record({ username: tags.username, display: tags["display-name"], text: message, emoteList, role: roleOf(tags) });
   });
+
+  client.on("subscription", (_c, username, _m, _msg, tags) => collector.recordEvent({ kind: "sub", ...who(tags, username) }));
+  client.on("resub", (_c, username, _streak, _msg, tags) => collector.recordEvent({ kind: "resub", ...who(tags, username) }));
+  client.on("subgift", (_c, username, _streak, _recipient, _m, tags) => {
+    if (collector.isMassGiftPart(tags)) return;
+    collector.recordEvent({ kind: "gift", ...who(tags, username) });
+  });
+  client.on("submysterygift", (_c, username, count, _m, tags) => {
+    collector.rememberMassGift(tags?.["msg-param-origin-id"]);
+    collector.recordEvent({ kind: "gift", ...who(tags, username), amount: count });
+  });
+  client.on("anonsubgift", (_c, _streak, _recipient, _m, tags) => {
+    if (collector.isMassGiftPart(tags)) return;
+    collector.recordEvent({ kind: "gift", username: "ananonymousgifter", display: "Anonymous" });
+  });
+  client.on("anonsubmysterygift", (_c, count, _m, tags) => {
+    collector.rememberMassGift(tags?.["msg-param-origin-id"]);
+    collector.recordEvent({ kind: "gift", username: "ananonymousgifter", display: "Anonymous", amount: count });
+  });
+  client.on("cheer", (_c, tags) => collector.recordEvent({ kind: "bits", username: tags.username, display: tags["display-name"], amount: tags.bits }));
+
   client.connect().catch((error) => console.error("subathon: Twitch chat connection failed.", error));
   return client;
 }
