@@ -7,7 +7,7 @@ const REFRESH_MS = 10 * 60 * 1000;
 
 export function createSevenTv({ fetchImpl = fetch, log = console } = {}) {
   let names = new Map(); // emote name -> 7tv id
-  const status = { loaded: false, count: 0, lastError: null, lastLoadedAt: null };
+  const status = { loaded: false, count: 0, channelCount: 0, sample: [], lastError: null, lastLoadedAt: null };
   let timer = null, twitchId = null;
 
   async function getJson(url) {
@@ -22,12 +22,16 @@ export function createSevenTv({ fetchImpl = fetch, log = console } = {}) {
       // Global first, so a channel emote with the same name wins.
       const global = await getJson(`${API}/emote-sets/global`).catch((e) => { log.warn?.("subathon: 7TV global set failed.", e.message); return null; });
       for (const e of global?.emotes || []) if (e?.id && e?.name) next.set(e.name, e.id);
+      let channel = [];
       if (twitchId) {
         const user = await getJson(`${API}/users/twitch/${encodeURIComponent(twitchId)}`);
-        for (const e of user?.emote_set?.emotes || []) if (e?.id && e?.name) next.set(e.name, e.id);
+        channel = (user?.emote_set?.emotes || []).filter((e) => e?.id && e?.name);
+        for (const e of channel) next.set(e.name, e.id);
       }
       names = next;
-      Object.assign(status, { loaded: true, count: next.size, lastError: null, lastLoadedAt: new Date().toISOString() });
+      // A few emotes the page can show as a quick "do the pictures load?" check.
+      const sample = (channel.length ? channel : global?.emotes || []).slice(0, 10).map((e) => ({ id: `7tv:${e.id}`, name: e.name }));
+      Object.assign(status, { loaded: true, count: next.size, channelCount: channel.length, sample, lastError: null, lastLoadedAt: new Date().toISOString() });
     } catch (error) {
       status.lastError = String(error.message || error);
       log.warn?.("subathon: could not load 7TV emotes, will retry.", status.lastError);
