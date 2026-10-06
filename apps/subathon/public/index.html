@@ -50,9 +50,6 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
 .hint { color:var(--mute); font-size:13px; margin:10px 0 0; max-width:75ch; }
 .err { color:var(--bad); min-height:1.2em; margin-top:8px; }
 [hidden] { display:none !important; }
-.checkrow { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-.checkrow .e { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:5px 10px 5px 6px; font-size:13px; font-weight:600; }
-.checkrow img { width:32px; height:32px; object-fit:contain; }
 .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-bottom:16px; }
 .tile { background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:16px 18px; box-shadow:var(--shadow); min-width:0; }
 .tile .k { font-size:13px; font-weight:600; color:var(--mute); }
@@ -111,12 +108,6 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
       </form>
       <div class="hint">Times are in <span id="tz"></span>. Only the subathon itself is tracked (<span id="win"></span>). Data is grouped by hour, so a range snaps to whole hours.</div>
       <div id="err" class="err" role="alert"></div>
-    </section>
-
-    <section class="panel" id="check">
-      <span class="cap">Emote check</span>
-      <div id="checkRow" class="checkrow"></div>
-      <p class="hint" id="checkNote"></p>
     </section>
 
     <div class="tiles" id="tiles"></div>
@@ -201,12 +192,6 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     if (whole && !$("from").value) { $("from").value = win.start; $("to").value = win.end; }
     $("connDot").className = "dot" + (s.connected ? " on" : "");
     $("connText").textContent = s.connected ? "Listening to chat" : "Not connected to chat";
-    const sv = s.sevenTv || {};
-    const e = (id, name) => '<span class="e"><img src="' + emoteUrl(id) + '" alt="">' + esc(name) + "</span>";
-    $("checkRow").innerHTML = e("25", "Kappa (Twitch)") + (sv.sample || []).map((x) => e(x.id, x.name)).join("");
-    $("checkNote").textContent = sv.loaded
-      ? "7TV: " + num(sv.count) + " emotes loaded (" + num(sv.channelCount) + " from the channel's own set). Every emote above should show a picture; animated ones move."
-      : "7TV emotes haven't loaded yet. This fills in a few seconds after the chat connection is up.";
     $("status").innerHTML = "Tracking since " + new Date(s.startedAt).toLocaleString() + "." +
       (s.persistent ? "" : ' <span class="warn">No database: counts reset on restart.</span>') +
       (s.sevenTv && s.sevenTv.lastError ? ' <span class="warn">7TV emotes not loaded yet: ' + s.sevenTv.lastError.replace(/</g, "&lt;") + "</span>" : "") +
