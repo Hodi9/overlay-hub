@@ -52,6 +52,12 @@ services:
         sync: false
       - key: RDR2DEATHS_TWITCH_CHANNEL
         sync: false
+      - key: SUBATHON_PATH
+        sync: false
+      - key: SUBATHON_PASSWORD
+        sync: false
+      - key: SUBATHON_CHANNEL
+        sync: false
       - key: NODE_VERSION
         value: 22
 

@@ -17,6 +17,7 @@ import { createPerfektMatchApp } from "./apps/perfektmatch/app.js";
 import { createPokemonApp } from "./apps/pokemon/app.js";
 import { createRdr2DeathsApp } from "./apps/rdr2-deaths/app.js";
 import { createRdr2App } from "./apps/rdr2/app.js";
+import { createSubathonApp } from "./apps/subathon/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -116,6 +117,14 @@ app.use("/perfektmatch", createPerfektMatchApp());
 app.use("/pokemon", createPokemonApp());
 app.use("/rdr2-deaths", createRdr2DeathsApp());
 app.use("/rdr2", createRdr2App());
+
+// Private, password-gated chat stats for the subathon. Deliberately not listed on
+// the public index page and not in OVERLAY_PREFIXES (no OBS copy-link button).
+// Only mounted at a secret address you choose (SUBATHON_PATH, e.g. "/x7k2-chat-stats-93f"):
+// anywhere else, including /subathon, simply 404s. Too-short paths are refused.
+const subathonPath = "/" + String(process.env.SUBATHON_PATH || "").trim().replace(/^\/+|\/+$/g, "");
+if (/^\/[A-Za-z0-9_-]{12,}$/.test(subathonPath)) app.use(subathonPath, createSubathonApp());
+else if (process.env.SUBATHON_PATH) console.warn("subathon: SUBATHON_PATH must be 12+ letters/digits/-/_ — tracker not mounted.");
 
 app.use(express.static(path.join(__dirname, "public")));
 
