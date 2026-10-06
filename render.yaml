@@ -58,6 +58,10 @@ services:
         sync: false
       - key: SUBATHON_CHANNEL
         sync: false
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
       - key: NODE_VERSION
         value: 22
 

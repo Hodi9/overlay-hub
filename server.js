@@ -123,7 +123,7 @@ app.use("/rdr2", createRdr2App());
 // Only mounted at a secret address you choose (SUBATHON_PATH, e.g. "/x7k2-chat-stats-93f"):
 // anywhere else, including /subathon, simply 404s. Too-short paths are refused.
 const subathonPath = "/" + String(process.env.SUBATHON_PATH || "").trim().replace(/^\/+|\/+$/g, "");
-if (/^\/[A-Za-z0-9_-]{12,}$/.test(subathonPath)) app.use(subathonPath, createSubathonApp());
+if (/^\/[A-Za-z0-9_-]{12,}$/.test(subathonPath)) app.use(subathonPath, createSubathonApp({ mountPath: subathonPath }));
 else if (process.env.SUBATHON_PATH) console.warn("subathon: SUBATHON_PATH must be 12+ letters/digits/-/_ — tracker not mounted.");
 
 app.use(express.static(path.join(__dirname, "public")));
