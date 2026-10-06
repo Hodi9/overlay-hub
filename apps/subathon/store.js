@@ -52,6 +52,58 @@ export function createStore({ channel, databaseUrl }) {
           PRIMARY KEY (channel, hour, emote)
         )
       `);
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS subathon_watch (
+          channel TEXT NOT NULL,
+          hour TIMESTAMPTZ NOT NULL,
+          username TEXT NOT NULL,
+          display TEXT NOT NULL,
+          seconds INT NOT NULL DEFAULT 0,
+          PRIMARY KEY (channel, hour, username)
+        )
+      `);
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS subathon_auth (
+          channel TEXT PRIMARY KEY,
+          refresh_token TEXT NOT NULL,
+          user_id TEXT,
+          login TEXT,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `);
+    },
+    async addWatch(rows) {
+      if (!rows.length) return;
+      await db.query(
+        `INSERT INTO subathon_watch (channel, hour, username, display, seconds)
+         SELECT $1::text, t.hour, t.username, t.display, t.seconds
+         FROM unnest($2::timestamptz[], $3::text[], $4::text[], $5::int[])
+           AS t(hour, username, display, seconds)
+         ON CONFLICT (channel, hour, username) DO UPDATE SET
+           display = EXCLUDED.display,
+           seconds = subathon_watch.seconds + EXCLUDED.seconds`,
+        [channel, rows.map((r) => iso(r.hour)), rows.map((r) => r.username), rows.map((r) => r.display), rows.map((r) => r.seconds)]
+      );
+    },
+    async watchRows(from, to) {
+      const result = await db.query(
+        `SELECT (EXTRACT(EPOCH FROM hour) * 1000)::float8 AS hour, username, display, seconds
+         FROM subathon_watch
+         WHERE channel = $1 AND ($2::timestamptz IS NULL OR hour >= $2) AND ($3::timestamptz IS NULL OR hour < $3)`,
+        [channel, ...bounds(from, to)]
+      );
+      return result.rows;
+    },
+    async getAuth() {
+      const result = await db.query(`SELECT refresh_token AS "refreshToken", user_id AS "userId", login FROM subathon_auth WHERE channel = $1`, [channel]);
+      return result.rows[0] || null;
+    },
+    async setAuth(a) {
+      await db.query(
+        `INSERT INTO subathon_auth (channel, refresh_token, user_id, login, updated_at) VALUES ($1, $2, $3, $4, NOW())
+         ON CONFLICT (channel) DO UPDATE SET refresh_token = EXCLUDED.refresh_token, user_id = EXCLUDED.user_id, login = EXCLUDED.login, updated_at = NOW()`,
+        [channel, a.refreshToken, a.userId || null, a.login || null]
+      );
     },
     async addChat(rows) {
       if (!rows.length) return;
@@ -128,7 +180,8 @@ export function createStore({ channel, databaseUrl }) {
 }
 
 function createMemoryStore() {
-  const chat = new Map(), events = new Map(), emotes = new Map();
+  const chat = new Map(), events = new Map(), emotes = new Map(), watch = new Map();
+  let auth = null;
   const within = (from, to) => (r) => (from == null || r.hour >= from) && (to == null || r.hour < to);
   function upsert(map, key, row, add) {
     const cur = map.get(key);
@@ -150,6 +203,12 @@ function createMemoryStore() {
     async addEmotes(rows) {
       for (const r of rows) upsert(emotes, `${r.hour}|${r.emote}`, r, (c) => { c.count += r.count; });
     },
+    async addWatch(rows) {
+      for (const r of rows) upsert(watch, `${r.hour}|${r.username}`, r, (c) => { c.display = r.display; c.seconds += r.seconds; });
+    },
+    async watchRows(from, to) { return [...watch.values()].filter(within(from, to)); },
+    async getAuth() { return auth; },
+    async setAuth(a) { auth = { ...a }; },
     async chatRows(from, to) { return [...chat.values()].filter(within(from, to)); },
     async eventRows(from, to) { return [...events.values()].filter(within(from, to)); },
     async emoteRows(from, to) { return [...emotes.values()].filter(within(from, to)); },

@@ -5,7 +5,7 @@ const HOUR = 3600_000;
 
 // Score used for the default ranking. Raw message count is easy to spam, so
 // time spent actually chatting (distinct active hours) counts for more.
-export const SCORE_WEIGHTS = { message: 1, hour: 5 };
+export const SCORE_WEIGHTS = { message: 1, hour: 5, watchHour: 2 };
 
 const formatters = new Map();
 function formatter(tz) {
@@ -85,7 +85,7 @@ function longestStreak(dayKeys) {
 }
 
 // rows: [{ hour (epoch ms), username, display, messages, words, chars, emotes }]
-export function aggregate(rows, { fromMs, toMs, tz }) {
+export function aggregate(rows, { fromMs, toMs, tz, watchRows = [], staffNames = new Set() }) {
   const users = new Map();
   const timeline = new Map(); // hour ms -> messages
   const dayCache = new Map();
@@ -120,6 +120,23 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
     if (r.hour > maxHour) maxHour = r.hour;
   }
 
+  // Watchtime: seconds connected to chat. People who only watched (never
+  // chatted) still get a row, with zero messages.
+  const watchBy = new Map();
+  let watchTotal = 0;
+  for (const w of watchRows) {
+    if (w.hour < lo || w.hour >= hi) continue;
+    const e = watchBy.get(w.username) || { seconds: 0, display: w.display || w.username };
+    e.seconds += w.seconds;
+    e.display = w.display || e.display;
+    watchBy.set(w.username, e);
+    watchTotal += w.seconds;
+    if (!users.has(w.username)) {
+      users.set(w.username, { username: w.username, display: e.display, role: "", roleAt: -Infinity, messages: 0, words: 0, chars: 0, emotes: 0, hours: 0, days: new Set(), first: w.hour, last: w.hour });
+    }
+  }
+  for (const name of staffNames) if (users.has(name) && !users.get(name).role) users.get(name).role = "mod";
+
   const list = [...users.values()].map((u) => ({
     username: u.username,
     display: u.display,
@@ -134,7 +151,8 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
     streak: longestStreak(u.days),
     firstSeen: new Date(u.first).toISOString(),
     lastSeen: new Date(u.last).toISOString(),
-    score: u.messages * SCORE_WEIGHTS.message + u.hours * SCORE_WEIGHTS.hour
+    watchSeconds: watchBy.get(u.username)?.seconds || 0,
+    score: Math.round(u.messages * SCORE_WEIGHTS.message + u.hours * SCORE_WEIGHTS.hour + ((watchBy.get(u.username)?.seconds || 0) / 3600) * SCORE_WEIGHTS.watchHour)
   }));
   list.sort((a, b) => b.score - a.score || b.messages - a.messages || a.username.localeCompare(b.username));
 
@@ -161,7 +179,7 @@ export function aggregate(rows, { fromMs, toMs, tz }) {
   for (const [h, n] of timeline) if (!busiest || n > busiest.messages) busiest = { hour: h, label: hourLabel(h, tz), messages: n };
 
   return {
-    totals: { ...total, chatters: viewers.length, staff: staff.length },
+    totals: { ...total, chatters: viewers.length, staff: staff.length, watchSeconds: watchTotal, watchers: watchBy.size },
     chatters: viewers,
     staff,
     busiest,

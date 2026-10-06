@@ -35,7 +35,7 @@ function merge(map, key, make, add) {
 export function createCollector({ channel, exclude = [], staff = [], countCommands = false, duplicateWindowMs = 10_000, window = null, now = () => Date.now() }) {
   const forcedStaff = new Set(staff);
   const excluded = new Set([...DEFAULT_BOTS, channel, ...exclude]);
-  const pending = { chat: new Map(), events: new Map(), emotes: new Map() };
+  const pending = { chat: new Map(), events: new Map(), emotes: new Map(), watch: new Map() };
   const lastByUser = new Map(); // user -> { text, at }
   const massGiftIds = new Set();
   const stats = { counted: 0, skippedBot: 0, skippedCommand: 0, skippedDuplicate: 0, skippedOutsideWindow: 0 };
@@ -87,6 +87,18 @@ export function createCollector({ channel, exclude = [], staff = [], countComman
     return true;
   }
 
+  // Seconds a person was connected to chat while the stream was live.
+  function recordWatch({ username, display, seconds, at = now() }) {
+    const user = String(username || "").toLowerCase();
+    const n = Math.round(Number(seconds));
+    if (!user || !(n > 0) || !inWindow(at) || excluded.has(user)) return false;
+    const hour = floorHour(at);
+    merge(pending.watch, `${hour}|${user}`,
+      () => ({ hour, username: user, display: display || user, seconds: n }),
+      (x) => { x.seconds += n; x.display = display || x.display; });
+    return true;
+  }
+
   // A mass gift is announced once ("X gifted 5 subs") and then once more per
   // recipient. Count the announcement and skip the per-recipient events.
   function rememberMassGift(id) {
@@ -97,8 +109,8 @@ export function createCollector({ channel, exclude = [], staff = [], countComman
   const isMassGiftPart = (tags) => Boolean(tags && (tags["msg-param-community-gift-id"] || massGiftIds.has(String(tags["msg-param-origin-id"]))));
 
   function drain() {
-    const out = { chat: [...pending.chat.values()], events: [...pending.events.values()], emotes: [...pending.emotes.values()] };
-    pending.chat.clear(); pending.events.clear(); pending.emotes.clear();
+    const out = { chat: [...pending.chat.values()], events: [...pending.events.values()], emotes: [...pending.emotes.values()], watch: [...pending.watch.values()] };
+    pending.chat.clear(); pending.events.clear(); pending.emotes.clear(); pending.watch.clear();
     return out;
   }
 
@@ -110,9 +122,10 @@ export function createCollector({ channel, exclude = [], staff = [], countComman
     }
     for (const r of batch.events || []) merge(pending.events, `${r.hour}|${r.kind}|${r.username}`, () => r, (b) => { b.amount += r.amount; });
     for (const r of batch.emotes || []) merge(pending.emotes, `${r.hour}|${r.emote}`, () => r, (b) => { b.count += r.count; });
+    for (const r of batch.watch || []) merge(pending.watch, `${r.hour}|${r.username}`, () => r, (b) => { b.seconds += r.seconds; });
   }
 
-  return { record, recordEvent, rememberMassGift, isMassGiftPart, drain, requeue, stats, inWindow, peek: () => ({ chat: [...pending.chat.values()], events: [...pending.events.values()], emotes: [...pending.emotes.values()] }) };
+  return { record, recordEvent, recordWatch, rememberMassGift, isMassGiftPart, drain, requeue, stats, inWindow, peek: () => ({ chat: [...pending.chat.values()], events: [...pending.events.values()], emotes: [...pending.emotes.values()], watch: [...pending.watch.values()] }) };
 }
 
 // Moderators and VIPs carry a badge on every message they send.
@@ -125,13 +138,18 @@ function roleOf(tags) {
 // Anonymous, read-only Twitch IRC connection: no account or OAuth needed.
 // Subs, gifts and cheers are announced to every chat client, so they are
 // tracked from here too.
-export function connectChat({ channel, collector, sevenTv = null, onStatus = () => {} }) {
+export function connectChat({ channel, collector, sevenTv = null, onRoomId = () => {}, onStatus = () => {} }) {
   const client = new tmi.Client({ connection: { reconnect: true, secure: true }, channels: [channel] });
   const who = (tags, fallback) => ({ username: (tags?.login || fallback || "").toLowerCase(), display: tags?.["display-name"] || fallback });
 
   client.on("connected", () => onStatus(true));
   client.on("disconnected", () => onStatus(false));
-  client.on("roomstate", (_c, state) => { if (sevenTv && state?.["room-id"]) sevenTv.start(state["room-id"]); });
+  client.on("roomstate", (_c, state) => {
+    const id = state?.["room-id"];
+    if (!id) return;
+    sevenTv?.start(id);
+    onRoomId(id);
+  });
 
   client.on("message", (_chan, tags, message, self) => {
     if (self || tags["message-type"] === "whisper") return;

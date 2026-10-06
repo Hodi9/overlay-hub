@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { aggregate, aggregateEmotes, aggregateEvents, parseWhen, dayKey } from "../apps/subathon/stats.js";
 import { createCollector, extractEmotes, parseList } from "../apps/subathon/collector.js";
 import { createSevenTv } from "../apps/subathon/sevenTv.js";
+import { createWatchtime } from "../apps/subathon/watch.js";
 
 const TZ = "Europe/Copenhagen";
 const H = 3600_000;
@@ -167,4 +168,124 @@ test("a failing 7TV request is recorded and does not throw", async () => {
   await new Promise((r) => setTimeout(r, 20));
   assert.equal(tv.status.loaded, false);
   assert.match(tv.status.lastError, /Request failed|offline|users\/twitch/);
+});
+
+function fakeTwitch({ live = true, chatters = [{ user_login: "fan1", user_name: "Fan1" }, { user_login: "nightbot", user_name: "Nightbot" }, { user_login: "Fan2", user_name: "Fan2" }], failChattersWith = null } = {}) {
+  const calls = [];
+  const fetchImpl = async (url, opts = {}) => {
+    calls.push({ url: String(url), opts });
+    const u = new URL(url);
+    const json = (status, body) => ({ ok: status < 300, status, text: async () => JSON.stringify(body) });
+    if (u.pathname === "/oauth2/token") {
+      const p = new URLSearchParams(opts.body);
+      if (p.get("grant_type") === "authorization_code") return json(200, { access_token: "A1", refresh_token: "R1", expires_in: 14000 });
+      return json(200, { access_token: "A2", refresh_token: "R2", expires_in: 14000 });
+    }
+    if (u.pathname === "/oauth2/validate") return json(200, { user_id: "999", login: "streamer", scopes: ["moderator:read:chatters"] });
+    if (u.pathname === "/helix/streams") return json(200, { data: live ? [{ id: "1" }] : [] });
+    if (u.pathname === "/helix/chat/chatters") return failChattersWith ? json(failChattersWith, {}) : json(200, { data: chatters, pagination: {} });
+    return json(404, {});
+  };
+  return { fetchImpl, calls };
+}
+
+function makeWatch(extra = {}) {
+  const store = { auth: null, async getAuth() { return this.auth; }, async setAuth(a) { this.auth = a; } };
+  const got = [];
+  const tw = fakeTwitch(extra);
+  let t = Date.UTC(2026, 9, 12, 12, 0, 0);
+  const watch = createWatchtime({ clientId: "cid", clientSecret: "sec", store, onPresent: (p) => got.push(p), fetchImpl: tw.fetchImpl, now: () => t, log: {} });
+  return { watch, store, got, tw, advance: (ms) => { t += ms; } };
+}
+
+test("watchtime stays off without a Twitch app", () => {
+  const w = createWatchtime({ clientId: "", clientSecret: "", store: {}, onPresent() {}, log: {} });
+  assert.equal(w.enabled, false);
+});
+
+test("connect link carries a one-time state and the callback stores the login", async () => {
+  const { watch, store } = makeWatch();
+  const url = new URL(watch.connectUrl("https://example.com/secret/auth/callback"));
+  assert.equal(url.searchParams.get("scope"), "moderator:read:chatters");
+  assert.equal(url.searchParams.get("redirect_uri"), "https://example.com/secret/auth/callback");
+  const state = url.searchParams.get("state");
+  await assert.rejects(watch.handleCallback({ code: "c", state: "wrong", redirectUri: "x" }), /expired|already used/);
+  const login = await watch.handleCallback({ code: "c", state, redirectUri: "https://example.com/secret/auth/callback" });
+  assert.equal(login, "streamer");
+  assert.deepEqual(store.auth, { refreshToken: "R1", userId: "999", login: "streamer" });
+  assert.equal(watch.status.connected, true);
+  await assert.rejects(watch.handleCallback({ code: "c", state, redirectUri: "x" }), /expired|already used/, "state is single use");
+});
+
+test("each tick adds seconds for everyone in chat while live, skipping bots via the collector", async () => {
+  const { watch, got, advance } = makeWatch();
+  const state = new URL(watch.connectUrl("r")).searchParams.get("state");
+  await watch.handleCallback({ code: "c", state, redirectUri: "r" });
+  watch.start("12345");
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(got.length >= 3, "first tick ran on start");
+  assert.deepEqual(got.slice(0, 3).map((p) => [p.username, p.seconds]), [["fan1", 60], ["nightbot", 60], ["fan2", 60]]);
+  got.length = 0;
+  advance(65_000);
+  await watch.tick();
+  assert.equal(got[0].seconds, 65);
+  assert.equal(watch.status.chattersNow, 3);
+  assert.equal(watch.status.live, true);
+
+  const c = createCollector({ channel: "streamer", window: { startMs: Date.UTC(2026, 9, 11), endMs: Date.UTC(2026, 9, 26) } });
+  assert.equal(c.recordWatch({ username: "nightbot", seconds: 60, at: Date.UTC(2026, 9, 12) }), false, "bots are not counted");
+  assert.equal(c.recordWatch({ username: "fan1", display: "Fan1", seconds: 60, at: Date.UTC(2026, 9, 12) }), true);
+  assert.equal(c.recordWatch({ username: "fan1", seconds: 60, at: Date.UTC(2026, 9, 30) }), false, "outside the window");
+  assert.equal(c.drain().watch[0].seconds, 60);
+});
+
+test("nothing is counted while the stream is offline", async () => {
+  const { watch, got } = makeWatch({ live: false });
+  const state = new URL(watch.connectUrl("r")).searchParams.get("state");
+  await watch.handleCallback({ code: "c", state, redirectUri: "r" });
+  watch.start("12345");
+  await new Promise((r) => setTimeout(r, 20));
+  await watch.tick();
+  assert.equal(got.length, 0);
+  assert.equal(watch.status.live, false);
+});
+
+test("a 403 from the chatters list is reported in plain words", async () => {
+  const { watch, got } = makeWatch({ failChattersWith: 403 });
+  const state = new URL(watch.connectUrl("r")).searchParams.get("state");
+  await watch.handleCallback({ code: "c", state, redirectUri: "r" });
+  watch.start("12345");
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(got.length, 0);
+  assert.match(watch.status.lastError, /not the broadcaster or a moderator/);
+});
+
+test("saved login is picked up on restart and refreshed when it is old", async () => {
+  const { watch, store, tw } = makeWatch();
+  store.auth = { refreshToken: "R1", userId: "999", login: "streamer" };
+  await watch.init();
+  assert.equal(watch.status.connected, true);
+  watch.start("12345");
+  await new Promise((r) => setTimeout(r, 20));
+  assert.ok(tw.calls.some((c) => c.url.endsWith("/oauth2/token")), "access token was fetched via the refresh token");
+  assert.equal(store.auth.refreshToken, "R2");
+});
+
+test("watch-only people appear in the leaderboard with zero messages, and watchtime adds to the score", () => {
+  const t0 = Date.UTC(2026, 9, 12, 10);
+  const chat = [{ hour: t0, username: "chatty", display: "Chatty", role: "", messages: 10, words: 10, chars: 10, emotes: 0 }];
+  const watchRows = [
+    { hour: t0, username: "chatty", display: "Chatty", seconds: 3600 },
+    { hour: t0, username: "lurker", display: "Lurker", seconds: 7200 },
+    { hour: t0, username: "lurkmod", display: "LurkMod", seconds: 600 }
+  ];
+  const out = aggregate(chat, { fromMs: t0, toMs: t0 + 5 * H, tz: TZ, watchRows, staffNames: new Set(["lurkmod"]) });
+  const by = Object.fromEntries(out.chatters.map((c) => [c.username, c]));
+  assert.equal(by.chatty.watchSeconds, 3600);
+  assert.equal(by.chatty.score, 10 + 5 + 2);
+  assert.equal(by.lurker.messages, 0);
+  assert.equal(by.lurker.watchSeconds, 7200);
+  assert.deepEqual(out.staff.map((c) => c.username), ["lurkmod"]);
+  assert.equal(out.totals.watchSeconds, 10800 + 600 - 0);
+  assert.equal(out.totals.watchers, 3);
 });

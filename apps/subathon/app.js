@@ -6,6 +6,7 @@ import { aggregate, aggregateEmotes, aggregateEvents, floorHour, isValidTimeZone
 import { createCollector, connectChat, parseList } from "./collector.js";
 import { createStore } from "./store.js";
 import { createSevenTv } from "./sevenTv.js";
+import { createWatchtime } from "./watch.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CHANNEL_RE = /^[a-z0-9_]{2,25}$/;
@@ -25,7 +26,7 @@ function safeEqual(a, b) {
 // Private chat-activity tracker for a subathon. Not linked from the public
 // index, protected by SUBATHON_PASSWORD on every request, and entirely
 // disabled (404) unless both SUBATHON_PASSWORD and SUBATHON_CHANNEL are set.
-export function createSubathonApp() {
+export function createSubathonApp({ mountPath = "" } = {}) {
   const router = express.Router();
   const password = process.env.SUBATHON_PASSWORD || "";
   const channel = String(process.env.SUBATHON_CHANNEL || "").trim().toLowerCase().replace(/^#/, "");
@@ -59,11 +60,12 @@ export function createSubathonApp() {
   async function flush() {
     await ready;
     const batch = collector.drain();
-    if (!batch.chat.length && !batch.events.length && !batch.emotes.length) return;
+    if (!batch.chat.length && !batch.events.length && !batch.emotes.length && !batch.watch.length) return;
     try {
       await store.addChat(batch.chat);
       await store.addEvents(batch.events);
       await store.addEmotes(batch.emotes);
+      await store.addWatch(batch.watch);
       state.lastFlushAt = new Date().toISOString();
       state.lastFlushError = null;
     } catch (error) {
@@ -76,7 +78,14 @@ export function createSubathonApp() {
   for (const sig of ["SIGTERM", "SIGINT"]) process.once(sig, () => { flush().finally(() => process.exit(0)); });
 
   const sevenTv = createSevenTv();
-  connectChat({ channel, collector, sevenTv, onStatus: (ok) => { state.connected = ok; } });
+  const watch = createWatchtime({
+    clientId: process.env.TWITCH_CLIENT_ID,
+    clientSecret: process.env.TWITCH_CLIENT_SECRET,
+    store,
+    onPresent: (p) => collector.recordWatch(p)
+  });
+  ready.then(() => watch.init());
+  connectChat({ channel, collector, sevenTv, onRoomId: (id) => watch.start(id), onStatus: (ok) => { state.connected = ok; } });
 
   router.use((_req, res, next) => {
     res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
@@ -102,18 +111,45 @@ export function createSubathonApp() {
     toMs = Math.min(toMs, win.endMs);
     await flush();
     const nowMs = Date.now();
-    const [chatRows, eventRows, emoteRows] = await Promise.all([
+    const [chatRows, eventRows, emoteRows, watchRows] = await Promise.all([
       store.chatRows(floorHour(fromMs), toMs),
       store.eventRows(floorHour(fromMs), toMs),
-      store.emoteRows(floorHour(fromMs), toMs)
+      store.emoteRows(floorHour(fromMs), toMs),
+      store.watchRows(floorHour(fromMs), toMs)
     ]);
-    const result = aggregate(chatRows, { fromMs, toMs, tz });
+    const result = aggregate(chatRows, { fromMs, toMs, tz, watchRows, staffNames: new Set(parseList(process.env.SUBATHON_STAFF)) });
     const events = aggregateEvents(eventRows, { fromMs, toMs, tz, nowMs });
     const emotes = aggregateEmotes(emoteRows, { fromMs, toMs });
     return { fromMs, toMs, result, events, emotes };
   }
 
-  router.get("/api/status", requireAuth, (_req, res) => {
+  // Where Twitch sends people back after they approve. Must match the
+  // redirect URL registered in the Twitch app exactly.
+  function redirectUri(req) {
+    const base = (process.env.SUBATHON_PUBLIC_URL || "").trim().replace(/\/+$/, "")
+      || `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers["x-forwarded-host"] || req.headers.host}`;
+    return `${base}${mountPath}/auth/callback`;
+  }
+
+  router.post("/api/twitch/link", requireAuth, (req, res) => {
+    if (!watch.enabled) return res.status(400).json({ error: "Watchtime is not set up (TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET missing)." });
+    const uri = redirectUri(req);
+    res.json({ url: watch.connectUrl(uri), redirectUri: uri });
+  });
+
+  router.get("/auth/callback", async (req, res) => {
+    const page = (title, text) => res.type("html").send(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title}</title><body style="font:16px/1.5 system-ui,sans-serif;background:#f4eee3;color:#221c15;display:grid;place-items:center;min-height:100vh;margin:0"><main style="max-width:420px;padding:24px;text-align:center"><h1 style="font-size:24px">${title}</h1><p>${text}</p></main>`);
+    if (req.query.error) return page("Ikke forbundet", "Forbindelsen blev afbrudt. Du kan lukke fanen og prøve igen med et nyt link.");
+    try {
+      await watch.handleCallback({ code: req.query.code, state: req.query.state, redirectUri: redirectUri(req) });
+      page("Forbundet ✓", "Tak! Watchtime bliver nu målt, mens streamen er live. Du kan lukke fanen.");
+    } catch (error) {
+      console.error("subathon: Twitch connect failed.", error.message);
+      page("Det lykkedes ikke", String(error.message || "Prøv igen med et nyt link.").replace(/[<>&]/g, ""));
+    }
+  });
+
+  router.get("/api/status", requireAuth, (req, res) => {
     res.json({
       channel, tz,
       window: windowInfo,
@@ -123,6 +159,7 @@ export function createSubathonApp() {
       lastFlushAt: state.lastFlushAt,
       lastFlushError: state.lastFlushError,
       sevenTv: sevenTv.status,
+      watch: { ...watch.status, redirectUri: watch.enabled ? redirectUri(req) : null },
       skipped: collector.stats
     });
   });
@@ -139,6 +176,7 @@ export function createSubathonApp() {
         window: windowInfo,
         from: out.fromMs == null ? null : new Date(out.fromMs).toISOString(),
         to: out.toMs == null ? null : new Date(out.toMs).toISOString(),
+        watch: { enabled: watch.enabled, connected: watch.status.connected, live: watch.status.live },
         totals: result.totals,
         busiest: result.busiest,
         overview: { subs: events.subs, bits: events.bits, today: events.today, bestDay: events.bestDay, avgPerDay: events.avgPerDay, days: events.days },
@@ -164,7 +202,7 @@ export function createSubathonApp() {
         if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // keep spreadsheets from running usernames as formulas
         return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
       };
-      const cols = ["rank", "role", "username", "display", "score", "messages", "activeHours", "activeDays", "streak", "words", "avgWords", "emotes", "firstSeen", "lastSeen"];
+      const cols = ["rank", "role", "username", "display", "score", "messages", "watchSeconds", "activeHours", "activeDays", "streak", "words", "avgWords", "emotes", "firstSeen", "lastSeen"];
       const lines = [cols.join(",")];
       const line = (rank, c) => [rank, ...cols.slice(1).map((k) => c[k])].map(esc).join(",");
       out.result.chatters.forEach((c, i) => lines.push(line(i + 1, { ...c, role: "viewer" })));
