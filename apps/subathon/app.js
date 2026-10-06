@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { aggregate, aggregateEmotes, aggregateEvents, floorHour, goalProgress, isValidTimeZone, parseGoals, parseWhen } from "./stats.js";
+import { aggregate, aggregateEmotes, aggregateEvents, floorHour, isValidTimeZone, parseWhen } from "./stats.js";
 import { createCollector, connectChat, parseList } from "./collector.js";
 import { createStore } from "./store.js";
 
@@ -39,7 +39,6 @@ export function createSubathonApp() {
   const startText = parseWhen(process.env.SUBATHON_START, tz) != null ? process.env.SUBATHON_START.trim() : DEFAULT_START;
   const endText = parseWhen(process.env.SUBATHON_END, tz) != null ? process.env.SUBATHON_END.trim() : DEFAULT_END;
   const win = { startMs: parseWhen(startText, tz), endMs: parseWhen(endText, tz) };
-  const goals = parseGoals(process.env.SUBATHON_GOALS);
   const store = createStore({ channel, databaseUrl: process.env.DATABASE_URL });
   const collector = createCollector({
     channel,
@@ -103,14 +102,13 @@ export function createSubathonApp() {
     const nowMs = Date.now();
     const [chatRows, eventRows, emoteRows] = await Promise.all([
       store.chatRows(floorHour(fromMs), toMs),
-      store.eventRows(floorHour(win.startMs), win.endMs),
+      store.eventRows(floorHour(fromMs), toMs),
       store.emoteRows(floorHour(fromMs), toMs)
     ]);
     const result = aggregate(chatRows, { fromMs, toMs, tz });
     const events = aggregateEvents(eventRows, { fromMs, toMs, tz, nowMs });
-    const wholeSubs = aggregateEvents(eventRows, { fromMs: win.startMs, toMs: win.endMs, tz, nowMs }).subs.total;
     const emotes = aggregateEmotes(emoteRows, { fromMs, toMs });
-    return { fromMs, toMs, result, events, emotes, goals: { current: wholeSubs, list: goalProgress(goals, wholeSubs) } };
+    return { fromMs, toMs, result, events, emotes };
   }
 
   router.get("/api/status", requireAuth, (_req, res) => {
@@ -144,7 +142,6 @@ export function createSubathonApp() {
         gifters: tagRole(events.gifters),
         cheerers: tagRole(events.cheerers),
         emotes: out.emotes,
-        goals: out.goals,
         timeline: result.timeline,
         truncated: result.chatters.length > MAX_ROWS,
         chatters: result.chatters.slice(0, MAX_ROWS),

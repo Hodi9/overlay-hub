@@ -58,8 +58,6 @@ services:
         sync: false
       - key: SUBATHON_CHANNEL
         sync: false
-      - key: SUBATHON_GOALS
-        sync: false
       - key: NODE_VERSION
         value: 22
 

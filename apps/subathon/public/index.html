@@ -55,15 +55,6 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
 .tile .k { font-size:13px; font-weight:600; color:var(--mute); }
 .tile .v { font:500 34px/1.15 "JetBrains Mono",monospace; color:var(--accent); margin:6px 0 2px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
 .tile .n { font-size:12px; color:var(--mute); min-height:1.2em; }
-.goal { display:grid; grid-template-columns:auto 1fr auto; gap:6px 14px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); }
-.goal:last-child { border-bottom:0; }
-.goal .at { font:500 15px "JetBrains Mono",monospace; color:var(--accent); }
-.goal .lbl { font-weight:600; min-width:0; overflow-wrap:anywhere; }
-.goal .st { font-size:12px; font-weight:700; color:var(--mute); white-space:nowrap; }
-.goal.done .st { color:var(--good); }
-.bar { grid-column:1 / -1; height:8px; background:var(--bg); border:1px solid var(--line); border-radius:999px; overflow:hidden; }
-.bar i { display:block; height:100%; background:var(--mint); }
-.goal.done .bar i { background:var(--good); }
 .emotes { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
 .emote { display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:8px 12px; min-width:0; }
 .emote img { width:32px; height:32px; flex:none; }
@@ -111,11 +102,6 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
     </section>
 
     <div class="tiles" id="tiles"></div>
-
-    <section class="panel" id="goalsPanel">
-      <span class="cap">Subgoals <span id="goalsNote"></span></span>
-      <div id="goals"></div>
-    </section>
 
     <section class="panel">
       <label>Messages over time</label>
@@ -241,12 +227,6 @@ small.tag { font:700 10px "JetBrains Mono",monospace; letter-spacing:.08em; colo
   }
 
   function extras() {
-    const g = data.goals;
-    $("goalsNote").textContent = "· " + num(g.current) + " subs so far (whole subathon)";
-    $("goals").innerHTML = g.list.length ? g.list.map((x) =>
-      '<div class="goal' + (x.reached ? " done" : "") + '"><span class="at">' + num(x.at) + '</span><span class="lbl">' + esc(x.label) + '</span><span class="st">' + (x.reached ? "✓ Reached" : num(x.at - g.current) + " to go") + '</span><div class="bar"><i style="width:' + (x.progress * 100).toFixed(1) + '%"></i></div></div>').join("")
-      : '<p class="hint" style="margin:0">No subgoals set yet. Add them in Render as SUBATHON_GOALS, e.g. <code>500=First goal; 1000=Second goal</code>.</p>';
-
     const e = data.emotes;
     $("emoteNote").textContent = "(" + num(e.total) + " uses)";
     $("emotes").innerHTML = e.top.length ? e.top.map((x) =>

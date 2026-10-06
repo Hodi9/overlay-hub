@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { aggregate, aggregateEmotes, aggregateEvents, goalProgress, parseGoals, parseWhen, dayKey } from "../apps/subathon/stats.js";
+import { aggregate, aggregateEmotes, aggregateEvents, parseWhen, dayKey } from "../apps/subathon/stats.js";
 import { createCollector, extractEmotes, parseList } from "../apps/subathon/collector.js";
 
 const TZ = "Europe/Copenhagen";
@@ -135,12 +135,4 @@ test("aggregateEmotes ranks by count inside the range", () => {
   const out = aggregateEmotes(rows, { fromMs: t, toMs: t + 10 * H });
   assert.deepEqual(out.top.map((e) => [e.name, e.count]), [["Kappa", 7], ["LUL", 5]]);
   assert.equal(out.total, 12);
-});
-
-test("goals parse from text and report reached or not", () => {
-  const goals = parseGoals("1,000=Shave the beard; 500 = Ice bath ;bad;0=zero;2000=");
-  assert.deepEqual(goals, [{ at: 500, label: "Ice bath" }, { at: 1000, label: "Shave the beard" }]);
-  const p = goalProgress(goals, 600);
-  assert.deepEqual(p.map((g) => g.reached), [true, false]);
-  assert.equal(p[1].progress, 0.6);
 });

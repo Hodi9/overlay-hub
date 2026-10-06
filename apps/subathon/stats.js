@@ -239,17 +239,3 @@ export function aggregateEmotes(rows, { fromMs, toMs }, limit = 12) {
   const all = [...byName.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   return { total: all.reduce((n, e) => n + e.count, 0), distinct: all.length, top: all.slice(0, limit) };
 }
-
-// "500=Shave the beard; 1000=Ice bath" -> [{ at: 500, label: "Shave the beard" }, ...]
-export function parseGoals(raw) {
-  return String(raw || "").split(";").map((part) => {
-    const i = part.indexOf("=");
-    const at = Number(part.slice(0, i).replace(/[\s,._]/g, ""));
-    const label = part.slice(i + 1).trim();
-    return i > 0 && Number.isFinite(at) && at > 0 && label ? { at, label } : null;
-  }).filter(Boolean).sort((a, b) => a.at - b.at);
-}
-
-export function goalProgress(goals, current) {
-  return goals.map((g) => ({ ...g, reached: current >= g.at, progress: Math.min(1, current / g.at) }));
-}
