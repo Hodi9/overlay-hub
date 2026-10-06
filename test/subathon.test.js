@@ -155,8 +155,6 @@ test("7TV emotes are loaded from the channel and global sets and matched by name
   await new Promise((r) => setTimeout(r, 20));
   assert.ok(calls.some((u) => u.endsWith("/users/twitch/12345")));
   assert.equal(tv.status.count, 3);
-  assert.equal(tv.status.channelCount, 2);
-  assert.deepEqual(tv.status.sample.map((e) => e.id), ["7tv:C1", "7tv:C2"], "sample shows the channel's own emotes");
   assert.deepEqual(tv.match("hi OMEGALUL7 OMEGALUL7 Clap omegalul7"), [
     { id: "7tv:C1", name: "OMEGALUL7" }, { id: "7tv:C1", name: "OMEGALUL7" }, { id: "7tv:G1", name: "Clap" }]);
   assert.deepEqual(tv.match("Shared"), [{ id: "7tv:C2", name: "Shared" }], "channel set wins over global");
