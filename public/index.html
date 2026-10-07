@@ -91,51 +91,55 @@
   .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
   /* Grid */
-  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); align-items: stretch; }
   .card {
     background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
     padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column;
+    transition: transform .15s, border-color .15s;
   }
-  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .card:hover { transform: translateY(-2px); border-color: #d6c8b0; }
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
   .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--mint-soft); color: var(--mint-dark); border: 1px solid #e2d8ff; }
   .logo svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mint-dark); background: var(--mint-soft); padding: 4px 9px; border-radius: 999px; }
   .card h2 { margin: 0; font-size: 20px; letter-spacing: -.015em; line-height: 1.2; }
-  .card .sub { margin: 4px 0 16px; color: var(--muted); font-size: 14px; }
-  .group-title { margin: 14px 0 6px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-  .group-title:first-of-type { margin-top: 0; }
-  .rows { display: grid; gap: 6px; }
-  .row {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-    border: 1px solid var(--line); border-radius: 12px; padding: 6px 6px 6px 12px;
+  .card .sub { margin: 4px 0 16px; color: var(--muted); font-size: 14px; min-height: 2.8em; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+  .link {
+    display: inline-flex; align-items: stretch;
+    border: 1px solid var(--line); border-radius: 11px; background: var(--bg); overflow: hidden;
   }
-  .row .name { flex: 1 1 90px; font-weight: 600; font-size: 14px; min-width: 0; }
-  .btn {
+  .link a, .link button {
     display: inline-flex; align-items: center; gap: 6px;
-    font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer;
-    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-    padding: 7px 11px; border-radius: 9px; white-space: nowrap;
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: none;
+    background: none; border: 0; cursor: pointer; padding: 8px 12px; white-space: nowrap;
   }
-  .btn:hover { border-color: var(--ink); }
-  .btn svg { width: 14px; height: 14px; }
-  .btn.copied { background: var(--mint-soft); border-color: var(--mint-dark); color: var(--mint-dark); }
+  .link a:hover { background: var(--mint-soft); color: var(--mint-dark); }
+  .link button { border-left: 1px solid var(--line); padding: 8px 10px; color: var(--muted); }
+  .link button:hover { background: var(--mint-soft); color: var(--mint-dark); }
+  .link button.copied { background: var(--mint-dark); color: #fff; }
+  .link svg { width: 14px; height: 14px; }
+  .card-spacer { flex: 1; min-height: 14px; }
+  .controls { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
   .control {
-    margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
     background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 700; font-size: 14px;
-    padding: 12px; border-radius: 12px;
+    padding: 12px; border-radius: 12px; white-space: nowrap;
   }
   .control:hover { background: #3a3127; }
   .control svg { width: 15px; height: 15px; }
-  .extra { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
   details { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; font-size: 13px; color: var(--muted); }
   summary { cursor: pointer; font-weight: 600; color: var(--ink); list-style: none; display: flex; align-items: center; gap: 6px; }
   summary::-webkit-details-marker { display: none; }
   summary::before { content: "+"; font-family: "JetBrains Mono", monospace; color: var(--mint-dark); }
   details[open] summary::before { content: "−"; }
   details p { margin: 8px 0 0; }
+  .extra { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .extra a { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--mint-dark); text-decoration: none; }
+  .extra a:hover { text-decoration: underline; }
+  .extra svg { width: 13px; height: 13px; }
   code { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--bg); color: var(--ink); padding: 1px 5px; border-radius: 5px; word-break: break-all; }
   .card[hidden] { display: none; }
-  .card-spacer { flex: 1; }
   .empty { display: none; text-align: center; color: var(--muted); padding: 48px 0; }
 
   /* Info strip */
@@ -278,9 +282,9 @@ const OVERLAYS = [
     links: [["Overlay", "/minecraft/overlay"], ["Wither Skulls", "/minecraft/wither-overlay"], ["Run Stats", "/minecraft/stats-overlay"]],
     control: "/minecraft/control" },
   { id: "rdr2", cat: "spil", tag: "Spil", title: "RDR2 Marathon Tracker", sub: "Story-progression — auto-opdateres via save-fil",
-    links: [["Overlay", "/rdr2/"], ["Dødstæller", "/rdr2-deaths/?bg=black"], ["Dødstæller kontrolpanel", "/rdr2-deaths/control.html", true]],
+    links: [["Overlay", "/rdr2/"], ["Dødstæller", "/rdr2-deaths/?bg=black"]],
     control: "/rdr2/control.html",
-    extra: [["Opret din egen dødstæller", "/rdr2-deaths/setup.html"]],
+    extra: [["Dødstæller kontrolpanel", "/rdr2-deaths/control.html"], ["Opret din egen dødstæller", "/rdr2-deaths/setup.html"]],
     info: "Kør <code>apps/rdr2/tracker/rdr2-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet. Dødstælleren tæller op via Twitch-chatten — skriv <code>!died</code> som streameren eller en moderator. Andre kanaler kan bruge samme værktøj uafhængigt via <code>/rdr2-deaths/setup.html</code>." },
   { id: "pokemon", cat: "stream", tag: "Stream", title: "Pokémon kortåbning", sub: "Dine egne hits + automatisk 30th Chase List",
     links: [["Mine hits", "/pokemon/?view=pulls&set=all"], ["30th Chase List", "/pokemon/?view=chase&set=30th-celebration"]],
@@ -299,11 +303,8 @@ const OVERLAYS = [
     links: [["Overlay", "/gta5/"]], control: "/gta5/control.html",
     info: "Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
   { id: "mafia", cat: "spil", tag: "Spil", title: "Mafia Trilogy Trackers", sub: "Story-progression — auto-opdateres via OCR",
-    groups: [
-      ["Mafia: Definitive Edition", [["Overlay", "/mafia1/"], ["Kontrolpanel", "/mafia1/control.html", true]]],
-      ["Mafia II: Definitive Edition", [["Overlay", "/mafia2/"], ["Kontrolpanel", "/mafia2/control.html", true]]],
-      ["Mafia III: Definitive Edition", [["Overlay", "/mafia3/"], ["Kontrolpanel", "/mafia3/control.html", true]]]
-    ],
+    links: [["Mafia I", "/mafia1/"], ["Mafia II", "/mafia2/"], ["Mafia III", "/mafia3/"]],
+    controls: [["Panel I", "/mafia1/control.html"], ["Panel II", "/mafia2/control.html"], ["Panel III", "/mafia3/control.html"]],
     info: "Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne." },
   { id: "perfektmatch", cat: "show", tag: "Show", title: "Perfekt Match", sub: "Dating-show-overlay med roterende social-media pop-ups",
     links: [["Overlay", "/perfektmatch/"]], control: "/perfektmatch/control.html",
@@ -336,28 +337,23 @@ function obsUrl(href) {
   return u.toString();
 }
 
-function row([name, href, isControl]) {
-  if (isControl) return `<div class="row"><span class="name">${esc(name)}</span><a class="btn" href="${esc(href)}">Åbn ${ICON_ARROW}</a></div>`;
-  return `<div class="row"><span class="name">${esc(name)}</span>` +
-    `<a class="btn" href="${esc(href)}" target="_blank" rel="noopener">Åbn</a>` +
-    `<button class="btn" data-copy="${esc(obsUrl(href))}" title="Kopiér URL til OBS">${ICON_COPY}Kopiér</button></div>`;
+function link([name, href]) {
+  return `<div class="link"><a href="${esc(href)}" target="_blank" rel="noopener">${esc(name)}</a>` +
+    `<button data-copy="${esc(obsUrl(href))}" title="Kopiér URL til OBS" aria-label="Kopiér link til ${esc(name)}">${ICON_COPY}</button></div>`;
 }
 
-function card(o, i) {
-  let body = "";
-  if (o.groups) {
-    body = o.groups.map(([t, links]) => `<div class="group-title">${esc(t)}</div><div class="rows">${links.map(row).join("")}</div>`).join("");
-  } else {
-    body = `<div class="rows">${o.links.map(row).join("")}</div>`;
-  }
-  const extra = o.extra ? `<div class="extra">${o.extra.map(([n, h]) => `<a class="btn" href="${esc(h)}" target="_blank" rel="noopener">${esc(n)} ${ICON_ARROW}</a>`).join("")}</div>` : "";
-  const control = o.control ? `<a class="control" href="${esc(o.control)}">${ICON_SLIDERS} Kontrolpanel</a>` : "";
-  const info = o.info ? `<details><summary>Opsætning &amp; info</summary><p>${o.info}</p></details>` : "";
-  const search = [o.title, o.sub, o.tag, ...(o.links || []).map(l => l[0]), ...(o.groups || []).map(g => g[0])].join(" ").toLowerCase();
+function card(o) {
+  const controls = o.controls || (o.control ? [["Kontrolpanel", o.control]] : []);
+  const controlHtml = controls.length
+    ? `<div class="controls">${controls.map(([n, h]) => `<a class="control" href="${esc(h)}">${controls.length > 1 ? "" : ICON_SLIDERS + " "}${esc(n)}</a>`).join("")}</div>` : "";
+  const extra = o.extra ? `<div class="extra">${o.extra.map(([n, h]) => `<a href="${esc(h)}" target="_blank" rel="noopener">${esc(n)} ${ICON_ARROW}</a>`).join("")}</div>` : "";
+  const info = o.info || o.extra ? `<details><summary>Opsætning &amp; info</summary>${o.info ? `<p>${o.info}</p>` : ""}${extra}</details>` : "";
+  const search = [o.title, o.sub, o.tag, ...o.links.map(l => l[0])].join(" ").toLowerCase();
   return `<article class="card" data-cat="${o.cat}" data-search="${esc(search)}">
     <div class="card-top"><div class="logo" aria-hidden="true">${ICONS[o.id] || ""}</div><span class="tag">${esc(o.tag)}</span></div>
     <h2>${esc(o.title)}</h2><p class="sub">${esc(o.sub)}</p>
-    ${body}${extra}<div class="card-spacer"></div>${control}${info}
+    <div class="links">${o.links.map(link).join("")}</div>
+    ${info}<div class="card-spacer"></div>${controlHtml}
   </article>`;
 }
 
