@@ -119,6 +119,29 @@
   .v5 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .v5 .stats div{background:var(--panel2);border-radius:12px;padding:6px 12px}
   .v5 .stats span{display:block;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v5 .stats b{font-size:25px;white-space:nowrap}
+  /* lysstyrke: et sort lag over panelets indhold (bevarer den slørede baggrund bag panelet) */
+  .panel::before{content:"";position:absolute;inset:0;background:#000;opacity:calc(1 - var(--bri,1));pointer-events:none;border-radius:inherit;z-index:4}
+  /* tema "Kun tekst + grå boks": halvgennemsigtig grå boks, hvid tekst med mørk kant og skygge */
+  #stage[data-look="mg"]{--panel-a:rgba(26,28,36,.55);--panel-b:rgba(26,28,36,.55);--panel2:rgba(255,255,255,.09);--line:rgba(255,255,255,.28);--cream:#fff;--muted:rgba(255,255,255,.86);--lilac:#fff;--pink:#fff;--glow:rgba(255,255,255,.25)}
+  #stage[data-look="mg"] .panel{background:rgba(26,28,36,.55);border-radius:22px;box-shadow:0 14px 36px -12px rgba(0,0,0,.55);backdrop-filter:blur(14px) saturate(1.15);text-shadow:0 0 2px rgba(0,0,0,.95),0 1px 3px rgba(0,0,0,.9),1px 0 0 rgba(0,0,0,.6),-1px 0 0 rgba(0,0,0,.6),0 1px 0 rgba(0,0,0,.6),0 -1px 0 rgba(0,0,0,.6),0 3px 12px rgba(0,0,0,.55)}
+  #stage[data-look="mg"] .pill{background:none;box-shadow:none;border-radius:0;padding:0 0 4px;border-bottom:2px solid #fff;letter-spacing:.2em;color:#fff}
+  #stage[data-look="mg"] .bar{height:8px;background:rgba(255,255,255,.3);box-shadow:none}
+  #stage[data-look="mg"] .bar>i{background:#fff;box-shadow:none}
+  #stage[data-look="mg"] svg.map{background:rgba(12,14,20,.38)}
+  #stage[data-look="mg"] .land{fill:rgba(255,255,255,.16);stroke:rgba(255,255,255,.8)}
+  #stage[data-look="mg"] .land2{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.25)}
+  #stage[data-look="mg"] .seg{stroke:rgba(255,255,255,.5)}
+  #stage[data-look="mg"] .seg.done{stroke:#fff;filter:none}
+  #stage[data-look="mg"] .town{fill:#111;stroke:#fff}#stage[data-look="mg"] .town.done{fill:#fff}
+  #stage[data-look="mg"] .tname{stroke:rgba(0,0,0,.8)}
+  #stage[data-look="mg"] .me{fill:#fff;stroke:#111}#stage[data-look="mg"] .pulse{stroke:#fff}
+  #stage[data-look="mg"] .v4 li.done .n{color:#111}
+  #stage[data-look="mg"] .v4 li.cur{box-shadow:none;border-color:rgba(255,255,255,.8)}
+  #stage[data-look="mg"] .v4 li.cur .n{background:#fff;color:#111;border-color:#fff}
+  #stage[data-look="mg"] .v4 li.cur .prog i{background:#fff}
+  #stage[data-look="mg"] .world-land{fill:rgba(255,255,255,.2);stroke:rgba(255,255,255,.6)}
+  #stage[data-look="mg"] .world-dk{fill:#fff;stroke:#111}
+  #stage[data-look="mg"] .v5 .etabox{border-color:rgba(255,255,255,.3)}
 </style>
 </head>
 <body>
@@ -320,7 +343,7 @@ const VARIANTS = ["1", "2", "3", "4", "5"];
 
 // Værdier fra URL'en (?v, ?day, ?km, ?scale) vinder over kontrolpanelet — bruges af galleriet til demo.
 const demo = q.has("day") || q.has("km") || q.has("preview");
-let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", eta: null, kmRate: 0, kmCap: 100, timer: { running: false, ms: 0 } };
+let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", look: "nu", brightness: 1, eta: null, kmRate: 0, kmCap: 100, timer: { running: false, ms: 0 } };
 let fetchedAt = Date.now();
 let lastKey = "";
 
@@ -348,9 +371,13 @@ function render() {
   const pk = progress(day, kmS);
   const etaI = etaInfo({ remainingKm: pk.stage.km - pk.todayKm, ms, kmToday: pk.todayKm, manual: live.eta, nowMs: Date.now(), walking: pr.state !== "done" });
   const t = { pace, time, status, eta: etaI.text };
-  const key = JSON.stringify([v, day, km, fields, title, scale, pace, time, status, unit, etaI.text]);
+  const look = ["nu", "mg"].includes(q.get("look")) ? q.get("look") : live.look || "nu"; // ?look= og ?bri= i URL'en vinder over panelet (demo)
+  const bri = Math.min(1, Math.max(0.3, num(q.get("bri"), live.brightness ?? 1)));
+  const key = JSON.stringify([v, day, km, fields, title, scale, pace, time, status, unit, etaI.text, look, bri]);
   if (key === lastKey) { mapTick(pr, kmS); return; } // undgå at genstarte animationer uden ændringer
   lastKey = key;
+  stage$.dataset.look = look;
+  stage$.style.setProperty("--bri", bri);
   stage$.innerHTML = views[v](pr, f, title, t);
   mapTick(pr, kmS);
   const root = stage$.firstElementChild;

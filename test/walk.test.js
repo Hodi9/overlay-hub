@@ -358,3 +358,22 @@ test("overlays 3 and 5 can switch between the whole route and a zoom on today's 
   assert.equal(applyPatch(DEFAULT_STATE, { fields: { 5: { overview: false } } }).fields[5].overview, false);
   assert.deepEqual(applyPatch(DEFAULT_STATE, { fields: { 1: { overview: false } } }).fields[1] ?? {}, {}); // findes kun på de to kort-overlays
 });
+
+import { LOOKS } from "../apps/walk/public/fields.js";
+
+test("the overlay look (theme) and brightness can be switched and are validated", () => {
+  assert.deepEqual(LOOKS.map(([k]) => k), ["nu", "mg"]);
+  assert.equal(DEFAULT_STATE.look, "nu");
+  assert.equal(applyPatch(DEFAULT_STATE, { look: "mg" }).look, "mg");
+  assert.equal(applyPatch(DEFAULT_STATE, { look: "hack" }).look, "nu"); // ukendt tema ignoreres
+  assert.equal(applyPatch({ ...DEFAULT_STATE, look: "mg" }, { look: 5 }).look, "mg");
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: 0.6 }).brightness, 0.6);
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: 9 }).brightness, 1);
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: 0 }).brightness, 0.3);
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: "abc" }).brightness, 1);
+  const e = effectiveState(applyPatch(DEFAULT_STATE, { look: "mg", brightness: 0.7 }));
+  assert.deepEqual([e.look, e.brightness], ["mg", 0.7]);
+  const back = restoreState(JSON.parse(JSON.stringify(applyPatch(DEFAULT_STATE, { look: "mg", brightness: 0.7 }))));
+  assert.deepEqual([back.look, back.brightness], ["mg", 0.7]); // gemmes og huskes efter genstart
+  assert.equal(restoreState({ look: "weird" }).look, "nu");
+});
