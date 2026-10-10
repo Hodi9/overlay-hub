@@ -334,3 +334,27 @@ test("default tempo is 4.5 km/t from the start, and a saved tempo is kept", () =
   assert.equal(restoreState({}).speed, 4.5);
   assert.equal(restoreState({ speed: 5 }).speed, 5); // et tempo du selv har sat (eller som er gemt) bevares
 });
+
+import { pathUpTo } from "../apps/walk/public/route.js";
+
+test("pathUpTo draws the walked part of a stage, growing with the fraction", () => {
+  const s = STAGES[6]; // dag 7: Brande -> Give -> Jelling
+  assert.equal(pathUpTo(s, 0).length, 2); // kun startpunktet (to ens punkter)
+  const half = pathUpTo(s, 0.5);
+  const full = pathUpTo(s, 1);
+  assert.deepEqual(full.at(-1), { lat: TOWNS.jelling.lat, lon: TOWNS.jelling.lon }); // ender i målet
+  assert.ok(full.some((p) => p.lat === TOWNS.give.lat && p.lon === TOWNS.give.lon)); // og går via Give
+  assert.ok(half.length <= full.length);
+  const len = (pts) => pts.slice(1).reduce((a, p, i) => a + Math.hypot(p.lat - pts[i].lat, (p.lon - pts[i].lon) * 0.56), 0);
+  assert.ok(len(pathUpTo(s, 0.25)) < len(half) && len(half) < len(pathUpTo(s, 0.75)) && len(pathUpTo(s, 0.75)) < len(full));
+  assert.ok(Math.abs(len(half) - len(full) / 2) < 1e-9); // 50 % af km = 50 % af stien
+  assert.deepEqual(positionOnStage(s, 0.5), half.at(-1)); // prikken sidder for enden af sporet
+  assert.deepEqual(pathUpTo(s, 7).at(-1), full.at(-1)); // fraction klemmes
+  assert.deepEqual(pathUpTo(s, -1)[0], { lat: TOWNS.brande.lat, lon: TOWNS.brande.lon });
+});
+
+test("overlays 3 and 5 can switch between the whole route and a zoom on today's stage", () => {
+  for (const v of ["3", "5"]) assert.ok(FIELDS[v].some(([k]) => k === "overview"), v);
+  assert.equal(applyPatch(DEFAULT_STATE, { fields: { 5: { overview: false } } }).fields[5].overview, false);
+  assert.deepEqual(applyPatch(DEFAULT_STATE, { fields: { 1: { overview: false } } }).fields[1] ?? {}, {}); // findes kun på de to kort-overlays
+});
