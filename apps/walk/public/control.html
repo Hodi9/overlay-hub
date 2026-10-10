@@ -93,6 +93,16 @@
     </section>
 
     <section>
+      <p class="label">Forventet ankomst i dag</p>
+      <div class="box">
+        <div class="timer"><div><div class="big mono" id="etaVal">–</div><div class="hint" id="etaSrc" style="margin:6px 0 0">Beregnes, når han har gået lidt</div></div></div>
+        <p class="hint" style="margin:14px 0 8px">Beregnes automatisk ud fra tempoet og de resterende km. Vil du bestemme selv, så sæt et klokkeslæt eller ryk tiden. Den sætter sig selv tilbage til automatisk ved midnat eller ved dagsskifte.</p>
+        <div class="row"><input type="time" id="etaIn" style="flex:none"><button class="btn" id="etaSet">Sæt tid</button><button class="btn sec" data-eta="-15">−15 min</button><button class="btn sec" data-eta="15">+15 min</button><button class="btn sec" id="etaAuto">Automatisk</button></div>
+        <div class="msg" id="etaMsg"></div>
+      </div>
+    </section>
+
+    <section>
       <p class="label">Dag</p>
       <div class="box">
         <p class="hint">Automatisk følger datoen (dag 1 = 12/10) og nulstiller dagens km ved midnat. Vælg en dag manuelt, hvis planen skrider.</p>
@@ -139,7 +149,7 @@
 
 <script type="module">
 import { STAGES, TOTAL_KM, dayForDate, progress } from "./route.js";
-import { paceText, timeText, timerStatus } from "./pace.js";
+import { paceText, timeText, timerStatus, etaInfo, shiftClock, isClock } from "./pace.js";
 import { FIELDS, VARIANT_NAMES, DEFAULT_TITLE, SCALE_MIN, SCALE_MAX } from "./fields.js";
 
 const KEY = "walk-control-key";
@@ -148,7 +158,7 @@ const NAMES = VARIANT_NAMES;
 const fmt = (n) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: 1 }).format(n);
 const getKey = () => { try { return localStorage.getItem(KEY) || ""; } catch { return ""; } };
 const setKey = (v) => { try { localStorage.setItem(KEY, v); } catch {} };
-let state = null, authed = false, fetchedAt = Date.now();
+let state = null, authed = false, fetchedAt = Date.now(), eta = "–";
 
 function msg(el, text, kind) { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); }
 
@@ -204,6 +214,11 @@ function tick() {
   $("tStatus").textContent = status === "running" ? "Går — uret løber" : status === "paused" ? "På pause — uret står stille" : "Ikke startet";
   const km = progress(state.day ?? dayForDate(), state.km).todayKm;
   $("tPace").textContent = paceText(km, ms, state.paceUnit || "kmh");
+  const pr = progress(state.day ?? dayForDate(), state.km);
+  const e = etaInfo({ remainingKm: pr.stage.km - pr.todayKm, ms, kmToday: pr.todayKm, manual: state.eta, nowMs: Date.now(), walking: pr.state === "walking" });
+  eta = e.text;
+  $("etaVal").textContent = e.text === "–" || e.text === "Fremme" ? e.text : `kl. ${e.text}`;
+  $("etaSrc").textContent = e.manual ? "Sat manuelt" : e.text === "–" ? "Beregnes, når han har gået lidt (eller sæt en tid)" : e.text === "Fremme" ? "Dagens mål er nået" : "Automatisk — ud fra tempoet";
   const b = $("tToggle");
   b.textContent = status === "running" ? "Pause" : status === "paused" ? "▶ Fortsæt" : "▶ Start gåtur";
   b.classList.toggle("pause", status === "running");
@@ -248,6 +263,12 @@ $("scaleReset").onclick = () => patch({ scale: 1 });
 $("tToggle").onclick = () => patch({ timer: state?.timer?.running ? "pause" : "start" }, $("tMsg"));
 $("tReset").onclick = () => { if (confirm("Nulstil gå-tiden til 0:00?")) patch({ timer: "reset" }, $("tMsg")); };
 document.querySelectorAll("[data-tadd]").forEach((b) => b.onclick = () => patch({ timerAddMin: Number(b.dataset.tadd) }, $("tMsg")));
+$("etaSet").onclick = () => { if (!isClock($("etaIn").value)) return msg($("etaMsg"), "Vælg et klokkeslæt.", "err"); patch({ eta: $("etaIn").value }, $("etaMsg")); };
+$("etaAuto").onclick = () => patch({ eta: null }, $("etaMsg"));
+document.querySelectorAll("[data-eta]").forEach((b) => b.onclick = () => {
+  if (!isClock(eta)) return msg($("etaMsg"), "Der er ingen tid at rykke endnu — sæt en tid først.", "err");
+  patch({ eta: shiftClock(eta, Number(b.dataset.eta)) }, $("etaMsg"));
+});
 $("paceUnit").onchange = () => patch({ paceUnit: $("paceUnit").value }, $("tMsg"));
 setInterval(tick, 1000);
 $("visible").onchange = (e) => patch({ visible: e.target.checked });

@@ -1,10 +1,11 @@
 import { copenhagenDate } from "./public/route.js";
+import { isClock } from "./public/pace.js";
 import { TITLE_MAX, SCALE_MIN, SCALE_MAX, isField } from "./public/fields.js";
 
 export const VARIANTS = ["1", "2", "3", "4", "5"];
 export const PACE_UNITS = ["kmh", "minkm"];
 export const IDLE_TIMER = { running: false, ms: 0, startedAt: null, date: null };
-export const DEFAULT_STATE = { day: null, km: 0, kmDate: null, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", timer: { ...IDLE_TIMER } };
+export const DEFAULT_STATE = { day: null, km: 0, kmDate: null, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", timer: { ...IDLE_TIMER }, eta: null, etaDate: null };
 
 // Gå-tid i ms lige nu (inkl. det stykke der er i gang).
 export const walkMs = (timer, nowMs) => Math.max(0, timer.ms + (timer.running && timer.startedAt ? nowMs - timer.startedAt : 0));
@@ -30,8 +31,13 @@ export function applyPatch(state, patch = {}, now = new Date()) {
     next.timer = { ...next.timer, ms: Math.max(0, next.timer.ms + add), date: copenhagenDate(now) };
   }
   if (typeof patch.paceUnit === "string" && PACE_UNITS.includes(patch.paceUnit)) next.paceUnit = patch.paceUnit;
-  // Ny dag fra panelet = nyt ur.
-  if ("day" in patch && next.day !== state.day) next.timer = { ...IDLE_TIMER };
+  // Forventet ankomst sat i panelet ("HH:MM", dansk tid). null/"auto"/"" = beregn automatisk.
+  if ("eta" in patch) {
+    if (patch.eta === null || patch.eta === "" || patch.eta === "auto") { next.eta = null; next.etaDate = null; }
+    else if (isClock(patch.eta)) { next.eta = patch.eta; next.etaDate = copenhagenDate(now); }
+  }
+  // Ny dag fra panelet = nyt ur og ny forventet ankomst.
+  if ("day" in patch && next.day !== state.day) { next.timer = { ...IDLE_TIMER }; next.eta = null; next.etaDate = null; }
   if ("variant" in patch && VARIANTS.includes(String(patch.variant))) next.variant = String(patch.variant);
   if (typeof patch.visible === "boolean") next.visible = patch.visible;
   if (patch.fields && typeof patch.fields === "object") {
@@ -54,8 +60,9 @@ export function effectiveState(state, now = new Date()) {
   const stale = state.day === null && state.kmDate !== copenhagenDate(now);
   const timer = state.timer || IDLE_TIMER;
   const timerStale = state.day === null && timer.date && timer.date !== copenhagenDate(now); // også uret nulstilles ved midnat
+  const etaStale = state.day === null && state.eta && state.etaDate !== copenhagenDate(now); // en sat ankomst gælder kun i dag
   const timerOut = timerStale ? { running: false, ms: 0 } : { running: timer.running, ms: walkMs(timer, now.getTime()) };
-  return { day: state.day, km: stale ? 0 : state.km, variant: state.variant, visible: state.visible, fields: state.fields || {}, title: state.title || "", scale: state.scale ?? 1, paceUnit: state.paceUnit || "kmh", timer: timerOut };
+  return { day: state.day, km: stale ? 0 : state.km, variant: state.variant, visible: state.visible, fields: state.fields || {}, title: state.title || "", scale: state.scale ?? 1, paceUnit: state.paceUnit || "kmh", timer: timerOut, eta: etaStale ? null : state.eta ?? null };
 }
 
 // Gendanner gemt tilstand (fx fra databasen) — også uret, så en genstart midt på dagen ikke mister gå-tiden.
@@ -67,5 +74,5 @@ export function restoreState(data = {}) {
     startedAt: Number.isFinite(Number(t.startedAt)) ? Number(t.startedAt) : null,
     date: typeof t.date === "string" ? t.date : null
   };
-  return { ...applyPatch(DEFAULT_STATE, data), kmDate: data.kmDate ?? null, timer };
+  return { ...applyPatch(DEFAULT_STATE, data), kmDate: data.kmDate ?? null, timer, eta: isClock(data.eta) ? data.eta : null, etaDate: typeof data.etaDate === "string" ? data.etaDate : null };
 }
