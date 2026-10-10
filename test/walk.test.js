@@ -18,7 +18,9 @@ test("dayForDate maps Copenhagen dates to stages", () => {
 test("progress accumulates earlier stages and clamps today's km", () => {
   const p = progress(3, 10);
   assert.equal(p.doneKm, 22 + 30 + 10);
-  assert.equal(progress(3, 999).todayKm, 32);
+  assert.equal(progress(3, 999).todayKm, 100); // højst 100 km på én dag
+  assert.equal(progress(3, 40).todayKm, 40); // må gerne overstige etapens 32 km (tabellen er et estimat)
+  assert.equal(progress(3, 40).stagePct, 1); // men baren stopper ved 100 %
   assert.equal(progress(0).doneKm, 0);
   assert.equal(progress(15).doneKm, TOTAL_KM);
 });
@@ -251,4 +253,72 @@ test("manual arrival time is validated, expires at midnight and with a day chang
 
 test("every overlay can toggle the expected arrival", () => {
   for (const v of ["1", "2", "3", "4", "5"]) assert.ok(FIELDS[v].some(([k]) => k === "eta"), v);
+});
+
+test("km counts before the start date too (regression: panel changes had no visible effect)", () => {
+  const before = progress(0, 12.5); // Dag = Automatisk, men i dag er før 12/10
+  assert.equal(before.state, "before");
+  assert.equal(before.todayKm, 12.5);
+  assert.equal(before.doneKm, 12.5);
+  assert.equal(progress(0, 30).todayKm, 30); // også ud over etapens 22 km
+  assert.equal(progress(15, 3).todayKm, STAGES[13].km); // efter målet er den hele etape altid gået
+});
+
+import { kmLive } from "../apps/walk/state.js";
+
+test("km counts up by itself while the clock runs, freezes on pause, and continues from a correction", () => {
+  const at = (h, m = 0) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+02:00`);
+  let s = applyPatch(DEFAULT_STATE, { day: 3 }, at(10)); // dag 3 = 32 km
+  assert.equal(effectiveState(s, at(10, 30)).km, 0); // uret er ikke startet
+  s = applyPatch(s, { timer: "start" }, at(11));
+  assert.equal(effectiveState(s, at(11, 30)).km, 2.5); // 0,5 t × 5 km/t
+  assert.equal(effectiveState(s, at(12)).kmRate, 5);
+  s = applyPatch(s, { timer: "pause" }, at(12));
+  const paused = effectiveState(s, at(15));
+  assert.deepEqual([paused.km, paused.kmRate], [5, 0]); // pause: km står stille
+  s = applyPatch(s, { km: 4.2 }, at(15)); // ret: han holdt pause og uret stod ikke stille
+  s = applyPatch(s, { timer: "start" }, at(15));
+  assert.equal(effectiveState(s, at(16)).km, 9.2); // 4,2 + 1 t × 5
+  s = applyPatch(s, { speed: 4 }, at(16)); // nyt tempo: intet hop
+  assert.equal(effectiveState(s, at(16)).km, 9.2);
+  assert.equal(effectiveState(s, at(17)).km, 13.2);
+  assert.equal(effectiveState(s, at(23)).km, 32); // stopper ved etapens planlagte km
+  assert.equal(effectiveState(s, at(23)).kmRate, 0);
+});
+
+test("a correction above the planned km is kept, and auto-count can be switched off", () => {
+  const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3 }, at(9)), { timer: "start" }, at(9));
+  s = applyPatch(s, { km: 35 }, at(10)); // ruten blev længere end de 32 km i tabellen
+  assert.equal(effectiveState(s, at(12)).km, 35); // optællingen går ikke længere end det, du selv har sat
+  s = applyPatch(DEFAULT_STATE, { day: 3 }, at(9));
+  s = applyPatch(s, { timer: "start" }, at(9));
+  s = applyPatch(s, { kmAuto: false }, at(10)); // holder de 5 optalte km fast
+  assert.equal(effectiveState(s, at(14)).km, 5);
+  assert.equal(effectiveState(s, at(14)).kmRate, 0);
+  s = applyPatch(s, { kmAuto: true }, at(14));
+  assert.equal(effectiveState(s, at(15)).km, 10); // 5 + 1 t
+});
+
+test("speed is validated, and day change or timer reset do not make km jump", () => {
+  const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
+  assert.equal(applyPatch(DEFAULT_STATE, { speed: 99 }, at(9)).speed, 12);
+  assert.equal(applyPatch(DEFAULT_STATE, { speed: 0.1 }, at(9)).speed, 1);
+  assert.equal(applyPatch(DEFAULT_STATE, { speed: "abc" }, at(9)).speed, 5);
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3 }, at(9)), { timer: "start" }, at(9));
+  const r = applyPatch(s, { timer: "reset" }, at(11)); // 2 t gået = 10 km; nulstilling af uret må ikke fjerne dem
+  assert.equal(effectiveState(r, at(11)).km, 10);
+  assert.equal(effectiveState(r, at(12)).km, 10); // uret står stille igen
+  const d = applyPatch(s, { day: 4, km: 0 }, at(11)); // dagsskifte fra panelet
+  assert.deepEqual([effectiveState(d, at(11)).km, d.timer.ms], [0, 0]);
+});
+
+test("auto-count and speed survive a restart, and yesterday's count is cleared at midnight", () => {
+  const at = (d, h) => new Date(`2026-10-${d}T${String(h).padStart(2, "0")}:00:00+02:00`);
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { timer: "start", speed: 4 }, at(14, 9)), { km: 2 }, at(14, 10));
+  const back = restoreState(JSON.parse(JSON.stringify(s)));
+  assert.equal(effectiveState(back, at(14, 12)).km, 2 + 2 * 4);
+  assert.equal(effectiveState(s, at(15, 1)).km, 0); // ny dag i automatisk tilstand
+  assert.equal(restoreState({ speed: "x", kmAnchorMs: -5, kmAuto: undefined }).speed, 5);
+  assert.equal(kmLive(restoreState({}), at(14, 9)).km, 0);
 });

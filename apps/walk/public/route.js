@@ -60,10 +60,11 @@ export function progress(day, kmToday = 0) {
   const state = day < 1 ? "before" : day > STAGES.length ? "done" : "walking";
   const idx = state === "before" ? 0 : state === "done" ? STAGES.length - 1 : day - 1;
   const stage = STAGES[idx];
-  const todayKm = state === "walking" ? Math.max(0, Math.min(kmToday, stage.km)) : state === "done" ? stage.km : 0;
+  // Km kan overstige etapens planlagte længde (tabellen er kun et estimat); barer og kort stopper dog ved målet.
+  const todayKm = state === "done" ? stage.km : Math.max(0, Math.min(kmToday, 100)); // også før start (ellers ser man ingen ændring, når man tester)
   const before = STAGES.slice(0, idx).reduce((sum, s) => sum + s.km, 0);
   const doneKm = before + todayKm;
-  return { state, idx, stage, todayKm, doneKm, totalKm: TOTAL_KM, pct: doneKm / TOTAL_KM, stagePct: todayKm / stage.km, kmLeft: TOTAL_KM - doneKm };
+  return { state, idx, stage, todayKm, doneKm, totalKm: TOTAL_KM, pct: Math.min(1, doneKm / TOTAL_KM), stagePct: Math.min(1, todayKm / stage.km), kmLeft: Math.max(0, TOTAL_KM - doneKm) };
 }
 
 // Position langs en etapes byer, fraction 0..1 (lineær pr. segment efter luftlinje).

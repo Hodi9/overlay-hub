@@ -211,13 +211,13 @@ function statCells(p, f, t, withPace = false) {
 }
 
 // "Forventet fremme kl. 16:40" — tom når tiden endnu er ukendt.
-const etaLabel = (t, short = false) => (t.eta === "–" ? "" : t.eta === "Fremme" ? "Fremme!" : `${short ? "fremme" : "Forventet fremme"} kl. ${t.eta}`);
+const etaLabel = (t, short = false) => (t.eta === "–" ? "" : t.eta === "Fremme" ? "Snart fremme" : `${short ? "fremme" : "Forventet fremme"} kl. ${t.eta}`);
 
 function sumLine(p, f, t) {
   const parts = [];
   if (f("date")) parts.push(`${headerNote(p)} · ${esc(p.stage.date)}`);
   if (f("pace")) parts.push(`Ø ${t.pace}`);
-  if (f("eta") && t.eta !== "–") parts.push(t.eta === "Fremme" ? "Fremme!" : `mål ${t.eta}`);
+  if (f("eta") && t.eta !== "–") parts.push(t.eta === "Fremme" ? "snart fremme" : `mål ${t.eta}`);
   const tag = t.tag(f);
   return parts.length || tag ? `<div class="sum">${parts.map((x) => `<span>${x}</span>`).join("")}${tag}</div>` : "";
 }
@@ -293,7 +293,7 @@ const views = {
           ${f("todayKm") ? `<div class="kmrow"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div><div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
           ${stats.length ? `<div class="stats">${stats.join("")}</div>` : ""}
           ${f("next") && p.state === "walking" && STAGES[p.idx + 1] ? `<div class="sub next">I morgen: <b>${esc(STAGES[p.idx + 1].from)}<span class="arrow">→</span>${esc(STAGES[p.idx + 1].to)}</b> · ${STAGES[p.idx + 1].km} km</div>` : ""}
-          ${f("eta") && etaLabel(t) ? `<div class="etabox"><span>Forventet mål</span><b class="mono">${t.eta === "Fremme" ? "Fremme!" : t.eta}</b></div>` : ""}
+          ${f("eta") && etaLabel(t) ? `<div class="etabox"><span>Forventet mål</span><b class="mono">${t.eta === "Fremme" ? "Snart" : t.eta}</b></div>` : ""}
           ${f("stay") ? `<div class="sub">Overnatning: ${esc(s.stay)}</div>` : ""}
         </div></aside></div>`;
   }
@@ -305,7 +305,7 @@ const VARIANTS = ["1", "2", "3", "4", "5"];
 
 // Værdier fra URL'en (?v, ?day, ?km, ?scale) vinder over kontrolpanelet — bruges af galleriet til demo.
 const demo = q.has("day") || q.has("km") || q.has("preview");
-let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", eta: null, timer: { running: false, ms: 0 } };
+let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", eta: null, kmRate: 0, kmCap: 100, timer: { running: false, ms: 0 } };
 let fetchedAt = Date.now();
 let lastKey = "";
 
@@ -313,7 +313,9 @@ function render() {
   const v = VARIANTS.includes(q.get("v")) ? q.get("v") : live.variant;
   if (!live.visible && !demo) { if (lastKey !== "hidden") { stage$.innerHTML = ""; lastKey = "hidden"; } return; }
   const day = num(q.get("day"), live.day ?? dayForDate());
-  const km = num(q.get("km"), live.km);
+  // Km tæller selv op mellem hentningerne, mens uret kører (serveren giver km, tempo og loft). ?km= i URL'en vinder (demo).
+  const liveKm = Math.min((live.km || 0) + ((live.kmRate || 0) * (Date.now() - fetchedAt)) / 3600000, live.kmCap ?? 100);
+  const km = Math.round(num(q.get("km"), liveKm) * 10) / 10;
   const scale = Math.min(1.5, Math.max(0.3, num(q.get("scale"), live.scale ?? 1)));
   const fields = live.fields?.[v] || {};
   const f = (k) => fields[k] !== false;
@@ -327,7 +329,7 @@ function render() {
   const pace = paceText(km, ms, unit);
   const time = timeText(ms);
   const pr = progress(day, km);
-  const etaI = etaInfo({ remainingKm: pr.stage.km - pr.todayKm, ms, kmToday: pr.todayKm, manual: live.eta, nowMs: Date.now(), walking: pr.state === "walking" });
+  const etaI = etaInfo({ remainingKm: pr.stage.km - pr.todayKm, ms, kmToday: pr.todayKm, manual: live.eta, nowMs: Date.now(), walking: pr.state !== "done" });
   const t = { pace, time, status, eta: etaI.text, tag: (ff) => (status === "paused" && ff("pause") ? `<span class="pill pause"><i class="pbars"></i>Pause</span>` : "") };
   const key = JSON.stringify([v, day, km, fields, title, scale, pace, time, status, unit, etaI.text]);
   if (key === lastKey) return; // undgå at genstarte animationer uden ændringer
@@ -349,8 +351,8 @@ async function poll() {
   render();
 }
 poll();
-setInterval(poll, q.has("preview") ? 1500 : 4000);
-setInterval(render, 5000); // gå-tid og tempo tikker mellem hentningerne
+setInterval(poll, q.has("preview") ? 1000 : 2000);
+setInterval(render, 1000); // km, gå-tid og tempo tikker mellem hentningerne
 </script>
 </body>
 </html>
