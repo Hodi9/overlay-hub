@@ -265,10 +265,11 @@ test("km counts before the start date too (regression: panel changes had no visi
 });
 
 import { kmLive } from "../apps/walk/state.js";
+import { DEFAULT_SPEED } from "../apps/walk/public/pace.js";
 
 test("km counts up by itself while the clock runs, freezes on pause, and continues from a correction", () => {
   const at = (h, m = 0) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+02:00`);
-  let s = applyPatch(DEFAULT_STATE, { day: 3 }, at(10)); // dag 3 = 32 km
+  let s = applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(10)); // dag 3 = 32 km, 5 km/t
   assert.equal(effectiveState(s, at(10, 30)).km, 0); // uret er ikke startet
   s = applyPatch(s, { timer: "start" }, at(11));
   assert.equal(effectiveState(s, at(11, 30)).km, 2.5); // 0,5 t × 5 km/t
@@ -288,10 +289,10 @@ test("km counts up by itself while the clock runs, freezes on pause, and continu
 
 test("a correction above the planned km is kept, and auto-count can be switched off", () => {
   const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
-  let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3 }, at(9)), { timer: "start" }, at(9));
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(9)), { timer: "start" }, at(9));
   s = applyPatch(s, { km: 35 }, at(10)); // ruten blev længere end de 32 km i tabellen
   assert.equal(effectiveState(s, at(12)).km, 35); // optællingen går ikke længere end det, du selv har sat
-  s = applyPatch(DEFAULT_STATE, { day: 3 }, at(9));
+  s = applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(9));
   s = applyPatch(s, { timer: "start" }, at(9));
   s = applyPatch(s, { kmAuto: false }, at(10)); // holder de 5 optalte km fast
   assert.equal(effectiveState(s, at(14)).km, 5);
@@ -304,8 +305,8 @@ test("speed is validated, and day change or timer reset do not make km jump", ()
   const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
   assert.equal(applyPatch(DEFAULT_STATE, { speed: 99 }, at(9)).speed, 12);
   assert.equal(applyPatch(DEFAULT_STATE, { speed: 0.1 }, at(9)).speed, 1);
-  assert.equal(applyPatch(DEFAULT_STATE, { speed: "abc" }, at(9)).speed, 5);
-  let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3 }, at(9)), { timer: "start" }, at(9));
+  assert.equal(applyPatch(DEFAULT_STATE, { speed: "abc" }, at(9)).speed, DEFAULT_SPEED);
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(9)), { timer: "start" }, at(9));
   const r = applyPatch(s, { timer: "reset" }, at(11)); // 2 t gået = 10 km; nulstilling af uret må ikke fjerne dem
   assert.equal(effectiveState(r, at(11)).km, 10);
   assert.equal(effectiveState(r, at(12)).km, 10); // uret står stille igen
@@ -319,6 +320,17 @@ test("auto-count and speed survive a restart, and yesterday's count is cleared a
   const back = restoreState(JSON.parse(JSON.stringify(s)));
   assert.equal(effectiveState(back, at(14, 12)).km, 2 + 2 * 4);
   assert.equal(effectiveState(s, at(15, 1)).km, 0); // ny dag i automatisk tilstand
-  assert.equal(restoreState({ speed: "x", kmAnchorMs: -5, kmAuto: undefined }).speed, 5);
+  assert.equal(restoreState({ speed: "x", kmAnchorMs: -5, kmAuto: undefined }).speed, DEFAULT_SPEED);
   assert.equal(kmLive(restoreState({}), at(14, 9)).km, 0);
+});
+
+test("default tempo is 4.5 km/t from the start, and a saved tempo is kept", () => {
+  const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
+  assert.equal(DEFAULT_SPEED, 4.5);
+  assert.equal(effectiveState(DEFAULT_STATE, at(9)).speed, 4.5);
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3 }, at(9)), { timer: "start" }, at(9));
+  assert.equal(effectiveState(s, at(11)).km, 9); // 2 t × 4,5 km/t
+  assert.equal(effectiveState(s, at(11)).kmRate, 4.5);
+  assert.equal(restoreState({}).speed, 4.5);
+  assert.equal(restoreState({ speed: 5 }).speed, 5); // et tempo du selv har sat (eller som er gemt) bevares
 });

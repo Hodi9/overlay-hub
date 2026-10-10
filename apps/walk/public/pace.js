@@ -1,4 +1,7 @@
 // Gå-tid og tempo. Deles af overlay, panel og tests.
+
+// Standard-tempo (km/t) til den automatiske km-optælling, før du selv har sat et. 4,5 = realistisk på lange dage med oppakning.
+export const DEFAULT_SPEED = 4.5;
 const one = new Intl.NumberFormat("da-DK", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 
 export const timeText = (ms) => {
