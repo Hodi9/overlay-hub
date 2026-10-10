@@ -216,3 +216,39 @@ test("a restart in the middle of the day keeps the running timer", () => {
 test("pace/time/pause toggles exist for every overlay", () => {
   for (const v of ["1", "2", "3", "4", "5"]) assert.ok(FIELDS[v].some(([k]) => k === "pace") && FIELDS[v].some(([k]) => k === "pause"), v);
 });
+
+import { etaInfo, shiftClock, isClock, clockText } from "../apps/walk/public/pace.js";
+
+test("expected arrival: automatic from pace, manual override, and edge cases", () => {
+  const now = new Date("2026-10-12T14:00:00+02:00").getTime();
+  // 10 km på 2 t = 5 km/t, 5 km tilbage -> 1 t -> 15:00
+  assert.deepEqual(etaInfo({ remainingKm: 5, ms: 2 * 3600000, kmToday: 10, manual: null, nowMs: now }), { text: "15:00", manual: false });
+  assert.deepEqual(etaInfo({ remainingKm: 5, ms: 2 * 3600000, kmToday: 10, manual: "17:30", nowMs: now }), { text: "17:30", manual: true }); // manuel vinder
+  assert.equal(etaInfo({ remainingKm: 5, ms: 0, kmToday: 0, manual: null, nowMs: now }).text, "–"); // ingen data endnu
+  assert.equal(etaInfo({ remainingKm: 5, ms: 0, kmToday: 0, manual: "18:00", nowMs: now }).text, "18:00"); // men manuel virker alligevel
+  assert.equal(etaInfo({ remainingKm: 0, ms: 3600000, kmToday: 10, manual: "18:00", nowMs: now }).text, "Fremme");
+  assert.equal(etaInfo({ remainingKm: 5, ms: 3600000, kmToday: 5, manual: "18:00", nowMs: now, walking: false }).text, "–");
+  assert.equal(etaInfo({ remainingKm: 5, ms: 3600000, kmToday: 5, manual: "99:99", nowMs: now }).manual, false); // ugyldig sat tid ignoreres
+  assert.equal(clockText(new Date("2026-10-12T14:05:00+02:00").getTime()), "14:05");
+  assert.equal(shiftClock("23:50", 15), "00:05");
+  assert.equal(shiftClock("00:05", -15), "23:50");
+  assert.ok(isClock("07:30") && !isClock("7:30") && !isClock("24:00"));
+});
+
+test("manual arrival time is validated, expires at midnight and with a day change", () => {
+  const day1 = new Date("2026-10-12T15:00:00+02:00");
+  let s = applyPatch(DEFAULT_STATE, { eta: "17:30" }, day1);
+  assert.equal(effectiveState(s, new Date("2026-10-12T16:00:00+02:00")).eta, "17:30");
+  assert.equal(effectiveState(s, new Date("2026-10-13T00:30:00+02:00")).eta, null); // gamle dags tid hænger ikke ved
+  assert.equal(effectiveState({ ...s, day: 3 }, new Date("2026-10-13T00:30:00+02:00")).eta, "17:30"); // manuel dag: bliver
+  assert.equal(applyPatch(s, { eta: "25:99" }, day1).eta, "17:30"); // ugyldigt ændrer intet
+  assert.equal(applyPatch(s, { eta: "auto" }, day1).eta, null);
+  assert.equal(applyPatch(s, { eta: null }, day1).eta, null);
+  assert.equal(applyPatch({ ...s, day: 3 }, { day: 4 }, day1).eta, null); // ny dag = ny beregning
+  assert.equal(restoreState(JSON.parse(JSON.stringify(s))).eta, "17:30");
+  assert.equal(restoreState({ eta: "bogus" }).eta, null);
+});
+
+test("every overlay can toggle the expected arrival", () => {
+  for (const v of ["1", "2", "3", "4", "5"]) assert.ok(FIELDS[v].some(([k]) => k === "eta"), v);
+});

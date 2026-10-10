@@ -46,6 +46,7 @@
   .v2 .bar{margin-top:18px}
   .v2 .stay,.v2 .pace{margin-top:14px;font-size:21px;color:var(--muted)}
   .v2 .pace{margin-top:10px}.v2 .pace b{color:var(--cream)}
+  .v2 .eta-line{margin-top:6px;color:var(--cream);font-weight:700}
   .v2 .stay{margin-top:6px}
   .v2 .stats{display:grid;border-top:1.5px solid var(--line);background:var(--panel2)}
   .v2 .stats div{padding:14px 20px;border-right:1px solid var(--line);min-width:0}.v2 .stats div:last-child{border:0}
@@ -66,7 +67,8 @@
   .v3{position:absolute;right:40px;bottom:40px;width:760px;overflow:hidden}
   .v3 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 26px}
   .v3 .top .route{font-size:36px;font-weight:800;letter-spacing:-.01em}
-  .v3 .mapbox{padding:0 14px 14px}
+  .v3 .mapbox{padding:0 14px 14px;position:relative}
+  .mapchip{position:absolute;left:30px;bottom:30px;padding:8px 16px;border-radius:99px;background:rgba(20,17,28,.85);border:1.5px solid var(--line);font-size:21px;font-weight:700;backdrop-filter:blur(6px)}
   .v3 .stats{display:grid;border-top:1.5px solid var(--line);background:var(--panel2)}
   .v3 .stats div{padding:14px 26px;border-right:1px solid var(--line)}.v3 .stats div:last-child{border:0}
   .v3 .stats span{display:block;font-size:19px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v3 .stats b{font-size:36px;white-space:nowrap}
@@ -75,6 +77,7 @@
   /* v4 — tidslinje */
   .v4{position:absolute;left:40px;top:40px;bottom:40px;width:480px;padding:22px 24px;display:flex;flex-direction:column}
   .v4 h1{margin:0 0 4px;font-size:32px;letter-spacing:-.01em}.v4 .sum{font-size:22px;color:var(--muted);margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .v4 .sum{column-gap:16px;row-gap:4px}.v4 .sum span{white-space:nowrap}
   .v4 .sum .pill{font-size:17px;padding:4px 12px}
   .v4 ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
   .v4 li{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:14px;font-size:21px;white-space:nowrap;font-weight:600;color:var(--muted)}
@@ -90,22 +93,26 @@
   /* v5 — verdenskort + Danmark */
   .v5{position:absolute;right:40px;bottom:40px;width:1340px;padding:18px;display:grid;grid-template-columns:1fr 420px;gap:18px;align-items:stretch}
   .v5.nomap{grid-template-columns:1fr}
-  .v5 .dkmap svg.map{height:100%}
-  .v5 aside{display:flex;flex-direction:column;justify-content:space-between;gap:14px;min-width:0}
-  .v5 .worldbox{position:relative;border-radius:18px;overflow:hidden}
+  .v5 .dkmap svg.map{height:640px}
+  .v5 aside{display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-width:0;height:640px;overflow:hidden}
+  .v5 .worldbox{position:relative;border-radius:18px;overflow:hidden;height:122px;flex:none}
+  .v5 .worldbox svg{height:100%;width:100%}
   .v5 .worldbox .cap{position:absolute;left:12px;bottom:8px;font-size:17px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cream);text-shadow:0 1px 6px #000}
   .world-land{fill:rgba(199,182,255,.26);stroke:rgba(199,182,255,.45);stroke-width:.6;stroke-linejoin:round}
   .world-dk{fill:var(--red);stroke:#fff;stroke-width:1.2}
   .grat{fill:none;stroke:rgba(255,255,255,.07);stroke-width:.7}
-  .v5 .info{padding:6px 8px 4px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .v5 .info{padding:2px 8px 0;display:flex;flex-direction:column;gap:8px;min-width:0}
   .v5 .info .ttl{display:flex;justify-content:space-between;align-items:center;gap:10px}
   .v5 .info .ttl .eyebrow{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.1em}
-  .v5 .route{font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.01em}.v5 .sub{font-size:21px;color:var(--muted)}
-  .v5 .kmrow{display:flex;justify-content:space-between;align-items:baseline;font-size:24px}.v5 .kmrow b{font-size:46px}
+  .v5 .route{font-size:38px;font-weight:800;line-height:1.1;letter-spacing:-.01em}.v5 .sub{font-size:20px;color:var(--muted)}
+  .v5 .kmrow{display:flex;justify-content:space-between;align-items:baseline;font-size:22px}.v5 .kmrow b{font-size:40px}
   .v5 .sub.next b{color:var(--cream);font-weight:700}
-  .v5 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .v5 .stats div{background:var(--panel2);border-radius:14px;padding:10px 14px}
-  .v5 .stats span{display:block;font-size:17px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v5 .stats b{font-size:30px}
+  .v5 .etabox{display:flex;justify-content:space-between;align-items:baseline;gap:10px;background:var(--panel2);border:1.5px solid var(--line);border-radius:12px;padding:6px 14px}
+  .v5 .etabox span{font-size:16px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}.v5 .etabox b{font-size:32px;white-space:nowrap}
+  .v1 .eta{color:var(--cream)}
+  .v5 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .v5 .stats div{background:var(--panel2);border-radius:12px;padding:6px 12px}
+  .v5 .stats span{display:block;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v5 .stats b{font-size:25px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -113,7 +120,7 @@
 <script type="module">
 import { DEFAULT_TITLE } from "./fields.js";
 import { STAGES, TOWNS, TOTAL_KM, dayForDate, progress, positionOnStage } from "./route.js";
-import { paceText, timeText, timerStatus } from "./pace.js";
+import { paceText, timeText, timerStatus, etaInfo } from "./pace.js";
 import { DK_LAND, DK_NEIGHBORS, WORLD_LAND, WORLD_DK, WORLD_VIEW, dkXY, worldXY } from "./geo.js";
 
 const q = new URLSearchParams(location.search);
@@ -196,12 +203,16 @@ function statCells(p, f, t, withPace = false) {
   return cells;
 }
 
+// "Forventet fremme kl. 16:40" — tom når tiden endnu er ukendt.
+const etaLabel = (t, short = false) => (t.eta === "–" ? "" : t.eta === "Fremme" ? "Fremme!" : `${short ? "fremme" : "Forventet fremme"} kl. ${t.eta}`);
+
 function sumLine(p, f, t) {
   const parts = [];
   if (f("date")) parts.push(`${headerNote(p)} · ${esc(p.stage.date)}`);
   if (f("pace")) parts.push(`Ø ${t.pace}`);
+  if (f("eta") && t.eta !== "–") parts.push(t.eta === "Fremme" ? "Fremme!" : `mål ${t.eta}`);
   const tag = t.tag(f);
-  return parts.length || tag ? `<div class="sum">${parts.length ? `<span>${parts.join(" · ")}</span>` : ""}${tag}</div>` : "";
+  return parts.length || tag ? `<div class="sum">${parts.map((x) => `<span>${x}</span>`).join("")}${tag}</div>` : "";
 }
 
 const views = {
@@ -216,6 +227,7 @@ const views = {
     if (f("todayKm")) parts.push(`<span class="mono">${fmt(p.todayKm)} / ${s.km} km</span> i dag`);
     if (f("pace")) parts.push(`Ø-tempo <span class="mono">${t.pace}</span>`);
     if (f("time")) parts.push(`gå-tid <span class="mono">${t.time}</span>`);
+    if (f("eta") && etaLabel(t)) parts.push(`<b class="eta">${etaLabel(t)}</b>`);
     if (f("stay")) parts.push(`overnatning: ${esc(s.stay)}`);
     const tot = f("total") || f("left")
       ? `<div class="tot">${f("total") ? `<b class="mono">${fmt(p.doneKm)}</b> <span>/ ${TOTAL_KM} km</span>` : ""}${f("left") ? `<div class="sub">${fmt(p.kmLeft)} km til Gavnø</div>` : ""}</div>` : "";
@@ -237,6 +249,7 @@ const views = {
       <div class="body"><div class="route">${routeLabel(s)}</div>${f("via") && viaLabel(s) ? `<div class="via">${viaLabel(s)}</div>` : ""}
       ${f("todayBar") ? `<div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
       ${paceLine ? `<div class="pace">${paceLine}</div>` : ""}
+      ${f("eta") && etaLabel(t) ? `<div class="pace eta-line">${etaLabel(t)}</div>` : ""}
       ${f("stay") ? `<div class="stay">Overnatning: ${esc(s.stay)}</div>` : ""}</div>
       ${cells.length ? `<div class="stats" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
   },
@@ -244,7 +257,7 @@ const views = {
     const s = p.stage;
     const cells = statCells(p, f, t, true);
     return `<div class="v3 panel"><div class="top"><div class="route">${routeLabel(s)}</div><span class="pills">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}${t.tag(f)}</span></div>
-      <div class="mapbox">${dkMap(p, f, 732, 400, 20, false)}</div>
+      <div class="mapbox">${dkMap(p, f, 732, 400, 20, false)}${f("eta") && etaLabel(t) ? `<div class="mapchip">${etaLabel(t)}</div>` : ""}</div>
       ${cells.length ? `<div class="stats${cells.length > 3 ? " four" : ""}" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
   },
   4(p, f, title, t) {
@@ -273,6 +286,7 @@ const views = {
           ${f("todayKm") ? `<div class="kmrow"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div><div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
           ${stats.length ? `<div class="stats">${stats.join("")}</div>` : ""}
           ${f("next") && p.state === "walking" && STAGES[p.idx + 1] ? `<div class="sub next">I morgen: <b>${esc(STAGES[p.idx + 1].from)}<span class="arrow">→</span>${esc(STAGES[p.idx + 1].to)}</b> · ${STAGES[p.idx + 1].km} km</div>` : ""}
+          ${f("eta") && etaLabel(t) ? `<div class="etabox"><span>Forventet mål</span><b class="mono">${t.eta === "Fremme" ? "Fremme!" : t.eta}</b></div>` : ""}
           ${f("stay") ? `<div class="sub">Overnatning: ${esc(s.stay)}</div>` : ""}
         </div></aside></div>`;
   }
@@ -284,7 +298,7 @@ const VARIANTS = ["1", "2", "3", "4", "5"];
 
 // Værdier fra URL'en (?v, ?day, ?km, ?scale) vinder over kontrolpanelet — bruges af galleriet til demo.
 const demo = q.has("day") || q.has("km") || q.has("preview");
-let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", timer: { running: false, ms: 0 } };
+let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", eta: null, timer: { running: false, ms: 0 } };
 let fetchedAt = Date.now();
 let lastKey = "";
 
@@ -305,11 +319,13 @@ function render() {
   const unit = live.paceUnit || "kmh";
   const pace = paceText(km, ms, unit);
   const time = timeText(ms);
-  const t = { pace, time, status, tag: (ff) => (status === "paused" && ff("pause") ? `<span class="pill pause"><i class="pbars"></i>Pause</span>` : "") };
-  const key = JSON.stringify([v, day, km, fields, title, scale, pace, time, status, unit]);
+  const pr = progress(day, km);
+  const etaI = etaInfo({ remainingKm: pr.stage.km - pr.todayKm, ms, kmToday: pr.todayKm, manual: live.eta, nowMs: Date.now(), walking: pr.state === "walking" });
+  const t = { pace, time, status, eta: etaI.text, tag: (ff) => (status === "paused" && ff("pause") ? `<span class="pill pause"><i class="pbars"></i>Pause</span>` : "") };
+  const key = JSON.stringify([v, day, km, fields, title, scale, pace, time, status, unit, etaI.text]);
   if (key === lastKey) return; // undgå at genstarte animationer uden ændringer
   lastKey = key;
-  stage$.innerHTML = views[v](progress(day, km), f, title, t);
+  stage$.innerHTML = views[v](pr, f, title, t);
   const root = stage$.firstElementChild;
   if (root && scale !== 1) { root.style.transformOrigin = ORIGIN[v]; root.style.transform = `scale(${scale})`; }
 }
