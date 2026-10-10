@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Walk overlay</title>
+<title>Marcel Walk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
@@ -22,7 +22,7 @@
 
   /* v1 — bundbar */
   .v1{position:absolute;left:40px;right:40px;bottom:36px;background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:22px 32px 20px;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
-  .v1 .row{display:grid;grid-template-columns:auto 1fr auto;gap:36px;align-items:center}
+  .v1 .row{display:flex;gap:36px;align-items:center}.v1 .mid{flex:1;min-width:0}
   .v1 .day{font-size:64px;font-weight:800;line-height:1}.v1 .day small{font-size:28px;color:var(--muted);font-weight:600}
   .v1 .route{font-size:40px;font-weight:700}.v1 .sub{font-size:24px;color:var(--muted);margin-top:4px}
   .v1 .bar{margin-top:12px}
@@ -74,10 +74,10 @@
 <body>
 <div id="stage"></div>
 <script type="module">
+import { DEFAULT_TITLE } from "./fields.js";
 import { STAGES, TOWNS, TOTAL_KM, dayForDate, progress, positionOnStage } from "./route.js";
 
 const q = new URLSearchParams(location.search);
-const variant = ["1", "2", "3", "4"].includes(q.get("v")) ? q.get("v") : "1";
 const num = (v, d) => (v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : d);
 const fmt = (n, dec = 1) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: dec, minimumFractionDigits: 0 }).format(n);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -100,29 +100,39 @@ function headerNote(p) {
 const LABELS = { rosenholm: [14, -10], aarhus: [14, 26], silkeborg: [4, -16], herning: [-14, 6], jelling: [-14, 10], vejle: [16, 30], odense: [0, -16], korsoer: [8, -14], naestved: [-14, -6], gavnoe: [-14, 22] };
 
 const views = {
-  1(p) {
+  1(p, f) {
     const s = p.stage;
     const trail = STAGES.map((st, i) => {
       const cls = p.state === "done" || i < p.idx ? "done" : i === p.idx && p.state === "walking" ? "cur" : "";
       return `<i class="${cls}" style="--p:${pctW(p.stagePct)}"></i>`;
     }).join("");
+    const parts = [];
+    if (f("via") && viaLabel(s)) parts.push(viaLabel(s));
+    if (f("todayKm")) parts.push(`<span class="mono">${fmt(p.todayKm)} / ${s.km} km</span> i dag`);
+    if (f("stay")) parts.push(`overnatning: ${esc(s.stay)}`);
+    const tot = f("total") || f("left")
+      ? `<div class="tot">${f("total") ? `<b class="mono">${fmt(p.doneKm)}</b> <span>/ ${TOTAL_KM} km</span>` : ""}${f("left") ? `<div class="sub">${fmt(p.kmLeft)} km til Gavnø</div>` : ""}</div>` : "";
     return `<div class="v1"><div class="row">
-      <div class="day"><span class="pill">${headerNote(p)}</span></div>
-      <div><div class="route">${routeLabel(s)}</div>
-        <div class="sub">${viaLabel(s) || "&nbsp;"}${viaLabel(s) ? " · " : ""}<span class="mono">${fmt(p.todayKm)} / ${s.km} km</span> i dag · overnatning: ${esc(s.stay)}</div>
-        <div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div></div>
-      <div class="tot"><b class="mono">${fmt(p.doneKm)}</b> <span>/ ${TOTAL_KM} km</span><div class="sub">${fmt(p.kmLeft)} km til Gavnø</div></div>
-    </div><div class="trail">${trail}</div></div>`;
+      ${f("badge") ? `<div class="day"><span class="pill">${headerNote(p)}</span></div>` : ""}
+      <div class="mid"><div class="route">${routeLabel(s)}</div>
+        ${parts.length ? `<div class="sub">${parts.join(" · ")}</div>` : ""}
+        ${f("todayBar") ? `<div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}</div>
+      ${tot}
+    </div>${f("trail") ? `<div class="trail">${trail}</div>` : ""}</div>`;
   },
-  2(p) {
+  2(p, f, title) {
     const s = p.stage;
-    return `<div class="v2"><div class="head"><b>Rosenholm → Gavnø</b><span class="pill">${headerNote(p)}</span></div>
-      <div class="body"><div class="route">${routeLabel(s)}</div><div class="via">${viaLabel(s) || "&nbsp;"}</div>
-      <div class="km"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div>
-      <div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>
-      <div class="foot"><span><b class="mono">${fmt(p.doneKm)}</b> <span class="muted">/ ${TOTAL_KM} km</span></span><span class="muted">${esc(s.stay)}</span></div></div></div>`;
+    const head = f("title") || f("badge")
+      ? `<div class="head"><b>${f("title") ? esc(title) : ""}</b>${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>` : "";
+    const foot = f("total") || f("stay")
+      ? `<div class="foot"><span>${f("total") ? `<b class="mono">${fmt(p.doneKm)}</b> <span class="muted">/ ${TOTAL_KM} km</span>` : ""}</span>${f("stay") ? `<span class="muted">${esc(s.stay)}</span>` : ""}</div>` : "";
+    return `<div class="v2">${head}
+      <div class="body"><div class="route">${routeLabel(s)}</div>${f("via") ? `<div class="via">${viaLabel(s) || "&nbsp;"}</div>` : ""}
+      ${f("todayKm") ? `<div class="km"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div>` : ""}
+      ${f("todayBar") ? `<div class="bar"${f("todayKm") ? "" : ' style="margin-top:18px"'}><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
+      ${foot}</div></div>`;
   },
-  3(p) {
+  3(p, f) {
     const s = p.stage;
     const W = 712, H = 400, pad = 36;
     const pts = Object.values(TOWNS);
@@ -145,32 +155,57 @@ const views = {
         const t = TOWNS[k], reached = done || (i === p.idx && j === 0 && p.state === "walking") || (p.state === "walking" && i < p.idx);
         dots += `<circle class="town${reached || done ? " done" : ""}" cx="${X(t.lon).toFixed(1)}" cy="${Y(t.lat).toFixed(1)}" r="7"/>`;
         const lab = LABELS[k];
-        if (lab) names += `<text class="tname" x="${(X(t.lon) + lab[0]).toFixed(1)}" y="${(Y(t.lat) + lab[1]).toFixed(1)}" text-anchor="${lab[0] < 0 ? "end" : "start"}">${esc(t.name)}</text>`;
+        if (lab && f("labels")) names += `<text class="tname" x="${(X(t.lon) + lab[0]).toFixed(1)}" y="${(Y(t.lat) + lab[1]).toFixed(1)}" text-anchor="${lab[0] < 0 ? "end" : "start"}">${esc(t.name)}</text>`;
       });
     });
     const pos = p.state === "before" ? TOWNS.rosenholm : p.state === "done" ? TOWNS.gavnoe : positionOnStage(s, p.stagePct);
     const me = `<circle class="pulse" cx="${X(pos.lon).toFixed(1)}" cy="${Y(pos.lat).toFixed(1)}" r="12"/><circle class="me" cx="${X(pos.lon).toFixed(1)}" cy="${Y(pos.lat).toFixed(1)}" r="10"/>`;
-    return `<div class="v3"><div class="top"><div class="route">${routeLabel(s)}</div><span class="pill">${headerNote(p)}</span></div>
+    const cells = [];
+    if (f("todayKm")) cells.push(`<div><span>I dag</span><b class="mono">${fmt(p.todayKm)}/${s.km} km</b></div>`);
+    if (f("total")) cells.push(`<div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div>`);
+    if (f("left")) cells.push(`<div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div>`);
+    return `<div class="v3"><div class="top"><div class="route">${routeLabel(s)}</div>${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>
       <svg viewBox="0 0 ${W} ${H}">${segs}${dots}${names}${me}</svg>
-      <div class="stats"><div><span>I dag</span><b class="mono">${fmt(p.todayKm)}/${s.km} km</b></div><div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div><div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div></div></div>`;
+      ${cells.length ? `<div class="stats" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
   },
-  4(p) {
+  4(p, f, title) {
     const rows = STAGES.map((st, i) => {
       const done = p.state === "done" || i < p.idx, cur = p.state === "walking" && i === p.idx;
-      return `<li class="${done ? "done" : cur ? "cur" : ""}"><span class="n">${done ? "✓" : st.day}</span><span>${esc(st.from)}<span class="arrow">→</span>${esc(st.to)}</span><span class="km mono">${st.km} km</span>${cur ? `<div class="prog"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}</li>`;
+      return `<li class="${done ? "done" : cur ? "cur" : ""}"><span class="n">${done ? "✓" : st.day}</span><span>${esc(st.from)}<span class="arrow">→</span>${esc(st.to)}</span>${f("kms") ? `<span class="km mono">${st.km} km</span>` : "<span></span>"}${cur ? `<div class="prog"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}</li>`;
     }).join("");
-    return `<div class="v4"><h1>Rosenholm → Gavnø</h1><div class="sum">${headerNote(p)} · ${esc(p.stage.date)}</div><ol>${rows}</ol>
-      <div class="total"><div><span class="mono"><b>${fmt(p.doneKm)}</b> / ${TOTAL_KM} km</span><span class="muted">${fmt(p.pct * 100, 0)} %</span></div><div class="bar"><i style="width:${pctW(p.pct)}"></i></div></div></div>`;
+    return `<div class="v4">${f("title") ? `<h1>${esc(title)}</h1>` : ""}${f("date") ? `<div class="sum">${headerNote(p)} · ${esc(p.stage.date)}</div>` : ""}<ol>${rows}</ol>
+      ${f("total") ? `<div class="total"><div><span class="mono"><b>${fmt(p.doneKm)}</b> / ${TOTAL_KM} km</span><span class="muted">${fmt(p.pct * 100, 0)} %</span></div><div class="bar"><i style="width:${pctW(p.pct)}"></i></div></div>` : ""}</div>`;
   }
 };
 
+// Værdier fra URL'en (?v, ?day, ?km) vinder over kontrolpanelet — bruges af galleriet til demo.
+const demo = q.has("day") || q.has("km") || q.has("preview");
+let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "" };
+let lastKey = "";
+
 function render() {
-  const day = num(q.get("day"), dayForDate());
-  const p = progress(day, num(q.get("km"), 0));
-  stage$.innerHTML = views[variant](p);
+  const v = ["1", "2", "3", "4"].includes(q.get("v")) ? q.get("v") : live.variant;
+  if (!live.visible && !demo) { if (lastKey !== "hidden") { stage$.innerHTML = ""; lastKey = "hidden"; } return; }
+  const day = num(q.get("day"), live.day ?? dayForDate());
+  const km = num(q.get("km"), live.km);
+  const fields = live.fields?.[v] || {};
+  const f = (k) => fields[k] !== false;
+  const title = live.title || DEFAULT_TITLE;
+  const key = JSON.stringify([v, day, km, fields, title]);
+  if (key === lastKey) return; // undgå at genstarte animationer uden ændringer
+  lastKey = key;
+  stage$.innerHTML = views[v](progress(day, km), f, title);
 }
-render();
-setInterval(render, 60000);
+
+async function poll() {
+  try {
+    const r = await fetch("api/state", { cache: "no-store" });
+    if (r.ok) live = await r.json();
+  } catch {}
+  render();
+}
+poll();
+setInterval(poll, q.has("preview") ? 1500 : 4000);
 </script>
 </body>
 </html>
