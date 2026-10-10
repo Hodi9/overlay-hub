@@ -362,9 +362,10 @@ test("overlays 3 and 5 can switch between the whole route and a zoom on today's 
 import { LOOKS } from "../apps/walk/public/fields.js";
 
 test("the overlay look (theme) and brightness can be switched and are validated", () => {
-  assert.deepEqual(LOOKS.map(([k]) => k), ["nu", "mg", "nl", "bp"]);
+  assert.deepEqual(LOOKS.map(([k]) => k), ["nu", "mg", "nl", "bp", "ef", "sl", "tg", "bi", "gs"]);
   assert.equal(applyPatch(DEFAULT_STATE, { look: "nl" }).look, "nl");
   assert.equal(applyPatch(DEFAULT_STATE, { look: "bp" }).look, "bp");
+  for (const k of ["ef", "sl", "tg", "bi", "gs"]) assert.equal(applyPatch(DEFAULT_STATE, { look: k }).look, k);
   assert.equal(DEFAULT_STATE.look, "nu");
   assert.equal(applyPatch(DEFAULT_STATE, { look: "mg" }).look, "mg");
   assert.equal(applyPatch(DEFAULT_STATE, { look: "hack" }).look, "nu"); // ukendt tema ignoreres
