@@ -9,7 +9,7 @@ export const SCALE_MAX = 1.5;
 
 export const FIELDS = {
   1: [["badge", "Dag-mærke (Dag 5/14)"], ["via", "Via-by / tog"], ["todayKm", "Km gået i dag"], ["stay", "Overnatning"], ["todayBar", "Dagens fremdriftsbar"], ["total", "Km i alt"], ["left", "Km til Gavnø"], ["trail", "Etape-striben nederst"]],
-  2: [["title", "Titel øverst"], ["badge", "Dag-mærke"], ["via", "Via-by / tog"], ["todayKm", "Km gået i dag"], ["todayBar", "Dagens fremdriftsbar"], ["total", "Km i alt"], ["stay", "Overnatning"]],
+  2: [["title", "Titel øverst"], ["badge", "Dag-mærke"], ["via", "Via-by / tog"], ["todayBar", "Dagens fremdriftsbar"], ["todayKm", "Km i dag"], ["total", "Km i alt"], ["left", "Km tilbage"], ["stay", "Overnatning"]],
   3: [["badge", "Dag-mærke"], ["labels", "Bynavne på kortet"], ["todayKm", "Km i dag"], ["total", "Km i alt"], ["left", "Km tilbage"]],
   4: [["title", "Titel øverst"], ["date", "Dag og dato"], ["kms", "Km pr. etape"], ["total", "Samlet fremdrift"]],
   5: [["world", "Verdenskort"], ["labels", "Bynavne på kortet"], ["title", "Titel"], ["badge", "Dag-mærke"], ["via", "Via-by / tog"], ["todayKm", "Km gået i dag + bar"], ["total", "Km i alt"], ["left", "Km tilbage"], ["next", "Næste dags etape"], ["stay", "Overnatning"]]

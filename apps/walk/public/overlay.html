@@ -33,13 +33,16 @@
   .v1 .trail i.done{background:var(--lilac);box-shadow:0 0 10px var(--glow)}.v1 .trail i.cur::after{content:"";position:absolute;inset:0;width:var(--p);background:linear-gradient(90deg,var(--lilac),var(--pink))}
 
   /* v2 — hjørnekort */
-  .v2{position:absolute;left:40px;top:40px;width:580px;overflow:hidden}
+  .v2{position:absolute;left:40px;top:40px;width:600px;overflow:hidden}
   .v2 .head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 26px;background:var(--panel2);border-bottom:1.5px solid var(--line)}
   .v2 .head b{font-size:23px;letter-spacing:.08em;text-transform:uppercase;color:var(--lilac)}
-  .v2 .body{padding:24px 26px 26px}
+  .v2 .body{padding:22px 26px 22px}
   .v2 .route{font-size:46px;font-weight:800;line-height:1.1;letter-spacing:-.01em}.v2 .via{font-size:22px;color:var(--muted);margin-top:6px}
-  .v2 .km{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 12px;font-size:26px}.v2 .km b{font-size:52px}
-  .v2 .foot{display:flex;justify-content:space-between;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);font-size:24px}
+  .v2 .bar{margin-top:18px}
+  .v2 .stay{margin-top:14px;font-size:21px;color:var(--muted)}
+  .v2 .stats{display:grid;border-top:1.5px solid var(--line);background:var(--panel2)}
+  .v2 .stats div{padding:14px 20px;border-right:1px solid var(--line);min-width:0}.v2 .stats div:last-child{border:0}
+  .v2 .stats span{display:block;font-size:19px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v2 .stats b{font-size:30px;white-space:nowrap}
 
   /* kort (v3 + v5) */
   svg.map{display:block;width:100%;height:auto;border-radius:18px;background:radial-gradient(ellipse at 50% 35%,#272046 0,#171230 70%,#120e24 100%)}
@@ -173,6 +176,15 @@ function worldMap(f) {
     <span class="cap">Danmark</span></div>`;
 }
 
+// De tre stats (I dag / I alt / Tilbage) — bruges af v2 og v3.
+function statCells(p, f) {
+  const cells = [];
+  if (f("todayKm")) cells.push(`<div><span>I dag</span><b class="mono">${fmt(p.todayKm)}/${p.stage.km} km</b></div>`);
+  if (f("total")) cells.push(`<div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div>`);
+  if (f("left")) cells.push(`<div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div>`);
+  return cells;
+}
+
 const views = {
   1(p, f) {
     const s = p.stage;
@@ -198,20 +210,16 @@ const views = {
     const s = p.stage;
     const head = f("title") || f("badge")
       ? `<div class="head"><b>${f("title") ? esc(title) : ""}</b>${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>` : "";
-    const foot = f("total") || f("stay")
-      ? `<div class="foot"><span>${f("total") ? `<b class="mono">${fmt(p.doneKm)}</b> <span class="muted">/ ${TOTAL_KM} km</span>` : ""}</span>${f("stay") ? `<span class="muted">${esc(s.stay)}</span>` : ""}</div>` : "";
+    const cells = statCells(p, f);
     return `<div class="v2 panel">${head}
-      <div class="body"><div class="route">${routeLabel(s)}</div>${f("via") ? `<div class="via">${viaLabel(s) || "&nbsp;"}</div>` : ""}
-      ${f("todayKm") ? `<div class="km"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div>` : ""}
-      ${f("todayBar") ? `<div class="bar"${f("todayKm") ? "" : ' style="margin-top:18px"'}><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
-      ${foot}</div></div>`;
+      <div class="body"><div class="route">${routeLabel(s)}</div>${f("via") && viaLabel(s) ? `<div class="via">${viaLabel(s)}</div>` : ""}
+      ${f("todayBar") ? `<div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
+      ${f("stay") ? `<div class="stay">Overnatning: ${esc(s.stay)}</div>` : ""}</div>
+      ${cells.length ? `<div class="stats" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
   },
   3(p, f) {
     const s = p.stage;
-    const cells = [];
-    if (f("todayKm")) cells.push(`<div><span>I dag</span><b class="mono">${fmt(p.todayKm)}/${s.km} km</b></div>`);
-    if (f("total")) cells.push(`<div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div>`);
-    if (f("left")) cells.push(`<div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div>`);
+    const cells = statCells(p, f);
     return `<div class="v3 panel"><div class="top"><div class="route">${routeLabel(s)}</div>${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>
       <div class="mapbox">${dkMap(p, f, 732, 400, 20, false)}</div>
       ${cells.length ? `<div class="stats" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
