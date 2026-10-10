@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Marcel Walk — kontrolpanel</title>
 <style>
-  :root{color-scheme:dark;--bg:#0e0b14;--panel:#17131f;--panel2:#221d2d;--line:#3a3150;--text:#fff8ec;--dim:#a79fbb;--lilac:#c7b6ff;--red:#e8334a;--ok:#7ee0a1}
+  :root{--bg:#0e0b14;--panel:#17131f;--panel2:#221d2d;--line:#3a3150;--text:#fff8ec;--dim:#a79fbb;--lilac:#c7b6ff;--red:#e8334a;--ok:#7ee0a1}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;padding:28px 18px 60px}
   .wrap{max-width:760px;margin:0 auto}
@@ -28,6 +28,15 @@
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
   .links a{color:var(--lilac)}.links li{margin:6px 0;word-break:break-all}
   .locked{opacity:.5;pointer-events:none}
+  .ov{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media (max-width:640px){.ov{grid-template-columns:1fr}}
+  .ov h3{margin:0 0 10px;font-size:1.05rem}
+  .checks{display:grid;gap:8px}
+  .checks label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.95rem}
+  .checks input{width:18px;height:18px;accent-color:var(--lilac)}
+  .prev{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#2b2538 0 25%,#221d2d 0 50%) 0 0/20px 20px}
+  .prev iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .ovbox{margin-bottom:14px}
   .switch{display:flex;align-items:center;gap:10px;cursor:pointer}.switch input{width:20px;height:20px;accent-color:var(--lilac)}
 </style>
 </head>
@@ -85,6 +94,22 @@
     </section>
   </div>
 
+  <div id="dataPanel" class="locked">
+    <section>
+      <p class="label">Titel</p>
+      <div class="box">
+        <p class="hint">Teksten øverst på Hjørnekort og Tidslinje. Tom = standard (Rosenholm → Gavnø).</p>
+        <div class="row"><input type="text" id="titleIn" maxlength="40" placeholder="Rosenholm → Gavnø"><button class="btn" id="titleSet">Gem titel</button></div>
+        <div class="msg" id="titleMsg"></div>
+      </div>
+    </section>
+    <section>
+      <p class="label">Data på hver overlay</p>
+      <p class="hint" style="margin-top:-2px">Sæt flueben ved det, der skal vises. Eksemplerne til højre opdateres inden for et par sekunder.</p>
+      <div id="ovs"></div>
+    </section>
+  </div>
+
   <section>
     <p class="label">Links til OBS</p>
     <div class="box links"><ul style="margin:0;padding-left:18px">
@@ -96,6 +121,7 @@
 
 <script type="module">
 import { STAGES, TOTAL_KM, dayForDate, progress } from "./route.js";
+import { FIELDS, VARIANT_NAMES, DEFAULT_TITLE } from "./fields.js";
 
 const KEY = "walk-control-key";
 const $ = (id) => document.getElementById(id);
@@ -114,7 +140,7 @@ async function api(path, body) {
   return data;
 }
 
-function setAuthed(on) { authed = on; $("panel").classList.toggle("locked", !on); }
+function setAuthed(on) { authed = on; $("panel").classList.toggle("locked", !on); $("dataPanel").classList.toggle("locked", !on); }
 
 async function login() {
   const key = $("pw").value.trim();
@@ -139,6 +165,8 @@ function render() {
   $("stTotal").textContent = `${fmt(p.doneKm)} / ${TOTAL_KM} km i alt · ${fmt(p.kmLeft)} km tilbage`;
   if (document.activeElement !== $("daySel")) $("daySel").value = state.day === null ? "auto" : String(state.day);
   $("visible").checked = state.visible;
+  document.querySelectorAll("#ovs input[data-v]").forEach((c) => { c.checked = state.fields?.[c.dataset.v]?.[c.dataset.k] !== false; });
+  if (document.activeElement !== $("titleIn")) $("titleIn").value = state.title || "";
   document.querySelectorAll("#variants button").forEach((b) => b.classList.toggle("on", b.dataset.v === state.variant));
 }
 
@@ -147,9 +175,14 @@ async function refresh() {
 }
 
 // opbygning
+$("ovs").innerHTML = Object.entries(FIELDS).map(([v, list]) => `<div class="box ovbox"><div class="ov">
+  <div><h3>${v}. ${VARIANT_NAMES[v]}</h3><div class="checks">${list.map(([k, label]) => `<label><input type="checkbox" data-v="${v}" data-k="${k}"> ${label}</label>`).join("")}</div>
+  <div class="row" style="margin-top:12px"><button class="btn sec" data-all="${v}">Vis alt</button></div></div>
+  <div class="prev"><iframe loading="lazy" title="Eksempel ${VARIANT_NAMES[v]}" src="overlay.html?v=${v}&preview=1"></iframe></div></div></div>`).join("");
 $("daySel").innerHTML = `<option value="auto">Automatisk (efter dato)</option><option value="0">Før start</option>` +
   STAGES.map((s) => `<option value="${s.day}">Dag ${s.day} · ${s.from} → ${s.to}</option>`).join("") + `<option value="15">Fremme</option>`;
 $("variants").innerHTML = Object.entries(NAMES).map(([v, n]) => `<button class="btn sec" data-v="${v}">${v}. ${n}</button>`).join("");
+$("titleIn").placeholder = DEFAULT_TITLE;
 $("lnkOverlay").textContent = $("lnkOverlay").href = new URL("overlay.html", location.href).href;
 $("lnkGallery").textContent = $("lnkGallery").href = new URL("./", location.href).href;
 
@@ -165,6 +198,10 @@ $("kmIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("kmSet")
 $("kmZero").onclick = () => patch({ km: 0 }, $("kmMsg"));
 $("daySet").onclick = () => { const v = $("daySel").value; patch(v === "auto" ? { day: null } : { day: Number(v), km: 0 }, $("kmMsg")); };
 $("variants").onclick = (e) => { const b = e.target.closest("button"); if (b) patch({ variant: b.dataset.v }); };
+$("ovs").onchange = (e) => { const c = e.target.closest("input[data-v]"); if (c) patch({ fields: { [c.dataset.v]: { [c.dataset.k]: c.checked } } }); };
+$("ovs").onclick = (e) => { const b = e.target.closest("[data-all]"); if (!b) return; const v = b.dataset.all; patch({ fields: { [v]: Object.fromEntries(FIELDS[v].map(([k]) => [k, true])) } }); };
+$("titleSet").onclick = () => patch({ title: $("titleIn").value }, $("titleMsg"));
+$("titleIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("titleSet").click(); });
 $("visible").onchange = (e) => patch({ visible: e.target.checked });
 
 // start: prøv gemt kode stille

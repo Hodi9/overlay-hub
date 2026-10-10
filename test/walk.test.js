@@ -105,3 +105,26 @@ test("too many wrong passwords get rate limited", async () => {
     assert.equal((await post(`${base}/api/login`, {}, "hemmelig-kode")).status, 429);
   });
 });
+
+import { FIELDS } from "../apps/walk/public/fields.js";
+
+test("field toggles and title are validated per overlay", () => {
+  let s = applyPatch(DEFAULT_STATE, { fields: { 1: { via: false, hack: true }, 9: { x: false }, 2: { title: false } }, title: "  <b>Min tur</b> " });
+  assert.deepEqual(s.fields, { 1: { via: false }, 2: { title: false } });
+  assert.equal(s.title, "bMin tur/b");
+  s = applyPatch(s, { fields: { 1: { via: true, stay: false } } });
+  assert.deepEqual(s.fields[1], { via: true, stay: false });
+  assert.equal(applyPatch(s, { title: "x".repeat(99) }).title.length, 40);
+  assert.deepEqual(applyPatch(s, { fields: { 1: { via: "ja" } } }).fields[1], { via: true, stay: false });
+  assert.deepEqual(Object.keys(FIELDS), ["1", "2", "3", "4"]);
+});
+
+test("fields and title reach the overlay via the public state, after login", async () => {
+  await withWalk("hemmelig-kode", async (base) => {
+    assert.equal((await post(`${base}/api/state`, { fields: { 3: { labels: false } } })).status, 401);
+    await post(`${base}/api/state`, { fields: { 3: { labels: false } }, title: "Marcel Walk" }, "hemmelig-kode");
+    const pub = await (await fetch(`${base}/api/state`)).json();
+    assert.deepEqual(pub.fields, { 3: { labels: false } });
+    assert.equal(pub.title, "Marcel Walk");
+  });
+});
