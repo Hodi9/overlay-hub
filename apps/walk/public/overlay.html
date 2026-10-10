@@ -7,7 +7,7 @@
 <title>Marcel Walk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=DM+Sans:wght@500;700&family=Schibsted+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=DM+Sans:wght@500;700&family=Bricolage+Grotesque:wght@700;800&family=Schibsted+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
 <style>
   :root{--ink:#14111c;--panel-a:rgba(36,30,52,.94);--panel-b:rgba(17,13,25,.95);--panel2:rgba(255,255,255,.06);--lilac:#c7b6ff;--pink:#ff9ac4;--red:#e8334a;--cream:#fff8ec;--muted:#a99fbf;--line:rgba(255,255,255,.12);--glow:rgba(199,182,255,.45)}
   *{box-sizing:border-box}
@@ -186,6 +186,87 @@
   #stage[data-look="bp"] .v5 .stats div,#stage[data-look="bp"] .v5 .etabox{border:1.5px solid rgba(255,255,255,.4);border-radius:3px}
   #stage[data-look="bp"] .world-land{fill:rgba(255,255,255,.1);stroke:rgba(255,255,255,.7)}
   #stage[data-look="bp"] .world-dk{fill:#ffd23f;stroke:#0c3a6d}
+  /* efterårstemaer: dæmpede skovfarver (Efterårsskov, Slåen, Tågeskov, Birk, Granskov). Samme opbygning, kun farverne skifter */
+  /* Efterårsskov */
+  #stage[data-look="ef"]{--ink:#0e130d;--panel-a:#26331f;--panel-b:#141c13;--panel2:rgba(240,180,90,.07);--lilac:#f0b45a;--pink:#f0b45a;--red:#e8643a;--cream:#fbf1dc;--muted:#b7ae8c;--line:rgba(240,180,90,.22);--glow:rgba(240,180,90,0);font-family:"DM Sans",system-ui,sans-serif}
+  #stage[data-look="ef"] .panel{background:linear-gradient(165deg,#26331f,#141c13);border-color:rgba(240,180,90,.34);border-radius:20px;box-shadow:0 22px 50px -18px rgba(0,0,0,.75)}
+  #stage[data-look="ef"] .panel.is-paused{border-color:rgba(246,195,91,.85)}
+  #stage[data-look="ef"] .pill{background:#c4521f;color:#fff6e8;box-shadow:none}
+  #stage[data-look="ef"] .bar>i,#stage[data-look="ef"] .v1 .trail i.cur::after,#stage[data-look="ef"] .v4 li.cur .prog i{background:linear-gradient(90deg,#f0b45a,#c4521f);box-shadow:none}
+  #stage[data-look="ef"] .v1 .trail i.done{box-shadow:none}
+  #stage[data-look="ef"] .v2 .head{background:linear-gradient(90deg,rgba(196,82,31,.28),rgba(240,180,90,.07))}
+  #stage[data-look="ef"] .route,#stage[data-look="ef"] .v4 h1{font-family:"Bricolage Grotesque","DM Sans",sans-serif;letter-spacing:-.02em}
+  #stage[data-look="ef"] svg.map{background:radial-gradient(ellipse at 30% 25%,#26331f,#0e130d 70%)}
+  #stage[data-look="ef"] .land{fill:rgba(240,180,90,.12);stroke:rgba(240,180,90,.42)}#stage[data-look="ef"] .land2{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.12)}
+  #stage[data-look="ef"] .seg{stroke:rgba(183,174,140,.42)}#stage[data-look="ef"] .seg.done{stroke:#f0b45a;filter:drop-shadow(0 0 3px rgba(240,180,90,.45))}
+  #stage[data-look="ef"] .town{stroke:#b7ae8c}#stage[data-look="ef"] .town.done{fill:#f0b45a;stroke:#f0b45a}
+  #stage[data-look="ef"] .tname{font-family:"DM Sans",sans-serif;stroke:rgba(14,19,13,.95)}
+  #stage[data-look="ef"] .mapchip{background:rgba(20,28,19,.88);border-color:rgba(240,180,90,.38)}
+  #stage[data-look="ef"] .world-land{fill:rgba(240,180,90,.18);stroke:rgba(240,180,90,.45)}
+  /* Slåen */
+  #stage[data-look="sl"]{--ink:#110b12;--panel-a:#30232f;--panel-b:#19111a;--panel2:rgba(216,163,174,.07);--lilac:#d8a3ae;--pink:#d8a3ae;--red:#e58b9b;--cream:#f6e9ee;--muted:#ae98a6;--line:rgba(216,163,174,.22);--glow:rgba(216,163,174,0);font-family:"DM Sans",system-ui,sans-serif}
+  #stage[data-look="sl"] .panel{background:linear-gradient(165deg,#30232f,#19111a);border-color:rgba(216,163,174,.34);border-radius:20px;box-shadow:0 22px 50px -18px rgba(0,0,0,.75)}
+  #stage[data-look="sl"] .panel.is-paused{border-color:rgba(246,195,91,.85)}
+  #stage[data-look="sl"] .pill{background:#8b4f64;color:#fff0f3;box-shadow:none}
+  #stage[data-look="sl"] .bar>i,#stage[data-look="sl"] .v1 .trail i.cur::after,#stage[data-look="sl"] .v4 li.cur .prog i{background:linear-gradient(90deg,#d8a3ae,#8b4f64);box-shadow:none}
+  #stage[data-look="sl"] .v1 .trail i.done{box-shadow:none}
+  #stage[data-look="sl"] .v2 .head{background:linear-gradient(90deg,rgba(139,79,100,.28),rgba(216,163,174,.07))}
+  #stage[data-look="sl"] .route,#stage[data-look="sl"] .v4 h1{font-family:"Bricolage Grotesque","DM Sans",sans-serif;letter-spacing:-.02em}
+  #stage[data-look="sl"] svg.map{background:radial-gradient(ellipse at 30% 25%,#30232f,#110b12 70%)}
+  #stage[data-look="sl"] .land{fill:rgba(216,163,174,.12);stroke:rgba(216,163,174,.42)}#stage[data-look="sl"] .land2{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.12)}
+  #stage[data-look="sl"] .seg{stroke:rgba(174,152,166,.42)}#stage[data-look="sl"] .seg.done{stroke:#d8a3ae;filter:drop-shadow(0 0 3px rgba(216,163,174,.45))}
+  #stage[data-look="sl"] .town{stroke:#ae98a6}#stage[data-look="sl"] .town.done{fill:#d8a3ae;stroke:#d8a3ae}
+  #stage[data-look="sl"] .tname{font-family:"DM Sans",sans-serif;stroke:rgba(17,11,18,.95)}
+  #stage[data-look="sl"] .mapchip{background:rgba(25,17,26,.88);border-color:rgba(216,163,174,.38)}
+  #stage[data-look="sl"] .world-land{fill:rgba(216,163,174,.18);stroke:rgba(216,163,174,.45)}
+  /* Tågeskov */
+  #stage[data-look="tg"]{--ink:#0c1216;--panel-a:#243138;--panel-b:#121b20;--panel2:rgba(205,185,138,.07);--lilac:#cdb98a;--pink:#cdb98a;--red:#e2b36a;--cream:#eaeee9;--muted:#9db0b0;--line:rgba(205,185,138,.22);--glow:rgba(205,185,138,0);font-family:"DM Sans",system-ui,sans-serif}
+  #stage[data-look="tg"] .panel{background:linear-gradient(165deg,#243138,#121b20);border-color:rgba(205,185,138,.34);border-radius:20px;box-shadow:0 22px 50px -18px rgba(0,0,0,.75)}
+  #stage[data-look="tg"] .panel.is-paused{border-color:rgba(246,195,91,.85)}
+  #stage[data-look="tg"] .pill{background:#5f7f86;color:#eef6f4;box-shadow:none}
+  #stage[data-look="tg"] .bar>i,#stage[data-look="tg"] .v1 .trail i.cur::after,#stage[data-look="tg"] .v4 li.cur .prog i{background:linear-gradient(90deg,#cdb98a,#5f7f86);box-shadow:none}
+  #stage[data-look="tg"] .v1 .trail i.done{box-shadow:none}
+  #stage[data-look="tg"] .v2 .head{background:linear-gradient(90deg,rgba(95,127,134,.28),rgba(205,185,138,.07))}
+  #stage[data-look="tg"] .route,#stage[data-look="tg"] .v4 h1{font-family:"Bricolage Grotesque","DM Sans",sans-serif;letter-spacing:-.02em}
+  #stage[data-look="tg"] svg.map{background:radial-gradient(ellipse at 30% 25%,#243138,#0c1216 70%)}
+  #stage[data-look="tg"] .land{fill:rgba(205,185,138,.12);stroke:rgba(205,185,138,.42)}#stage[data-look="tg"] .land2{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.12)}
+  #stage[data-look="tg"] .seg{stroke:rgba(157,176,176,.42)}#stage[data-look="tg"] .seg.done{stroke:#cdb98a;filter:drop-shadow(0 0 3px rgba(205,185,138,.45))}
+  #stage[data-look="tg"] .town{stroke:#9db0b0}#stage[data-look="tg"] .town.done{fill:#cdb98a;stroke:#cdb98a}
+  #stage[data-look="tg"] .tname{font-family:"DM Sans",sans-serif;stroke:rgba(12,18,22,.95)}
+  #stage[data-look="tg"] .mapchip{background:rgba(18,27,32,.88);border-color:rgba(205,185,138,.38)}
+  #stage[data-look="tg"] .world-land{fill:rgba(205,185,138,.18);stroke:rgba(205,185,138,.45)}
+  /* Birk */
+  #stage[data-look="bi"]{--ink:#0e100e;--panel-a:#2b2e2a;--panel-b:#151714;--panel2:rgba(174,195,160,.07);--lilac:#aec3a0;--pink:#aec3a0;--red:#d9c47a;--cream:#eef0e6;--muted:#a3a999;--line:rgba(174,195,160,.22);--glow:rgba(174,195,160,0);font-family:"DM Sans",system-ui,sans-serif}
+  #stage[data-look="bi"] .panel{background:linear-gradient(165deg,#2b2e2a,#151714);border-color:rgba(174,195,160,.34);border-radius:20px;box-shadow:0 22px 50px -18px rgba(0,0,0,.75)}
+  #stage[data-look="bi"] .panel.is-paused{border-color:rgba(246,195,91,.85)}
+  #stage[data-look="bi"] .pill{background:#6d8260;color:#121710;box-shadow:none}
+  #stage[data-look="bi"] .bar>i,#stage[data-look="bi"] .v1 .trail i.cur::after,#stage[data-look="bi"] .v4 li.cur .prog i{background:linear-gradient(90deg,#aec3a0,#6d8260);box-shadow:none}
+  #stage[data-look="bi"] .v1 .trail i.done{box-shadow:none}
+  #stage[data-look="bi"] .v2 .head{background:linear-gradient(90deg,rgba(109,130,96,.28),rgba(174,195,160,.07))}
+  #stage[data-look="bi"] .route,#stage[data-look="bi"] .v4 h1{font-family:"Bricolage Grotesque","DM Sans",sans-serif;letter-spacing:-.02em}
+  #stage[data-look="bi"] svg.map{background:radial-gradient(ellipse at 30% 25%,#2b2e2a,#0e100e 70%)}
+  #stage[data-look="bi"] .land{fill:rgba(174,195,160,.12);stroke:rgba(174,195,160,.42)}#stage[data-look="bi"] .land2{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.12)}
+  #stage[data-look="bi"] .seg{stroke:rgba(163,169,153,.42)}#stage[data-look="bi"] .seg.done{stroke:#aec3a0;filter:drop-shadow(0 0 3px rgba(174,195,160,.45))}
+  #stage[data-look="bi"] .town{stroke:#a3a999}#stage[data-look="bi"] .town.done{fill:#aec3a0;stroke:#aec3a0}
+  #stage[data-look="bi"] .tname{font-family:"DM Sans",sans-serif;stroke:rgba(14,16,14,.95)}
+  #stage[data-look="bi"] .mapchip{background:rgba(21,23,20,.88);border-color:rgba(174,195,160,.38)}
+  #stage[data-look="bi"] .world-land{fill:rgba(174,195,160,.18);stroke:rgba(174,195,160,.45)}
+  /* Granskov */
+  #stage[data-look="gs"]{--ink:#081210;--panel-a:#1b3430;--panel-b:#0c1a18;--panel2:rgba(210,154,105,.07);--lilac:#d29a69;--pink:#d29a69;--red:#e4a56e;--cream:#e9f0ea;--muted:#9db5ad;--line:rgba(210,154,105,.22);--glow:rgba(210,154,105,0);font-family:"DM Sans",system-ui,sans-serif}
+  #stage[data-look="gs"] .panel{background:linear-gradient(165deg,#1b3430,#0c1a18);border-color:rgba(210,154,105,.34);border-radius:20px;box-shadow:0 22px 50px -18px rgba(0,0,0,.75)}
+  #stage[data-look="gs"] .panel.is-paused{border-color:rgba(246,195,91,.85)}
+  #stage[data-look="gs"] .pill{background:#3f7f72;color:#eefaf6;box-shadow:none}
+  #stage[data-look="gs"] .bar>i,#stage[data-look="gs"] .v1 .trail i.cur::after,#stage[data-look="gs"] .v4 li.cur .prog i{background:linear-gradient(90deg,#d29a69,#3f7f72);box-shadow:none}
+  #stage[data-look="gs"] .v1 .trail i.done{box-shadow:none}
+  #stage[data-look="gs"] .v2 .head{background:linear-gradient(90deg,rgba(63,127,114,.28),rgba(210,154,105,.07))}
+  #stage[data-look="gs"] .route,#stage[data-look="gs"] .v4 h1{font-family:"Bricolage Grotesque","DM Sans",sans-serif;letter-spacing:-.02em}
+  #stage[data-look="gs"] svg.map{background:radial-gradient(ellipse at 30% 25%,#1b3430,#081210 70%)}
+  #stage[data-look="gs"] .land{fill:rgba(210,154,105,.12);stroke:rgba(210,154,105,.42)}#stage[data-look="gs"] .land2{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.12)}
+  #stage[data-look="gs"] .seg{stroke:rgba(157,181,173,.42)}#stage[data-look="gs"] .seg.done{stroke:#d29a69;filter:drop-shadow(0 0 3px rgba(210,154,105,.45))}
+  #stage[data-look="gs"] .town{stroke:#9db5ad}#stage[data-look="gs"] .town.done{fill:#d29a69;stroke:#d29a69}
+  #stage[data-look="gs"] .tname{font-family:"DM Sans",sans-serif;stroke:rgba(8,18,16,.95)}
+  #stage[data-look="gs"] .mapchip{background:rgba(12,26,24,.88);border-color:rgba(210,154,105,.38)}
+  #stage[data-look="gs"] .world-land{fill:rgba(210,154,105,.18);stroke:rgba(210,154,105,.45)}
 </style>
 </head>
 <body>
