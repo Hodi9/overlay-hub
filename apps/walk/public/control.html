@@ -28,6 +28,9 @@
   .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
   .links a{color:var(--lilac)}.links li{margin:6px 0;word-break:break-all}
   .locked{opacity:.5;pointer-events:none}
+  .timer{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+  .big-btn{font-size:1.15rem;padding:14px 26px}
+  .btn.pause{background:#f6c35b;color:#2a1b00}
   .ov{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
   @media (max-width:640px){.ov{grid-template-columns:1fr}}
   .ov h3{margin:0 0 10px;font-size:1.05rem}
@@ -73,6 +76,19 @@
         </div>
         <div class="row"><input type="text" inputmode="decimal" id="kmIn" placeholder="Sæt præcist, fx 12,4"><button class="btn" id="kmSet">Sæt km</button><button class="btn sec" id="kmZero">Nulstil</button></div>
         <div class="msg" id="kmMsg"></div>
+      </div>
+    </section>
+
+    <section>
+      <p class="label">Gå-tid, tempo og pause</p>
+      <div class="box">
+        <div class="timer"><div><div class="big mono" id="tTime">0:00:00</div><div class="hint" id="tStatus" style="margin:6px 0 0">Ikke startet</div></div>
+          <div style="text-align:right"><div class="big mono" id="tPace" style="font-size:2rem">–</div><div class="hint" style="margin:6px 0 0">Ø-tempo i dag</div></div></div>
+        <div class="row" style="margin-top:14px"><button class="btn big-btn" id="tToggle">▶ Start gåtur</button><button class="btn sec" id="tReset">Nulstil tid</button></div>
+        <p class="hint" style="margin:14px 0 8px">Uret løber kun, mens han går. Tryk <b>Pause</b>, når han holder pause, og <b>Fortsæt</b>, når han går videre. Pausetid tæller ikke med i tempoet. Glemte du at trykke? Ret tiden:</p>
+        <div class="row"><button class="btn sec" data-tadd="-15">−15 min</button><button class="btn sec" data-tadd="-5">−5 min</button><button class="btn sec" data-tadd="5">+5 min</button><button class="btn sec" data-tadd="15">+15 min</button></div>
+        <div class="row" style="margin-top:14px"><span>Vis tempo som</span><select id="paceUnit"><option value="kmh">km/t (fx 5,2 km/t)</option><option value="minkm">min/km (fx 11:32 min/km)</option></select></div>
+        <div class="msg" id="tMsg"></div>
       </div>
     </section>
 
@@ -123,6 +139,7 @@
 
 <script type="module">
 import { STAGES, TOTAL_KM, dayForDate, progress } from "./route.js";
+import { paceText, timeText, timerStatus } from "./pace.js";
 import { FIELDS, VARIANT_NAMES, DEFAULT_TITLE, SCALE_MIN, SCALE_MAX } from "./fields.js";
 
 const KEY = "walk-control-key";
@@ -131,7 +148,7 @@ const NAMES = VARIANT_NAMES;
 const fmt = (n) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: 1 }).format(n);
 const getKey = () => { try { return localStorage.getItem(KEY) || ""; } catch { return ""; } };
 const setKey = (v) => { try { localStorage.setItem(KEY, v); } catch {} };
-let state = null, authed = false;
+let state = null, authed = false, fetchedAt = Date.now();
 
 function msg(el, text, kind) { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); }
 
@@ -153,7 +170,7 @@ async function login() {
 }
 
 async function patch(body, el) {
-  try { state = await api("api/state", body); render(); if (el) msg(el, "Gemt ✓", "ok"); }
+  try { state = await api("api/state", body); fetchedAt = Date.now(); render(); if (el) msg(el, "Gemt ✓", "ok"); }
   catch (e) { if (e.status === 401) setAuthed(false); msg(el || $("loginMsg"), e.message, "err"); }
 }
 
@@ -167,6 +184,8 @@ function render() {
   $("stTotal").textContent = `${fmt(p.doneKm)} / ${TOTAL_KM} km i alt · ${fmt(p.kmLeft)} km tilbage`;
   if (document.activeElement !== $("daySel")) $("daySel").value = state.day === null ? "auto" : String(state.day);
   $("visible").checked = state.visible;
+  tick();
+  if (document.activeElement !== $("paceUnit")) $("paceUnit").value = state.paceUnit || "kmh";
   if (document.activeElement !== $("scale")) { $("scale").value = Math.round((state.scale ?? 1) * 100); }
   $("scaleVal").textContent = Math.round((state.scale ?? 1) * 100) + " %";
   document.querySelectorAll("#ovs input[data-v]").forEach((c) => { c.checked = state.fields?.[c.dataset.v]?.[c.dataset.k] !== false; });
@@ -174,8 +193,24 @@ function render() {
   document.querySelectorAll("#variants button").forEach((b) => b.classList.toggle("on", b.dataset.v === state.variant));
 }
 
+// Gå-tid: serverens værdi + tiden siden vi hentede den, hvis uret løber.
+function tick() {
+  if (!state) return;
+  const t = state.timer || { running: false, ms: 0 };
+  const ms = t.ms + (t.running ? Date.now() - fetchedAt : 0);
+  const sec = Math.floor(ms / 1000);
+  $("tTime").textContent = `${Math.floor(sec / 3600)}:${String(Math.floor(sec / 60) % 60).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+  const status = timerStatus({ running: t.running, ms });
+  $("tStatus").textContent = status === "running" ? "Går — uret løber" : status === "paused" ? "På pause — uret står stille" : "Ikke startet";
+  const km = progress(state.day ?? dayForDate(), state.km).todayKm;
+  $("tPace").textContent = paceText(km, ms, state.paceUnit || "kmh");
+  const b = $("tToggle");
+  b.textContent = status === "running" ? "Pause" : status === "paused" ? "▶ Fortsæt" : "▶ Start gåtur";
+  b.classList.toggle("pause", status === "running");
+}
+
 async function refresh() {
-  try { const r = await fetch("api/state", { cache: "no-store" }); if (r.ok) { state = await r.json(); render(); } } catch {}
+  try { const r = await fetch("api/state", { cache: "no-store" }); if (r.ok) { state = await r.json(); fetchedAt = Date.now(); render(); } } catch {}
 }
 
 // opbygning
@@ -210,6 +245,11 @@ $("scale").min = Math.round(SCALE_MIN * 100); $("scale").max = Math.round(SCALE_
 $("scale").oninput = () => { $("scaleVal").textContent = $("scale").value + " %"; };
 $("scale").onchange = () => patch({ scale: Number($("scale").value) / 100 });
 $("scaleReset").onclick = () => patch({ scale: 1 });
+$("tToggle").onclick = () => patch({ timer: state?.timer?.running ? "pause" : "start" }, $("tMsg"));
+$("tReset").onclick = () => { if (confirm("Nulstil gå-tiden til 0:00?")) patch({ timer: "reset" }, $("tMsg")); };
+document.querySelectorAll("[data-tadd]").forEach((b) => b.onclick = () => patch({ timerAddMin: Number(b.dataset.tadd) }, $("tMsg")));
+$("paceUnit").onchange = () => patch({ paceUnit: $("paceUnit").value }, $("tMsg"));
+setInterval(tick, 1000);
 $("visible").onchange = (e) => patch({ visible: e.target.checked });
 
 // start: prøv gemt kode stille

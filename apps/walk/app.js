@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
-import { DEFAULT_STATE, applyPatch, effectiveState } from "./state.js";
+import { DEFAULT_STATE, applyPatch, effectiveState, restoreState } from "./state.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MAX_FAILS = 10;
@@ -54,7 +54,7 @@ export function createWalkApp() {
     });
     await db.query(`CREATE TABLE IF NOT EXISTS walk_state (id TEXT PRIMARY KEY, data JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`);
     const { rows } = await db.query("SELECT data FROM walk_state WHERE id = 'primary'");
-    if (rows[0]) state = applyPatch({ ...DEFAULT_STATE, kmDate: rows[0].data.kmDate ?? null }, rows[0].data);
+    if (rows[0]) state = restoreState(rows[0].data);
   }
 
   function persist() {

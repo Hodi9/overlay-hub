@@ -29,7 +29,7 @@
   for (const [v, name, desc] of V) {
     const url = new URL("overlay.html?v=" + v, location.href).href;
     const f = document.createElement("figure");
-    f.innerHTML = `<div class="frame"><iframe loading="lazy" src="overlay.html?v=${v}&day=5&km=9" scrolling="no"></iframe></div><figcaption><b>${v}. ${name}</b><span>${desc}</span></figcaption><figcaption><code>${url}</code></figcaption>`;
+    f.innerHTML = `<div class="frame"><iframe loading="lazy" src="overlay.html?v=${v}&day=5&km=9&min=110" scrolling="no"></iframe></div><figcaption><b>${v}. ${name}</b><span>${desc}</span></figcaption><figcaption><code>${url}</code></figcaption>`;
     g.append(f);
   }
 </script>

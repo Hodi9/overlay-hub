@@ -163,3 +163,56 @@ test("towns sit near their real location (guards against bad coordinates)", () =
   near("rosenholm", 56.333, 10.325); near("aarup", 55.376, 10.049); near("gavnoe", 55.189, 11.725);
   near("aarhus", 56.157, 10.21); near("odense", 55.40, 10.40); near("herning", 56.139, 8.976);
 });
+
+import { paceText, timeText, timerStatus, speedKmh } from "../apps/walk/public/pace.js";
+import { restoreState, walkMs } from "../apps/walk/state.js";
+
+test("pace and walking time are formatted in Danish", () => {
+  assert.equal(paceText(10, 2 * 3600000), "5,0 km/t");
+  assert.equal(paceText(9, 110 * 60000), "4,9 km/t");
+  assert.equal(paceText(10, 2 * 3600000, "minkm"), "12:00 min/km");
+  assert.equal(paceText(5, 0), "–"); // intet tal før uret har kørt
+  assert.equal(paceText(0, 3600000), "–"); // og ikke før der er gået et stykke
+  assert.equal(speedKmh(0.01, 600000), null);
+  assert.equal(timeText(110 * 60000), "1:50 t");
+  assert.equal(timeText(0), "0:00 t");
+  assert.deepEqual(["idle", "running", "paused"], [timerStatus({ running: false, ms: 0 }), timerStatus({ running: true, ms: 0 }), timerStatus({ running: false, ms: 5 })]);
+});
+
+test("timer: start, pause, resume, adjust, reset", () => {
+  const at = (h, m = 0) => new Date(`2026-10-12T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+02:00`);
+  let s = applyPatch(DEFAULT_STATE, { timer: "start" }, at(11));
+  assert.equal(effectiveState(s, at(12)).timer.ms, 3600000); // uret løber
+  s = applyPatch(s, { timer: "pause" }, at(12));
+  assert.deepEqual(effectiveState(s, at(14)).timer, { running: false, ms: 3600000 }); // pause: står stille
+  s = applyPatch(s, { timer: "start" }, at(14));
+  assert.equal(effectiveState(s, at(14, 30)).timer.ms, 3600000 + 1800000);
+  assert.equal(applyPatch(s, { timer: "start" }, at(15)).timer.startedAt, s.timer.startedAt); // dobbelt start ændrer intet
+  s = applyPatch(s, { timer: "pause" }, at(14, 30));
+  assert.equal(applyPatch(s, { timerAddMin: 15 }, at(15)).timer.ms, 5400000 + 900000);
+  assert.equal(applyPatch(s, { timerAddMin: -9999 }, at(15)).timer.ms, 0); // aldrig negativ
+  assert.equal(applyPatch(s, { timerAddMin: "abc" }, at(15)).timer.ms, 5400000);
+  assert.equal(applyPatch(s, { timer: "reset" }, at(15)).timer.ms, 0);
+  assert.equal(applyPatch(s, { paceUnit: "minkm" }).paceUnit, "minkm");
+  assert.equal(applyPatch(s, { paceUnit: "hack" }).paceUnit, "kmh");
+});
+
+test("timer resets at midnight in auto mode, and when the day is changed in the panel", () => {
+  let s = applyPatch(DEFAULT_STATE, { timer: "start" }, new Date("2026-10-12T11:00:00+02:00"));
+  assert.equal(effectiveState(s, new Date("2026-10-13T00:30:00+02:00")).timer.ms, 0);
+  assert.equal(effectiveState({ ...s, day: 3 }, new Date("2026-10-13T00:30:00+02:00")).timer.running, true); // manuel dag: ingen nulstilling
+  const changed = applyPatch({ ...s, day: 3 }, { day: 4 }, new Date("2026-10-13T08:00:00+02:00"));
+  assert.deepEqual(changed.timer, { running: false, ms: 0, startedAt: null, date: null });
+});
+
+test("a restart in the middle of the day keeps the running timer", () => {
+  const s = applyPatch(DEFAULT_STATE, { timer: "start", km: 4 }, new Date("2026-10-12T11:00:00+02:00"));
+  const restored = restoreState(JSON.parse(JSON.stringify(s)));
+  assert.equal(walkMs(restored.timer, new Date("2026-10-12T12:00:00+02:00").getTime()), 3600000);
+  assert.equal(restoreState({ timer: { running: true, startedAt: "x", ms: -5 } }).timer.running, false); // ugyldig data
+  assert.equal(restoreState({}).timer.ms, 0);
+});
+
+test("pace/time/pause toggles exist for every overlay", () => {
+  for (const v of ["1", "2", "3", "4", "5"]) assert.ok(FIELDS[v].some(([k]) => k === "pace") && FIELDS[v].some(([k]) => k === "pause"), v);
+});
