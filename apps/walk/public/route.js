@@ -67,18 +67,27 @@ export function progress(day, kmToday = 0) {
   return { state, idx, stage, todayKm, doneKm, totalKm: TOTAL_KM, pct: Math.min(1, doneKm / TOTAL_KM), stagePct: Math.min(1, todayKm / stage.km), kmLeft: Math.max(0, TOTAL_KM - doneKm) };
 }
 
-// Position langs en etapes byer, fraction 0..1 (lineær pr. segment efter luftlinje).
-export function positionOnStage(stage, fraction) {
+// Stien fra etapens start og så langt som `fraction` (0..1) — byerne på vejen og til sidst det interpolerede punkt.
+// Bruges til at tegne det stykke af dagens rute, der er gået (lineær pr. segment efter luftlinje).
+export function pathUpTo(stage, fraction) {
   const pts = stage.path.map((k) => TOWNS[k]);
   const lens = [];
   for (let i = 1; i < pts.length; i++) lens.push(Math.hypot(pts[i].lat - pts[i - 1].lat, (pts[i].lon - pts[i - 1].lon) * 0.56));
   let target = Math.max(0, Math.min(1, fraction)) * lens.reduce((a, b) => a + b, 0);
+  const out = [{ lat: pts[0].lat, lon: pts[0].lon }];
   for (let i = 0; i < lens.length; i++) {
     if (target <= lens[i] || i === lens.length - 1) {
       const t = lens[i] ? Math.min(1, target / lens[i]) : 0;
-      return { lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * t, lon: pts[i].lon + (pts[i + 1].lon - pts[i].lon) * t };
+      out.push({ lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * t, lon: pts[i].lon + (pts[i + 1].lon - pts[i].lon) * t });
+      return out;
     }
+    out.push({ lat: pts[i + 1].lat, lon: pts[i + 1].lon });
     target -= lens[i];
   }
-  return { lat: pts[0].lat, lon: pts[0].lon };
+  return out;
+}
+
+// Position langs en etapes byer, fraction 0..1.
+export function positionOnStage(stage, fraction) {
+  return pathUpTo(stage, fraction).at(-1);
 }
