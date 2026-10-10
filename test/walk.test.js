@@ -358,3 +358,32 @@ test("overlays 3 and 5 can switch between the whole route and a zoom on today's 
   assert.equal(applyPatch(DEFAULT_STATE, { fields: { 5: { overview: false } } }).fields[5].overview, false);
   assert.deepEqual(applyPatch(DEFAULT_STATE, { fields: { 1: { overview: false } } }).fields[1] ?? {}, {}); // findes kun på de to kort-overlays
 });
+
+import { LOOKS } from "../apps/walk/public/fields.js";
+
+test("the overlay look (theme) and brightness can be switched and are validated", () => {
+  assert.deepEqual(LOOKS.map(([k]) => k), ["nu", "mg", "nl", "bp"]);
+  assert.equal(applyPatch(DEFAULT_STATE, { look: "nl" }).look, "nl");
+  assert.equal(applyPatch(DEFAULT_STATE, { look: "bp" }).look, "bp");
+  assert.equal(DEFAULT_STATE.look, "nu");
+  assert.equal(applyPatch(DEFAULT_STATE, { look: "mg" }).look, "mg");
+  assert.equal(applyPatch(DEFAULT_STATE, { look: "hack" }).look, "nu"); // ukendt tema ignoreres
+  assert.equal(applyPatch({ ...DEFAULT_STATE, look: "mg" }, { look: 5 }).look, "mg");
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: 0.6 }).brightness, 0.6);
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: 9 }).brightness, 1);
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: 0 }).brightness, 0.3);
+  assert.equal(applyPatch(DEFAULT_STATE, { brightness: "abc" }).brightness, 1);
+  const e = effectiveState(applyPatch(DEFAULT_STATE, { look: "mg", brightness: 0.7 }));
+  assert.deepEqual([e.look, e.brightness], ["mg", 0.7]);
+  const back = restoreState(JSON.parse(JSON.stringify(applyPatch(DEFAULT_STATE, { look: "mg", brightness: 0.7 }))));
+  assert.deepEqual([back.look, back.brightness], ["mg", 0.7]); // gemmes og huskes efter genstart
+  assert.equal(restoreState({ look: "weird" }).look, "nu");
+});
+
+test("the live map update only touches the Denmark map, never the world inset (regression)", () => {
+  const html = fs.readFileSync(new URL("../apps/walk/public/overlay.html", import.meta.url), "utf8");
+  const tick = html.slice(html.indexOf("function mapTick"), html.indexOf("const views = {"));
+  assert.ok(tick.includes('svg.dk .me, svg.dk .pulse') && tick.includes('svg.dk .seg.cur'));
+  assert.ok(!/querySelector(All)?\("\.me|querySelector(All)?\("\.seg/.test(tick), "mapTick må ikke vælge .me/.seg globalt");
+  assert.ok(html.includes('<svg class="map dk"'));
+});

@@ -4,6 +4,9 @@ export const DEFAULT_TITLE = "Rosenholm → Gavnø";
 export const TITLE_MAX = 40;
 
 export const VARIANT_NAMES = { 1: "Bundbar", 2: "Hjørnekort", 3: "Kort", 4: "Tidslinje", 5: "Verdenskort" };
+// Temaer (udseender) man kan skifte mellem live. Første er standard.
+export const LOOKS = [["nu", "Lilla glas"], ["mg", "Kun tekst + grå boks"], ["nl", "Nordlys"], ["bp", "Blåtryk"]];
+export const BRIGHTNESS_MIN = 0.3;
 export const SCALE_MIN = 0.3;
 export const SCALE_MAX = 1.5;
 

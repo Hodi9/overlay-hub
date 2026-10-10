@@ -1,11 +1,11 @@
 import { copenhagenDate, dayForDate, STAGES } from "./public/route.js";
 import { isClock, DEFAULT_SPEED } from "./public/pace.js";
-import { TITLE_MAX, SCALE_MIN, SCALE_MAX, isField } from "./public/fields.js";
+import { TITLE_MAX, SCALE_MIN, SCALE_MAX, LOOKS, BRIGHTNESS_MIN, isField } from "./public/fields.js";
 
 export const VARIANTS = ["1", "2", "3", "4", "5"];
 export const PACE_UNITS = ["kmh", "minkm"];
 export const IDLE_TIMER = { running: false, ms: 0, startedAt: null, date: null };
-export const DEFAULT_STATE = { day: null, km: 0, kmDate: null, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", timer: { ...IDLE_TIMER }, eta: null, etaDate: null, kmAuto: true, speed: DEFAULT_SPEED, kmAnchorMs: 0 };
+export const DEFAULT_STATE = { day: null, km: 0, kmDate: null, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", timer: { ...IDLE_TIMER }, eta: null, etaDate: null, kmAuto: true, speed: DEFAULT_SPEED, kmAnchorMs: 0, look: LOOKS[0][0], brightness: 1 };
 
 // Gå-tid i ms lige nu (inkl. det stykke der er i gang).
 export const walkMs = (timer, nowMs) => Math.max(0, timer.ms + (timer.running && timer.startedAt ? nowMs - timer.startedAt : 0));
@@ -80,6 +80,8 @@ export function applyPatch(state, patch = {}, now = new Date()) {
     }
   }
   if ("scale" in patch && patch.scale !== "" && patch.scale !== null && Number.isFinite(Number(patch.scale))) next.scale = Math.round(Math.min(SCALE_MAX, Math.max(SCALE_MIN, Number(patch.scale))) * 100) / 100;
+  if (typeof patch.look === "string" && LOOKS.some(([k]) => k === patch.look)) next.look = patch.look;
+  if ("brightness" in patch && patch.brightness !== "" && patch.brightness !== null && Number.isFinite(Number(patch.brightness))) next.brightness = Math.round(Math.min(1, Math.max(BRIGHTNESS_MIN, Number(patch.brightness))) * 100) / 100;
   if (typeof patch.title === "string") next.title = patch.title.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, TITLE_MAX);
   if (kmSet || rebase) next.kmAnchorMs = walkMs(next.timer, now.getTime()); // optællingen starter forfra herfra
   return next;
@@ -93,7 +95,7 @@ export function effectiveState(state, now = new Date()) {
   const etaStale = state.day === null && state.eta && state.etaDate !== copenhagenDate(now); // en sat ankomst gælder kun i dag
   const timerOut = timerStale ? { running: false, ms: 0 } : { running: timer.running, ms: walkMs(timer, now.getTime()) };
   const kl = kmLive(state, now);
-  return { day: state.day, km: stale ? 0 : round3(kl.km), kmRate: stale ? 0 : kl.rate, kmCap: stale ? 0 : kl.cap, kmAuto: state.kmAuto !== false, speed: state.speed || DEFAULT_SPEED, variant: state.variant, visible: state.visible, fields: state.fields || {}, title: state.title || "", scale: state.scale ?? 1, paceUnit: state.paceUnit || "kmh", timer: timerOut, eta: etaStale ? null : state.eta ?? null };
+  return { day: state.day, km: stale ? 0 : round3(kl.km), kmRate: stale ? 0 : kl.rate, kmCap: stale ? 0 : kl.cap, kmAuto: state.kmAuto !== false, speed: state.speed || DEFAULT_SPEED, variant: state.variant, visible: state.visible, fields: state.fields || {}, title: state.title || "", scale: state.scale ?? 1, paceUnit: state.paceUnit || "kmh", look: state.look || LOOKS[0][0], brightness: state.brightness ?? 1, timer: timerOut, eta: etaStale ? null : state.eta ?? null };
 }
 
 // Gendanner gemt tilstand (fx fra databasen) — også uret, så en genstart midt på dagen ikke mister gå-tiden.
