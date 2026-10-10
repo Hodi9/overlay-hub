@@ -20,6 +20,13 @@
   .pill{display:inline-block;padding:7px 16px;border-radius:99px;background:linear-gradient(180deg,#f2495f,#cf2a40);box-shadow:0 6px 16px -6px rgba(232,51,74,.8),inset 0 1px 0 rgba(255,255,255,.35);font-weight:800;letter-spacing:.07em;text-transform:uppercase;font-size:22px;white-space:nowrap}
   .pill.pause{background:linear-gradient(180deg,#f6c35b,#d9972a);color:#2a1b00;box-shadow:0 6px 16px -6px rgba(217,151,42,.8),inset 0 1px 0 rgba(255,255,255,.45)}
   .pbars{display:inline-block;width:13px;height:16px;margin-right:8px;vertical-align:-2px;border-left:4.5px solid currentColor;border-right:4.5px solid currentColor}
+  /* Pause: gul pulserende ramme + stort PAUSE henover panelet, så det ikke kan overses */
+  .panel.is-paused{border-color:#f6c35b;animation:pausering 2s ease-in-out infinite}
+  @keyframes pausering{0%,100%{box-shadow:0 24px 60px -18px rgba(0,0,0,.7),0 0 0 0 rgba(246,195,91,0)}50%{box-shadow:0 24px 60px -18px rgba(0,0,0,.7),0 0 0 9px rgba(246,195,91,.5)}}
+  .pauseveil{position:absolute;inset:0;border-radius:inherit;background:rgba(20,17,28,.38);display:grid;place-items:center;z-index:5}
+  .pausebig{display:flex;align-items:center;gap:14px;padding:8px 30px;border-radius:99px;background:linear-gradient(180deg,#f6c35b,#d9972a);color:#2a1b00;font-weight:800;font-size:44px;letter-spacing:.12em;box-shadow:0 14px 40px -10px rgba(0,0,0,.7),inset 0 2px 0 rgba(255,255,255,.45);animation:pausebeat 2s ease-in-out infinite}
+  .pausebig .pbars{width:21px;height:29px;margin:0;border-left-width:8px;border-right-width:8px}
+  @keyframes pausebeat{50%{transform:scale(1.05)}}
   .pills{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
   .muted{color:var(--muted)}
   .arrow{color:var(--lilac);margin:0 .28em}
@@ -327,6 +334,10 @@ function render() {
   lastKey = key;
   stage$.innerHTML = views[v](pr, f, title, t);
   const root = stage$.firstElementChild;
+  if (root && status === "paused" && f("pause")) {
+    root.classList.add("is-paused");
+    root.insertAdjacentHTML("beforeend", `<div class="pauseveil"><div class="pausebig"><i class="pbars"></i>PAUSE</div></div>`);
+  }
   if (root && scale !== 1) { root.style.transformOrigin = ORIGIN[v]; root.style.transform = `scale(${scale})`; }
 }
 

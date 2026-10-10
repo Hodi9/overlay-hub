@@ -31,6 +31,16 @@
   .timer{display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
   .big-btn{font-size:1.15rem;padding:14px 26px}
   .btn.pause{background:#f6c35b;color:#2a1b00}
+  .btn.wide{width:100%;font-size:1.3rem;padding:18px}
+  .row.nowrap{flex-wrap:nowrap}
+  .live .lc{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+  .lbl{margin:0 0 8px;font-size:.75rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .kmbig{font-size:2.8rem;font-weight:800;line-height:1}.kmbig small{font-size:1.1rem;color:var(--dim);font-weight:600}
+  .livestate{margin-top:12px;padding:14px 16px;border-radius:12px;font-weight:800;text-align:center;letter-spacing:.04em;text-transform:uppercase;font-size:.95rem}
+  .livestate.idle{background:var(--panel2);color:var(--dim)}
+  .livestate.running{background:rgba(126,224,161,.14);color:var(--ok);border:1px solid rgba(126,224,161,.45)}
+  .livestate.paused{background:rgba(246,195,91,.2);color:#f6c35b;border:1px solid rgba(246,195,91,.7);animation:blink 1.6s ease-in-out infinite}
+  @keyframes blink{50%{background:rgba(246,195,91,.36)}}
   .ov{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
   @media (max-width:640px){.ov{grid-template-columns:1fr}}
   .ov h3{margin:0 0 10px;font-size:1.05rem}
@@ -58,34 +68,45 @@
 
   <div id="panel" class="locked">
     <section>
-      <p class="label">Status nu</p>
-      <div class="box">
+      <p class="label">Live-styring</p>
+      <div class="box live">
         <div class="big"><span id="stRoute">–</span></div>
         <p class="hint" style="margin-top:8px" id="stSub"></p>
         <div class="bar"><i id="stBar"></i></div>
         <div class="hint" id="stTotal"></div>
-      </div>
-    </section>
 
-    <section>
-      <p class="label">Km gået i dag</p>
-      <div class="box">
-        <div class="row" style="margin-bottom:12px">
-          <button class="btn sec" data-add="-1">−1</button><button class="btn sec" data-add="1">+1</button>
-          <button class="btn sec" data-add="5">+5</button><button class="btn sec" data-add="10">+10</button>
+        <div class="lc">
+          <div class="lbl">Dag</div>
+          <div class="row nowrap"><button class="btn sec" id="dayPrev" aria-label="Forrige dag">◀</button><select id="daySel" style="flex:1;min-width:0"></select><button class="btn sec" id="dayNext" aria-label="Næste dag">▶</button></div>
+          <p class="hint" style="margin:6px 0 0">Automatisk følger datoen (dag 1 = 12/10). Skifter du dag, nulstilles dagens km og gå-tid.</p>
         </div>
-        <div class="row"><input type="text" inputmode="decimal" id="kmIn" placeholder="Sæt præcist, fx 12,4"><button class="btn" id="kmSet">Sæt km</button><button class="btn sec" id="kmZero">Nulstil</button></div>
-        <div class="msg" id="kmMsg"></div>
+
+        <div class="lc">
+          <div class="lbl">Km gået i dag</div>
+          <div class="kmbig"><span id="kmShow" class="mono">0</span><small> / <span id="kmOf">–</span> km</small></div>
+          <div class="row" style="margin:10px 0">
+            <button class="btn sec" data-add="-1">−1</button><button class="btn sec" data-add="1">+1</button>
+            <button class="btn sec" data-add="5">+5</button><button class="btn sec" data-add="10">+10</button>
+          </div>
+          <div class="row"><input type="text" inputmode="decimal" id="kmIn" placeholder="Sæt præcist, fx 12,4"><button class="btn" id="kmSet">Sæt km</button><button class="btn sec" id="kmZero">Nulstil</button></div>
+          <div class="msg" id="kmMsg"></div>
+        </div>
+
+        <div class="lc" style="margin-bottom:0">
+          <div class="lbl">Pause</div>
+          <button class="btn big-btn wide" id="tToggle">▶ Start gåtur</button>
+          <div class="livestate idle" id="tStatus">Ikke startet</div>
+        </div>
       </div>
     </section>
 
     <section>
       <p class="label">Gå-tid, tempo og pause</p>
       <div class="box">
-        <div class="timer"><div><div class="big mono" id="tTime">0:00:00</div><div class="hint" id="tStatus" style="margin:6px 0 0">Ikke startet</div></div>
+        <div class="timer"><div><div class="big mono" id="tTime">0:00:00</div><div class="hint" style="margin:6px 0 0">Gå-tid i dag</div></div>
           <div style="text-align:right"><div class="big mono" id="tPace" style="font-size:2rem">–</div><div class="hint" style="margin:6px 0 0">Ø-tempo i dag</div></div></div>
-        <div class="row" style="margin-top:14px"><button class="btn big-btn" id="tToggle">▶ Start gåtur</button><button class="btn sec" id="tReset">Nulstil tid</button></div>
-        <p class="hint" style="margin:14px 0 8px">Uret løber kun, mens han går. Tryk <b>Pause</b>, når han holder pause, og <b>Fortsæt</b>, når han går videre. Pausetid tæller ikke med i tempoet. Glemte du at trykke? Ret tiden:</p>
+        <div class="row" style="margin-top:14px"><button class="btn sec" id="tReset">Nulstil tid</button></div>
+        <p class="hint" style="margin:14px 0 8px">Uret løber kun, mens han går (start/pause øverst). Pausetid tæller ikke med i tempoet. Glemte du at trykke? Ret tiden:</p>
         <div class="row"><button class="btn sec" data-tadd="-15">−15 min</button><button class="btn sec" data-tadd="-5">−5 min</button><button class="btn sec" data-tadd="5">+5 min</button><button class="btn sec" data-tadd="15">+15 min</button></div>
         <div class="row" style="margin-top:14px"><span>Vis tempo som</span><select id="paceUnit"><option value="kmh">km/t (fx 5,2 km/t)</option><option value="minkm">min/km (fx 11:32 min/km)</option></select></div>
         <div class="msg" id="tMsg"></div>
@@ -99,14 +120,6 @@
         <p class="hint" style="margin:14px 0 8px">Beregnes automatisk ud fra tempoet og de resterende km. Vil du bestemme selv, så sæt et klokkeslæt eller ryk tiden. Den sætter sig selv tilbage til automatisk ved midnat eller ved dagsskifte.</p>
         <div class="row"><input type="time" id="etaIn" style="flex:none"><button class="btn" id="etaSet">Sæt tid</button><button class="btn sec" data-eta="-15">−15 min</button><button class="btn sec" data-eta="15">+15 min</button><button class="btn sec" id="etaAuto">Automatisk</button></div>
         <div class="msg" id="etaMsg"></div>
-      </div>
-    </section>
-
-    <section>
-      <p class="label">Dag</p>
-      <div class="box">
-        <p class="hint">Automatisk følger datoen (dag 1 = 12/10) og nulstiller dagens km ved midnat. Vælg en dag manuelt, hvis planen skrider.</p>
-        <div class="row"><select id="daySel"></select><button class="btn" id="daySet">Gem dag</button></div>
       </div>
     </section>
 
@@ -191,6 +204,8 @@ function render() {
   $("stRoute").innerHTML = `${p.stage.from} → ${p.stage.to}`;
   $("stSub").textContent = `${p.state === "before" ? "Starter 12/10" : p.state === "done" ? "Fremme!" : `Dag ${p.stage.day}/${STAGES.length}`} · ${fmt(p.todayKm)} / ${p.stage.km} km i dag · ${state.day === null ? "dag automatisk" : "dag sat manuelt"}`;
   $("stBar").style.width = `${p.stagePct * 100}%`;
+  $("kmShow").textContent = fmt(p.todayKm);
+  $("kmOf").textContent = p.stage.km;
   $("stTotal").textContent = `${fmt(p.doneKm)} / ${TOTAL_KM} km i alt · ${fmt(p.kmLeft)} km tilbage`;
   if (document.activeElement !== $("daySel")) $("daySel").value = state.day === null ? "auto" : String(state.day);
   $("visible").checked = state.visible;
@@ -211,7 +226,9 @@ function tick() {
   const sec = Math.floor(ms / 1000);
   $("tTime").textContent = `${Math.floor(sec / 3600)}:${String(Math.floor(sec / 60) % 60).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
   const status = timerStatus({ running: t.running, ms });
-  $("tStatus").textContent = status === "running" ? "Går — uret løber" : status === "paused" ? "På pause — uret står stille" : "Ikke startet";
+  const ls = $("tStatus");
+  ls.textContent = status === "running" ? "Går — uret løber" : status === "paused" ? "På pause — overlayet viser PAUSE" : "Ikke startet";
+  ls.className = "livestate " + status;
   const km = progress(state.day ?? dayForDate(), state.km).todayKm;
   $("tPace").textContent = paceText(km, ms, state.paceUnit || "kmh");
   const pr = progress(state.day ?? dayForDate(), state.km);
@@ -250,7 +267,15 @@ $("kmSet").onclick = () => {
 };
 $("kmIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("kmSet").click(); });
 $("kmZero").onclick = () => patch({ km: 0 }, $("kmMsg"));
-$("daySet").onclick = () => { const v = $("daySel").value; patch(v === "auto" ? { day: null } : { day: Number(v), km: 0 }, $("kmMsg")); };
+function changeDay(v) {
+  const resets = (state?.km || 0) > 0 || (state?.timer?.ms || 0) > 0;
+  if (v !== "auto" && resets && !confirm("Skift dag? Dagens km og gå-tid nulstilles.")) return render();
+  patch(v === "auto" ? { day: null } : { day: Number(v), km: 0 }, $("kmMsg"));
+}
+$("daySel").onchange = () => changeDay($("daySel").value);
+const stepDay = (d) => changeDay(String(Math.min(STAGES.length, Math.max(1, (state?.day ?? dayForDate()) + d))));
+$("dayPrev").onclick = () => stepDay(-1);
+$("dayNext").onclick = () => stepDay(1);
 $("variants").onclick = (e) => { const b = e.target.closest("button"); if (b) patch({ variant: b.dataset.v }); };
 $("ovs").onchange = (e) => { const c = e.target.closest("input[data-v]"); if (c) patch({ fields: { [c.dataset.v]: { [c.dataset.k]: c.checked } } }); };
 $("ovs").onclick = (e) => { const b = e.target.closest("[data-all]"); if (!b) return; const v = b.dataset.all; patch({ fields: { [v]: Object.fromEntries(FIELDS[v].map(([k]) => [k, true])) } }); };
