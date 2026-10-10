@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Walk overlay</title>
+<title>Marcel Walk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
@@ -77,7 +77,6 @@
 import { STAGES, TOWNS, TOTAL_KM, dayForDate, progress, positionOnStage } from "./route.js";
 
 const q = new URLSearchParams(location.search);
-const variant = ["1", "2", "3", "4"].includes(q.get("v")) ? q.get("v") : "1";
 const num = (v, d) => (v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : d);
 const fmt = (n, dec = 1) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: dec, minimumFractionDigits: 0 }).format(n);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -164,13 +163,31 @@ const views = {
   }
 };
 
+// Værdier fra URL'en (?v, ?day, ?km) vinder over kontrolpanelet — bruges af galleriet til demo.
+const demo = q.has("day") || q.has("km");
+let live = { day: null, km: 0, variant: "1", visible: true };
+let lastKey = "";
+
 function render() {
-  const day = num(q.get("day"), dayForDate());
-  const p = progress(day, num(q.get("km"), 0));
-  stage$.innerHTML = views[variant](p);
+  const v = ["1", "2", "3", "4"].includes(q.get("v")) ? q.get("v") : live.variant;
+  if (!live.visible && !demo) { if (lastKey !== "hidden") { stage$.innerHTML = ""; lastKey = "hidden"; } return; }
+  const day = num(q.get("day"), live.day ?? dayForDate());
+  const km = num(q.get("km"), live.km);
+  const key = [v, day, km].join("|");
+  if (key === lastKey) return; // undgå at genstarte animationer uden ændringer
+  lastKey = key;
+  stage$.innerHTML = views[v](progress(day, km));
 }
-render();
-setInterval(render, 60000);
+
+async function poll() {
+  try {
+    const r = await fetch("api/state", { cache: "no-store" });
+    if (r.ok) live = await r.json();
+  } catch {}
+  render();
+}
+poll();
+setInterval(poll, 4000);
 </script>
 </body>
 </html>

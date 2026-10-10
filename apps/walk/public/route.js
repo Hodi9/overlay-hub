@@ -44,7 +44,7 @@ export const STAGES = [
 
 export const TOTAL_KM = STAGES.reduce((sum, s) => sum + s.km, 0);
 
-function copenhagenDate(now) {
+export function copenhagenDate(now = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 

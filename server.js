@@ -1,5 +1,6 @@
 import express from "express";
 import http from "node:http";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import brovsbroModule from "./apps/brovsbro/app.cjs";
@@ -19,6 +20,7 @@ import { createRdr2DeathsApp } from "./apps/rdr2-deaths/app.js";
 import { createRdr2App } from "./apps/rdr2/app.js";
 import { createSubathonApp } from "./apps/subathon/app.js";
 import { createWalkApp } from "./apps/walk/app.js";
+import { injectHomeCard } from "./apps/walk/homeCard.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -133,6 +135,15 @@ const walkPath = "/" + String(process.env.WALK_PATH || "").trim().replace(/^\/+|
 if (/^\/[A-Za-z0-9_-]{12,}$/.test(walkPath)) {
   OVERLAY_PREFIXES.push(walkPath);
   app.use(walkPath, createWalkApp());
+  // Marcel Walk-kortet på forsiden er skjult, til WALK_SHOW_ON_HOME=1 (se apps/walk/homeCard.js).
+  if (process.env.WALK_SHOW_ON_HOME === "1") {
+    app.get(["/", "/index.html"], async (_req, res, next) => {
+      try {
+        const html = await fs.readFile(path.join(__dirname, "public", "index.html"), "utf8");
+        res.type("html").send(injectHomeCard(html, walkPath));
+      } catch (error) { next(error); }
+    });
+  }
 } else if (process.env.WALK_PATH) console.warn("walk: WALK_PATH must be 12+ letters/digits/-/_ — overlay not mounted.");
 
 app.use(express.static(path.join(__dirname, "public")));
