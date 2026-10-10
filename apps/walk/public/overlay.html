@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Walk overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#17131f;--panel:rgba(23,19,31,.92);--panel2:rgba(36,30,48,.92);--lilac:#c7b6ff;--red:#e8334a;--cream:#fff8ec;--muted:#a79fbb;--line:rgba(199,182,255,.28);--ok:#7ee0a1}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:transparent;overflow:hidden;font-family:"Schibsted Grotesk",system-ui,sans-serif;color:var(--cream)}
+  #stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .bar{height:14px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--lilac),#fff);transition:width 1s}
+  .pill{display:inline-block;padding:6px 14px;border-radius:99px;background:var(--red);font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:22px}
+  .muted{color:var(--muted)}
+  .arrow{color:var(--lilac);margin:0 .25em}
+
+  /* v1 — bundbar */
+  .v1{position:absolute;left:40px;right:40px;bottom:36px;background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:22px 32px 20px;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+  .v1 .row{display:grid;grid-template-columns:auto 1fr auto;gap:36px;align-items:center}
+  .v1 .day{font-size:64px;font-weight:800;line-height:1}.v1 .day small{font-size:28px;color:var(--muted);font-weight:600}
+  .v1 .route{font-size:40px;font-weight:700}.v1 .sub{font-size:24px;color:var(--muted);margin-top:4px}
+  .v1 .bar{margin-top:12px}
+  .v1 .tot{text-align:right}.v1 .tot b{font-size:44px}.v1 .tot span{font-size:24px;color:var(--muted)}
+  .v1 .trail{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;margin-top:18px}
+  .v1 .trail i{height:10px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;overflow:hidden}
+  .v1 .trail i.done{background:var(--lilac)}.v1 .trail i.cur::after{content:"";position:absolute;inset:0;width:var(--p);background:var(--lilac)}
+  .v1 .trail i.cur{background:rgba(255,255,255,.2)}
+
+  /* v2 — hjørnekort */
+  .v2{position:absolute;left:40px;top:40px;width:560px;background:var(--panel);border:2px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+  .v2 .head{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:var(--panel2);border-bottom:2px solid var(--line)}
+  .v2 .head b{font-size:24px;letter-spacing:.04em;text-transform:uppercase;color:var(--lilac)}
+  .v2 .body{padding:22px 24px 24px}
+  .v2 .route{font-size:44px;font-weight:800;line-height:1.1}.v2 .via{font-size:22px;color:var(--muted);margin-top:4px}
+  .v2 .km{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 10px;font-size:26px}.v2 .km b{font-size:48px}
+  .v2 .foot{display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-size:24px}
+
+  /* v3 — kort */
+  .v3{position:absolute;right:40px;bottom:40px;width:760px;background:var(--panel);border:2px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+  .v3 .top{display:flex;justify-content:space-between;align-items:center;padding:16px 24px}
+  .v3 .top .route{font-size:34px;font-weight:800}
+  .v3 svg{display:block;width:100%;height:auto;background:radial-gradient(ellipse at 50% 40%,rgba(199,182,255,.1),transparent 70%)}
+  .v3 .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:2px solid var(--line)}
+  .v3 .stats div{padding:14px 24px;border-right:1px solid var(--line)}.v3 .stats div:last-child{border:0}
+  .v3 .stats span{display:block;font-size:20px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.v3 .stats b{font-size:36px}
+  .seg{fill:none;stroke:rgba(255,255,255,.2);stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+  .seg.done{stroke:var(--lilac)}.seg.train{stroke-dasharray:2 14}
+  .town{fill:var(--ink);stroke:var(--muted);stroke-width:3}.town.done{stroke:var(--lilac);fill:var(--lilac)}
+  .tname{font:700 20px "Schibsted Grotesk",sans-serif;fill:var(--cream);paint-order:stroke;stroke:rgba(23,19,31,.9);stroke-width:5px}
+  .me{fill:var(--red);stroke:#fff;stroke-width:4}.pulse{fill:none;stroke:var(--red);stroke-width:3;animation:pulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes pulse{from{opacity:.9;transform:scale(.6)}to{opacity:0;transform:scale(2.6)}}
+
+  /* v4 — tidslinje */
+  .v4{position:absolute;left:40px;top:40px;bottom:40px;width:470px;background:var(--panel);border:2px solid var(--line);border-radius:24px;padding:20px 22px;display:flex;flex-direction:column;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+  .v4 h1{margin:0 0 4px;font-size:30px;letter-spacing:.02em}.v4 .sum{font-size:22px;color:var(--muted);margin-bottom:12px}
+  .v4 ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
+  .v4 li{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:12px;font-size:21px;white-space:nowrap;font-weight:600;color:var(--muted)}
+  .v4 li .n{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);font-size:19px;font-weight:800}
+  .v4 li.done{opacity:.55}.v4 li.done .n{background:var(--lilac);border-color:var(--lilac);color:var(--ink)}
+  .v4 li.cur{background:var(--panel2);border:2px solid var(--lilac);color:var(--cream);padding:11px 10px;grid-template-columns:44px 1fr auto;position:relative}
+  .v4 li.cur .n{background:var(--red);border-color:var(--red);color:#fff}
+  .v4 li .km{font-size:20px;color:var(--muted)}
+  .v4 li.cur .prog{grid-column:2/4;height:8px;margin-top:2px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
+  .v4 li.cur .prog i{display:block;height:100%;background:var(--lilac)}
+  .v4 .total{margin-top:12px}.v4 .total .bar{height:12px}.v4 .total div:first-child{display:flex;justify-content:space-between;font-size:22px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script type="module">
+import { STAGES, TOWNS, TOTAL_KM, dayForDate, progress, positionOnStage } from "./route.js";
+
+const q = new URLSearchParams(location.search);
+const variant = ["1", "2", "3", "4"].includes(q.get("v")) ? q.get("v") : "1";
+const num = (v, d) => (v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : d);
+const fmt = (n, dec = 1) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: dec, minimumFractionDigits: 0 }).format(n);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const stage$ = document.getElementById("stage");
+function fit() { stage$.style.transform = `scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`; }
+addEventListener("resize", fit); fit();
+
+const routeLabel = (s) => `${esc(s.from)}<span class="arrow">→</span>${esc(s.to)}`;
+const viaLabel = (s) => [s.train, s.via ? "via " + s.via : ""].filter(Boolean).map(esc).join(" · ");
+const pctW = (p) => `${Math.max(0, Math.min(1, p)) * 100}%`;
+
+function headerNote(p) {
+  if (p.state === "before") return "Starter 12/10";
+  if (p.state === "done") return "Fremme!";
+  return `Dag ${p.stage.day}/${STAGES.length}`;
+}
+
+// [dx, dy] pr. by — håndplaceret så etiketterne ikke overlapper.
+const LABELS = { rosenholm: [14, -10], aarhus: [14, 26], silkeborg: [4, -16], herning: [-14, 6], jelling: [-14, 10], vejle: [16, 30], odense: [0, -16], korsoer: [8, -14], naestved: [-14, -6], gavnoe: [-14, 22] };
+
+const views = {
+  1(p) {
+    const s = p.stage;
+    const trail = STAGES.map((st, i) => {
+      const cls = p.state === "done" || i < p.idx ? "done" : i === p.idx && p.state === "walking" ? "cur" : "";
+      return `<i class="${cls}" style="--p:${pctW(p.stagePct)}"></i>`;
+    }).join("");
+    return `<div class="v1"><div class="row">
+      <div class="day"><span class="pill">${headerNote(p)}</span></div>
+      <div><div class="route">${routeLabel(s)}</div>
+        <div class="sub">${viaLabel(s) || "&nbsp;"}${viaLabel(s) ? " · " : ""}<span class="mono">${fmt(p.todayKm)} / ${s.km} km</span> i dag · overnatning: ${esc(s.stay)}</div>
+        <div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div></div>
+      <div class="tot"><b class="mono">${fmt(p.doneKm)}</b> <span>/ ${TOTAL_KM} km</span><div class="sub">${fmt(p.kmLeft)} km til Gavnø</div></div>
+    </div><div class="trail">${trail}</div></div>`;
+  },
+  2(p) {
+    const s = p.stage;
+    return `<div class="v2"><div class="head"><b>Rosenholm → Gavnø</b><span class="pill">${headerNote(p)}</span></div>
+      <div class="body"><div class="route">${routeLabel(s)}</div><div class="via">${viaLabel(s) || "&nbsp;"}</div>
+      <div class="km"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div>
+      <div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>
+      <div class="foot"><span><b class="mono">${fmt(p.doneKm)}</b> <span class="muted">/ ${TOTAL_KM} km</span></span><span class="muted">${esc(s.stay)}</span></div></div></div>`;
+  },
+  3(p) {
+    const s = p.stage;
+    const W = 712, H = 400, pad = 36;
+    const pts = Object.values(TOWNS);
+    const kx = Math.cos(56 * Math.PI / 180);
+    const minLon = Math.min(...pts.map((t) => t.lon)), maxLon = Math.max(...pts.map((t) => t.lon));
+    const minLat = Math.min(...pts.map((t) => t.lat)), maxLat = Math.max(...pts.map((t) => t.lat));
+    const sc = Math.min((W - 2 * pad) / ((maxLon - minLon) * kx), (H - 2 * pad) / (maxLat - minLat));
+    const ox = (W - (maxLon - minLon) * kx * sc) / 2, oy = (H - (maxLat - minLat) * sc) / 2;
+    const X = (lon) => ox + (lon - minLon) * kx * sc, Y = (lat) => oy + (maxLat - lat) * sc;
+    const xy = (t) => `${X(t.lon).toFixed(1)},${Y(t.lat).toFixed(1)}`;
+    let segs = "", dots = "", names = "";
+    const seen = new Set();
+    STAGES.forEach((st, i) => {
+      const done = p.state === "done" || i < p.idx;
+      const line = st.path.map((k) => xy(TOWNS[k])).join(" ");
+      segs += `<polyline class="seg${done ? " done" : ""}" points="${line}"/>`;
+      if (st.train) segs += `<polyline class="seg train" points="${xy(TOWNS.nyborg)} ${xy(TOWNS.korsoer)}"/>`;
+      st.path.forEach((k, j) => {
+        if (seen.has(k)) return; seen.add(k);
+        const t = TOWNS[k], reached = done || (i === p.idx && j === 0 && p.state === "walking") || (p.state === "walking" && i < p.idx);
+        dots += `<circle class="town${reached || done ? " done" : ""}" cx="${X(t.lon).toFixed(1)}" cy="${Y(t.lat).toFixed(1)}" r="7"/>`;
+        const lab = LABELS[k];
+        if (lab) names += `<text class="tname" x="${(X(t.lon) + lab[0]).toFixed(1)}" y="${(Y(t.lat) + lab[1]).toFixed(1)}" text-anchor="${lab[0] < 0 ? "end" : "start"}">${esc(t.name)}</text>`;
+      });
+    });
+    const pos = p.state === "before" ? TOWNS.rosenholm : p.state === "done" ? TOWNS.gavnoe : positionOnStage(s, p.stagePct);
+    const me = `<circle class="pulse" cx="${X(pos.lon).toFixed(1)}" cy="${Y(pos.lat).toFixed(1)}" r="12"/><circle class="me" cx="${X(pos.lon).toFixed(1)}" cy="${Y(pos.lat).toFixed(1)}" r="10"/>`;
+    return `<div class="v3"><div class="top"><div class="route">${routeLabel(s)}</div><span class="pill">${headerNote(p)}</span></div>
+      <svg viewBox="0 0 ${W} ${H}">${segs}${dots}${names}${me}</svg>
+      <div class="stats"><div><span>I dag</span><b class="mono">${fmt(p.todayKm)}/${s.km} km</b></div><div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div><div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div></div></div>`;
+  },
+  4(p) {
+    const rows = STAGES.map((st, i) => {
+      const done = p.state === "done" || i < p.idx, cur = p.state === "walking" && i === p.idx;
+      return `<li class="${done ? "done" : cur ? "cur" : ""}"><span class="n">${done ? "✓" : st.day}</span><span>${esc(st.from)}<span class="arrow">→</span>${esc(st.to)}</span><span class="km mono">${st.km} km</span>${cur ? `<div class="prog"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}</li>`;
+    }).join("");
+    return `<div class="v4"><h1>Rosenholm → Gavnø</h1><div class="sum">${headerNote(p)} · ${esc(p.stage.date)}</div><ol>${rows}</ol>
+      <div class="total"><div><span class="mono"><b>${fmt(p.doneKm)}</b> / ${TOTAL_KM} km</span><span class="muted">${fmt(p.pct * 100, 0)} %</span></div><div class="bar"><i style="width:${pctW(p.pct)}"></i></div></div></div>`;
+  }
+};
+
+function render() {
+  const day = num(q.get("day"), dayForDate());
+  const p = progress(day, num(q.get("km"), 0));
+  stage$.innerHTML = views[variant](p);
+}
+render();
+setInterval(render, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Walk overlay — varianter</title>
+<style>
+  :root{color-scheme:dark}
+  body{margin:0;padding:32px;background:#0e0b14;color:#fff8ec;font-family:system-ui,sans-serif}
+  h1{margin:0 0 6px;font-size:26px}p{margin:0 0 28px;color:#a79fbb}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:28px}
+  figure{margin:0}
+  .frame{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;border:1px solid #3a3150;
+    background:repeating-conic-gradient(#2b2538 0 25%,#221d2d 0 50%) 0 0/28px 28px}
+  iframe{position:absolute;left:0;top:0;width:100%;height:100%;border:0}
+  figcaption{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:15px}
+  figcaption span{color:#a79fbb}code{background:#221d2d;padding:3px 8px;border-radius:6px;font-size:13px;user-select:all}
+</style>
+</head>
+<body>
+<h1>Rosenholm → Gavnø · overlay-varianter</h1>
+<p>Demo: dag 5, 9 km gået. I OBS: Browser Source 1920×1080, brug linket under hver variant. Tilføj <code>?day=7&amp;km=20</code> for at teste andre tilstande.</p>
+<div class="grid" id="g"></div>
+<script>
+  const V = [["1","Bundbar","Bred stribe nederst med hele ruten som 14 segmenter"],["2","Hjørnekort","Kompakt kort øverst til venstre"],["3","Kort","Rutekort med position på vej gennem Danmark"],["4","Tidslinje","Alle 14 etaper som liste til venstre"]];
+  const g = document.getElementById("g");
+  for (const [v, name, desc] of V) {
+    const url = new URL("overlay.html?v=" + v, location.href).href;
+    const f = document.createElement("figure");
+    f.innerHTML = `<div class="frame"><iframe loading="lazy" src="overlay.html?v=${v}&day=5&km=9" scrolling="no"></iframe></div><figcaption><b>${v}. ${name}</b><span>${desc}</span></figcaption><figcaption><code>${url}</code></figcaption>`;
+    g.append(f);
+  }
+</script>
+</body>
+</html>

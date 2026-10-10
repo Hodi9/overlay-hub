@@ -18,6 +18,7 @@ import { createPokemonApp } from "./apps/pokemon/app.js";
 import { createRdr2DeathsApp } from "./apps/rdr2-deaths/app.js";
 import { createRdr2App } from "./apps/rdr2/app.js";
 import { createSubathonApp } from "./apps/subathon/app.js";
+import { createWalkApp } from "./apps/walk/app.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -125,6 +126,14 @@ app.use("/rdr2", createRdr2App());
 const subathonPath = "/" + String(process.env.SUBATHON_PATH || "").trim().replace(/^\/+|\/+$/g, "");
 if (/^\/[A-Za-z0-9_-]{12,}$/.test(subathonPath)) app.use(subathonPath, createSubathonApp({ mountPath: subathonPath }));
 else if (process.env.SUBATHON_PATH) console.warn("subathon: SUBATHON_PATH must be 12+ letters/digits/-/_ — tracker not mounted.");
+
+// Hidden walk-through-Denmark overlay (apps/walk). Same idea: not on the index page,
+// only mounted at the secret address in WALK_PATH, 404 everywhere else.
+const walkPath = "/" + String(process.env.WALK_PATH || "").trim().replace(/^\/+|\/+$/g, "");
+if (/^\/[A-Za-z0-9_-]{12,}$/.test(walkPath)) {
+  OVERLAY_PREFIXES.push(walkPath);
+  app.use(walkPath, createWalkApp());
+} else if (process.env.WALK_PATH) console.warn("walk: WALK_PATH must be 12+ letters/digits/-/_ — overlay not mounted.");
 
 app.use(express.static(path.join(__dirname, "public")));
 
