@@ -1,8 +1,8 @@
 import { copenhagenDate } from "./public/route.js";
-import { TITLE_MAX, isField } from "./public/fields.js";
+import { TITLE_MAX, SCALE_MIN, SCALE_MAX, isField } from "./public/fields.js";
 
-export const VARIANTS = ["1", "2", "3", "4"];
-export const DEFAULT_STATE = { day: null, km: 0, kmDate: null, variant: "1", visible: true, fields: {}, title: "" };
+export const VARIANTS = ["1", "2", "3", "4", "5"];
+export const DEFAULT_STATE = { day: null, km: 0, kmDate: null, variant: "1", visible: true, fields: {}, title: "", scale: 1 };
 
 const round1 = (n) => Math.round(n * 10) / 10;
 
@@ -29,6 +29,7 @@ export function applyPatch(state, patch = {}, now = new Date()) {
       next.fields[v] = merged;
     }
   }
+  if ("scale" in patch && patch.scale !== "" && patch.scale !== null && Number.isFinite(Number(patch.scale))) next.scale = Math.round(Math.min(SCALE_MAX, Math.max(SCALE_MIN, Number(patch.scale))) * 100) / 100;
   if (typeof patch.title === "string") next.title = patch.title.replace(/[\u0000-\u001f<>]/g, "").trim().slice(0, TITLE_MAX);
   return next;
 }
@@ -36,5 +37,5 @@ export function applyPatch(state, patch = {}, now = new Date()) {
 // I automatisk dag-tilstand nulstilles dagens km ved datoskifte, så gårsdagens km ikke hænger ved.
 export function effectiveState(state, now = new Date()) {
   const stale = state.day === null && state.kmDate !== copenhagenDate(now);
-  return { day: state.day, km: stale ? 0 : state.km, variant: state.variant, visible: state.visible, fields: state.fields || {}, title: state.title || "" };
+  return { day: state.day, km: stale ? 0 : state.km, variant: state.variant, visible: state.visible, fields: state.fields || {}, title: state.title || "", scale: state.scale ?? 1 };
 }

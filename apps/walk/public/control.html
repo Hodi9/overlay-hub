@@ -25,7 +25,7 @@
   .msg{margin-top:9px;font-size:.85rem;min-height:1.2em}.msg.err{color:#ff7a8b}.msg.ok{color:var(--ok)}
   .big{font-size:3rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}.big small{font-size:1.1rem;color:var(--dim);font-weight:600}
   .bar{height:12px;border-radius:99px;background:var(--panel2);overflow:hidden;margin:14px 0 4px}.bar i{display:block;height:100%;background:var(--lilac);width:0;transition:width .4s}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
   .links a{color:var(--lilac)}.links li{margin:6px 0;word-break:break-all}
   .locked{opacity:.5;pointer-events:none}
   .ov{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
@@ -89,6 +89,8 @@
       <div class="box">
         <p class="hint">Gælder overlay-linket uden <code>?v=</code>. Skiftes live i OBS.</p>
         <div class="grid4" id="variants"></div>
+        <div class="row" style="margin-top:16px"><span style="min-width:90px">Størrelse</span><input type="range" id="scale" min="30" max="150" step="5" style="flex:1;accent-color:var(--lilac)"><b id="scaleVal" style="min-width:52px;text-align:right">100 %</b><button class="btn sec" id="scaleReset">100 %</button></div>
+        <p class="hint" style="margin:6px 0 0">Gør hele overlayet mindre eller større (30–150 %). Det krymper ind mod sit hjørne.</p>
         <label class="switch" style="margin-top:14px"><input type="checkbox" id="visible"> Vis overlay på streamen</label>
       </div>
     </section>
@@ -121,11 +123,11 @@
 
 <script type="module">
 import { STAGES, TOTAL_KM, dayForDate, progress } from "./route.js";
-import { FIELDS, VARIANT_NAMES, DEFAULT_TITLE } from "./fields.js";
+import { FIELDS, VARIANT_NAMES, DEFAULT_TITLE, SCALE_MIN, SCALE_MAX } from "./fields.js";
 
 const KEY = "walk-control-key";
 const $ = (id) => document.getElementById(id);
-const NAMES = { 1: "Bundbar", 2: "Hjørnekort", 3: "Kort", 4: "Tidslinje" };
+const NAMES = VARIANT_NAMES;
 const fmt = (n) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: 1 }).format(n);
 const getKey = () => { try { return localStorage.getItem(KEY) || ""; } catch { return ""; } };
 const setKey = (v) => { try { localStorage.setItem(KEY, v); } catch {} };
@@ -165,6 +167,8 @@ function render() {
   $("stTotal").textContent = `${fmt(p.doneKm)} / ${TOTAL_KM} km i alt · ${fmt(p.kmLeft)} km tilbage`;
   if (document.activeElement !== $("daySel")) $("daySel").value = state.day === null ? "auto" : String(state.day);
   $("visible").checked = state.visible;
+  if (document.activeElement !== $("scale")) { $("scale").value = Math.round((state.scale ?? 1) * 100); }
+  $("scaleVal").textContent = Math.round((state.scale ?? 1) * 100) + " %";
   document.querySelectorAll("#ovs input[data-v]").forEach((c) => { c.checked = state.fields?.[c.dataset.v]?.[c.dataset.k] !== false; });
   if (document.activeElement !== $("titleIn")) $("titleIn").value = state.title || "";
   document.querySelectorAll("#variants button").forEach((b) => b.classList.toggle("on", b.dataset.v === state.variant));
@@ -202,6 +206,10 @@ $("ovs").onchange = (e) => { const c = e.target.closest("input[data-v]"); if (c)
 $("ovs").onclick = (e) => { const b = e.target.closest("[data-all]"); if (!b) return; const v = b.dataset.all; patch({ fields: { [v]: Object.fromEntries(FIELDS[v].map(([k]) => [k, true])) } }); };
 $("titleSet").onclick = () => patch({ title: $("titleIn").value }, $("titleMsg"));
 $("titleIn").addEventListener("keydown", (e) => { if (e.key === "Enter") $("titleSet").click(); });
+$("scale").min = Math.round(SCALE_MIN * 100); $("scale").max = Math.round(SCALE_MAX * 100);
+$("scale").oninput = () => { $("scaleVal").textContent = $("scale").value + " %"; };
+$("scale").onchange = () => patch({ scale: Number($("scale").value) / 100 });
+$("scaleReset").onclick = () => patch({ scale: 1 });
 $("visible").onchange = (e) => patch({ visible: e.target.checked });
 
 // start: prøv gemt kode stille
