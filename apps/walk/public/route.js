@@ -3,7 +3,7 @@ export const START_DATE = "2026-10-12"; // dag 1
 export const TZ = "Europe/Copenhagen";
 
 export const TOWNS = {
-  rosenholm: { name: "Rosenholm", lat: 56.19, lon: 10.35 },
+  rosenholm: { name: "Rosenholm", lat: 56.333, lon: 10.325 },
   aarhus: { name: "Aarhus", lat: 56.157, lon: 10.211 },
   skanderborg: { name: "Skanderborg", lat: 56.045, lon: 9.927 },
   silkeborg: { name: "Silkeborg", lat: 56.17, lon: 9.545 },
@@ -15,13 +15,13 @@ export const TOWNS = {
   horsens: { name: "Horsens", lat: 55.861, lon: 9.851 },
   vejle: { name: "Vejle", lat: 55.709, lon: 9.536 },
   middelfart: { name: "Middelfart", lat: 55.505, lon: 9.73 },
-  aarup: { name: "Aarup", lat: 55.31, lon: 9.76 },
+  aarup: { name: "Aarup", lat: 55.376, lon: 10.049 },
   odense: { name: "Odense", lat: 55.4, lon: 10.39 },
   nyborg: { name: "Nyborg", lat: 55.31, lon: 10.79 },
   korsoer: { name: "Korsør", lat: 55.33, lon: 11.14 },
   slagelse: { name: "Slagelse", lat: 55.4, lon: 11.35 },
   naestved: { name: "Næstved", lat: 55.23, lon: 11.76 },
-  gavnoe: { name: "Gavnø", lat: 55.174, lon: 11.751 }
+  gavnoe: { name: "Gavnø", lat: 55.1888, lon: 11.7252 }
 };
 
 // path = byer etapen går igennem (bruges til position på kortet).

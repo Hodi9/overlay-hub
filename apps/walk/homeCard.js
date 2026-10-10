@@ -5,13 +5,14 @@ const ICON = '<path d="M13 4.5a1.8 1.8 0 1 1-3.6 0 1.8 1.8 0 0 1 3.6 0z"/><path 
 
 export function walkEntry(base) {
   return {
-    id: "marcelwalk", cat: "show", tag: "Event", title: "Marcel Walk", sub: "Walk-overlays samlet — live km, kort og tidslinje",
+    id: "marcelwalk", cat: "show", tag: "Event", title: "Marcel Walk", sub: "Walk-overlays samlet — live km, kort og tidslinje, Danmark på verdenskort",
     links: [
       ["Overlay (følger panelet)", `${base}/overlay.html`],
       ["Bundbar", `${base}/overlay.html?v=1`],
       ["Hjørnekort", `${base}/overlay.html?v=2`],
       ["Kort", `${base}/overlay.html?v=3`],
-      ["Tidslinje", `${base}/overlay.html?v=4`]
+      ["Tidslinje", `${base}/overlay.html?v=4`],
+      ["Verdenskort", `${base}/overlay.html?v=5`]
     ],
     control: `${base}/control.html`,
     extra: [["Alle varianter", `${base}/`]],

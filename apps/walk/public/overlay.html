@@ -9,66 +9,94 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
 <style>
-  :root{--ink:#17131f;--panel:rgba(23,19,31,.92);--panel2:rgba(36,30,48,.92);--lilac:#c7b6ff;--red:#e8334a;--cream:#fff8ec;--muted:#a79fbb;--line:rgba(199,182,255,.28);--ok:#7ee0a1}
+  :root{--ink:#14111c;--panel-a:rgba(36,30,52,.94);--panel-b:rgba(17,13,25,.95);--panel2:rgba(255,255,255,.06);--lilac:#c7b6ff;--pink:#ff9ac4;--red:#e8334a;--cream:#fff8ec;--muted:#a99fbf;--line:rgba(255,255,255,.12);--glow:rgba(199,182,255,.45)}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:transparent;overflow:hidden;font-family:"Schibsted Grotesk",system-ui,sans-serif;color:var(--cream)}
   #stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
   .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
-  .bar{height:14px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}
-  .bar>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--lilac),#fff);transition:width 1s}
-  .pill{display:inline-block;padding:6px 14px;border-radius:99px;background:var(--red);font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:22px}
+  .panel{background:linear-gradient(160deg,var(--panel-a),var(--panel-b));border:1.5px solid var(--line);border-radius:28px;box-shadow:0 24px 60px -18px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.1);backdrop-filter:blur(10px)}
+  .bar{height:16px;border-radius:99px;background:rgba(255,255,255,.1);box-shadow:inset 0 1px 3px rgba(0,0,0,.4);overflow:hidden}
+  .bar>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--lilac),var(--pink));box-shadow:0 0 18px var(--glow);transition:width 1s}
+  .pill{display:inline-block;padding:7px 16px;border-radius:99px;background:linear-gradient(180deg,#f2495f,#cf2a40);box-shadow:0 6px 16px -6px rgba(232,51,74,.8),inset 0 1px 0 rgba(255,255,255,.35);font-weight:800;letter-spacing:.07em;text-transform:uppercase;font-size:22px;white-space:nowrap}
   .muted{color:var(--muted)}
-  .arrow{color:var(--lilac);margin:0 .25em}
+  .arrow{color:var(--lilac);margin:0 .28em}
+  .eyebrow{font-size:20px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
   /* v1 — bundbar */
-  .v1{position:absolute;left:40px;right:40px;bottom:36px;background:var(--panel);border:2px solid var(--line);border-radius:22px;padding:22px 32px 20px;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+  .v1{position:absolute;left:40px;right:40px;bottom:36px;padding:24px 34px 22px}
   .v1 .row{display:flex;gap:36px;align-items:center}.v1 .mid{flex:1;min-width:0}
-  .v1 .day{font-size:64px;font-weight:800;line-height:1}.v1 .day small{font-size:28px;color:var(--muted);font-weight:600}
-  .v1 .route{font-size:40px;font-weight:700}.v1 .sub{font-size:24px;color:var(--muted);margin-top:4px}
-  .v1 .bar{margin-top:12px}
-  .v1 .tot{text-align:right}.v1 .tot b{font-size:44px}.v1 .tot span{font-size:24px;color:var(--muted)}
-  .v1 .trail{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;margin-top:18px}
-  .v1 .trail i{height:10px;border-radius:99px;background:rgba(255,255,255,.14);position:relative;overflow:hidden}
-  .v1 .trail i.done{background:var(--lilac)}.v1 .trail i.cur::after{content:"";position:absolute;inset:0;width:var(--p);background:var(--lilac)}
-  .v1 .trail i.cur{background:rgba(255,255,255,.2)}
+  .v1 .route{font-size:44px;font-weight:800;letter-spacing:-.01em}.v1 .sub{font-size:24px;color:var(--muted);margin-top:4px}
+  .v1 .bar{margin-top:14px}
+  .v1 .tot{text-align:right}.v1 .tot b{font-size:50px}.v1 .tot span{font-size:24px;color:var(--muted)}
+  .v1 .trail{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;margin-top:20px}
+  .v1 .trail i{height:10px;border-radius:99px;background:rgba(255,255,255,.12);position:relative;overflow:hidden}
+  .v1 .trail i.done{background:var(--lilac);box-shadow:0 0 10px var(--glow)}.v1 .trail i.cur::after{content:"";position:absolute;inset:0;width:var(--p);background:linear-gradient(90deg,var(--lilac),var(--pink))}
 
   /* v2 — hjørnekort */
-  .v2{position:absolute;left:40px;top:40px;width:560px;background:var(--panel);border:2px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
-  .v2 .head{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:var(--panel2);border-bottom:2px solid var(--line)}
-  .v2 .head b{font-size:24px;letter-spacing:.04em;text-transform:uppercase;color:var(--lilac)}
-  .v2 .body{padding:22px 24px 24px}
-  .v2 .route{font-size:44px;font-weight:800;line-height:1.1}.v2 .via{font-size:22px;color:var(--muted);margin-top:4px}
-  .v2 .km{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 10px;font-size:26px}.v2 .km b{font-size:48px}
-  .v2 .foot{display:flex;justify-content:space-between;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);font-size:24px}
+  .v2{position:absolute;left:40px;top:40px;width:600px;overflow:hidden}
+  .v2 .head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 26px;background:var(--panel2);border-bottom:1.5px solid var(--line)}
+  .v2 .head b{font-size:23px;letter-spacing:.08em;text-transform:uppercase;color:var(--lilac)}
+  .v2 .body{padding:22px 26px 22px}
+  .v2 .route{font-size:46px;font-weight:800;line-height:1.1;letter-spacing:-.01em}.v2 .via{font-size:22px;color:var(--muted);margin-top:6px}
+  .v2 .bar{margin-top:18px}
+  .v2 .stay{margin-top:14px;font-size:21px;color:var(--muted)}
+  .v2 .stats{display:grid;border-top:1.5px solid var(--line);background:var(--panel2)}
+  .v2 .stats div{padding:14px 20px;border-right:1px solid var(--line);min-width:0}.v2 .stats div:last-child{border:0}
+  .v2 .stats span{display:block;font-size:19px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v2 .stats b{font-size:30px;white-space:nowrap}
 
-  /* v3 — kort */
-  .v3{position:absolute;right:40px;bottom:40px;width:760px;background:var(--panel);border:2px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
-  .v3 .top{display:flex;justify-content:space-between;align-items:center;padding:16px 24px}
-  .v3 .top .route{font-size:34px;font-weight:800}
-  .v3 svg{display:block;width:100%;height:auto;background:radial-gradient(ellipse at 50% 40%,rgba(199,182,255,.1),transparent 70%)}
-  .v3 .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:2px solid var(--line)}
-  .v3 .stats div{padding:14px 24px;border-right:1px solid var(--line)}.v3 .stats div:last-child{border:0}
-  .v3 .stats span{display:block;font-size:20px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.v3 .stats b{font-size:36px}
-  .seg{fill:none;stroke:rgba(255,255,255,.2);stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
-  .seg.done{stroke:var(--lilac)}.seg.train{stroke-dasharray:2 14}
-  .town{fill:var(--ink);stroke:var(--muted);stroke-width:3}.town.done{stroke:var(--lilac);fill:var(--lilac)}
-  .tname{font:700 20px "Schibsted Grotesk",sans-serif;fill:var(--cream);paint-order:stroke;stroke:rgba(23,19,31,.9);stroke-width:5px}
-  .me{fill:var(--red);stroke:#fff;stroke-width:4}.pulse{fill:none;stroke:var(--red);stroke-width:3;animation:pulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+  /* kort (v3 + v5) */
+  svg.map{display:block;width:100%;height:auto;border-radius:18px;background:radial-gradient(ellipse at 50% 35%,#272046 0,#171230 70%,#120e24 100%)}
+  .land{fill:rgba(199,182,255,.2);stroke:rgba(199,182,255,.5);stroke-linejoin:round}
+  .land2{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.14);stroke-linejoin:round}
+  .seg{fill:none;stroke:rgba(255,255,255,.28);stroke-linecap:round;stroke-linejoin:round}
+  .seg.done{stroke:var(--pink);filter:drop-shadow(0 0 4px rgba(255,154,196,.7))}.seg.train{stroke-dasharray:1 2.4;stroke-width:inherit}
+  .town{fill:var(--ink);stroke:#d9d0ec}.town.done{stroke:var(--pink);fill:var(--pink)}
+  .tname{font-family:"Schibsted Grotesk",sans-serif;font-weight:700;fill:var(--cream);paint-order:stroke;stroke:rgba(20,17,28,.95);stroke-linejoin:round}
+  .me{fill:var(--red);stroke:#fff}.pulse{fill:none;stroke:var(--red);animation:pulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
   @keyframes pulse{from{opacity:.9;transform:scale(.6)}to{opacity:0;transform:scale(2.6)}}
 
+  /* v3 — kort */
+  .v3{position:absolute;right:40px;bottom:40px;width:760px;overflow:hidden}
+  .v3 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 26px}
+  .v3 .top .route{font-size:36px;font-weight:800;letter-spacing:-.01em}
+  .v3 .mapbox{padding:0 14px 14px}
+  .v3 .stats{display:grid;border-top:1.5px solid var(--line);background:var(--panel2)}
+  .v3 .stats div{padding:14px 26px;border-right:1px solid var(--line)}.v3 .stats div:last-child{border:0}
+  .v3 .stats span{display:block;font-size:19px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v3 .stats b{font-size:36px}
+
   /* v4 — tidslinje */
-  .v4{position:absolute;left:40px;top:40px;bottom:40px;width:470px;background:var(--panel);border:2px solid var(--line);border-radius:24px;padding:20px 22px;display:flex;flex-direction:column;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
-  .v4 h1{margin:0 0 4px;font-size:30px;letter-spacing:.02em}.v4 .sum{font-size:22px;color:var(--muted);margin-bottom:12px}
+  .v4{position:absolute;left:40px;top:40px;bottom:40px;width:480px;padding:22px 24px;display:flex;flex-direction:column}
+  .v4 h1{margin:0 0 4px;font-size:32px;letter-spacing:-.01em}.v4 .sum{font-size:22px;color:var(--muted);margin-bottom:12px}
   .v4 ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
-  .v4 li{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:12px;font-size:21px;white-space:nowrap;font-weight:600;color:var(--muted)}
+  .v4 li{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:14px;font-size:21px;white-space:nowrap;font-weight:600;color:var(--muted)}
   .v4 li .n{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);font-size:19px;font-weight:800}
   .v4 li.done{opacity:.55}.v4 li.done .n{background:var(--lilac);border-color:var(--lilac);color:var(--ink)}
-  .v4 li.cur{background:var(--panel2);border:2px solid var(--lilac);color:var(--cream);padding:11px 10px;grid-template-columns:44px 1fr auto;position:relative}
+  .v4 li.cur{background:var(--panel2);border:1.5px solid var(--lilac);box-shadow:0 0 22px -6px var(--glow);color:var(--cream);padding:11px 10px}
   .v4 li.cur .n{background:var(--red);border-color:var(--red);color:#fff}
   .v4 li .km{font-size:20px;color:var(--muted)}
   .v4 li.cur .prog{grid-column:2/4;height:8px;margin-top:2px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
-  .v4 li.cur .prog i{display:block;height:100%;background:var(--lilac)}
+  .v4 li.cur .prog i{display:block;height:100%;background:linear-gradient(90deg,var(--lilac),var(--pink))}
   .v4 .total{margin-top:12px}.v4 .total .bar{height:12px}.v4 .total div:first-child{display:flex;justify-content:space-between;font-size:22px;margin-bottom:8px}
+
+  /* v5 — verdenskort + Danmark */
+  .v5{position:absolute;right:40px;bottom:40px;width:1340px;padding:18px;display:grid;grid-template-columns:1fr 420px;gap:18px;align-items:stretch}
+  .v5.nomap{grid-template-columns:1fr}
+  .v5 .dkmap svg.map{height:100%}
+  .v5 aside{display:flex;flex-direction:column;justify-content:space-between;gap:14px;min-width:0}
+  .v5 .worldbox{position:relative;border-radius:18px;overflow:hidden}
+  .v5 .worldbox .cap{position:absolute;left:12px;bottom:8px;font-size:17px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cream);text-shadow:0 1px 6px #000}
+  .world-land{fill:rgba(199,182,255,.26);stroke:rgba(199,182,255,.45);stroke-width:.6;stroke-linejoin:round}
+  .world-dk{fill:var(--red);stroke:#fff;stroke-width:1.2}
+  .grat{fill:none;stroke:rgba(255,255,255,.07);stroke-width:.7}
+  .v5 .info{padding:6px 8px 4px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .v5 .info .ttl{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .v5 .info .ttl .eyebrow{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:.1em}
+  .v5 .route{font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.01em}.v5 .sub{font-size:21px;color:var(--muted)}
+  .v5 .kmrow{display:flex;justify-content:space-between;align-items:baseline;font-size:24px}.v5 .kmrow b{font-size:46px}
+  .v5 .sub.next b{color:var(--cream);font-weight:700}
+  .v5 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .v5 .stats div{background:var(--panel2);border-radius:14px;padding:10px 14px}
+  .v5 .stats span{display:block;font-size:17px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}.v5 .stats b{font-size:30px}
 </style>
 </head>
 <body>
@@ -76,6 +104,7 @@
 <script type="module">
 import { DEFAULT_TITLE } from "./fields.js";
 import { STAGES, TOWNS, TOTAL_KM, dayForDate, progress, positionOnStage } from "./route.js";
+import { DK_LAND, DK_NEIGHBORS, WORLD_LAND, WORLD_DK, WORLD_VIEW, dkXY, worldXY } from "./geo.js";
 
 const q = new URLSearchParams(location.search);
 const num = (v, d) => (v != null && v !== "" && Number.isFinite(Number(v)) ? Number(v) : d);
@@ -96,8 +125,65 @@ function headerNote(p) {
   return `Dag ${p.stage.day}/${STAGES.length}`;
 }
 
-// [dx, dy] pr. by — håndplaceret så etiketterne ikke overlapper.
-const LABELS = { rosenholm: [14, -10], aarhus: [14, 26], silkeborg: [4, -16], herning: [-14, 6], jelling: [-14, 10], vejle: [16, 30], odense: [0, -16], korsoer: [8, -14], naestved: [-14, -6], gavnoe: [-14, 22] };
+// Etiketter på kortet: [dx, dy] i skærm-px fra byen (skaleres med kortets zoom).
+const LABELS = { rosenholm: [16, -8], aarhus: [16, 24], skanderborg: [14, 24], silkeborg: [0, -16], ikast: [0, 30], herning: [-16, 6], brande: [-16, 6], jelling: [-16, 10], horsens: [16, -8], vejle: [16, 24], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], nyborg: [0, 30], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
+
+const MAJOR = new Set(["rosenholm", "aarhus", "silkeborg", "herning", "vejle", "odense", "naestved", "gavnoe"]);
+
+// Tegner Danmark (rigtig kystlinje) med ruten. W×H er visningsstørrelsen i px.
+function dkMap(p, f, W, H, fontPx, allLabels = true) {
+  const s = p.stage;
+  const xy = Object.values(TOWNS).map((t) => dkXY(t.lon, t.lat));
+  const minX = Math.min(...xy.map((a) => a[0])), maxX = Math.max(...xy.map((a) => a[0]));
+  const minY = Math.min(...xy.map((a) => a[1])), maxY = Math.max(...xy.map((a) => a[1]));
+  const padX = 118, padY = 66; // luft til bynavne (Herning til venstre, Gavnø til højre)
+  const z = Math.min((W - 2 * padX) / (maxX - minX), (H - 2 * padY) / (maxY - minY)); // px pr. kort-enhed
+  const u = 1 / z; // kort-enheder pr. skærm-px
+  const vw = W * u, vh = H * u, vx = (minX + maxX) / 2 - vw / 2, vy = (minY + maxY) / 2 - vh / 2;
+  const P = (key) => dkXY(TOWNS[key].lon, TOWNS[key].lat);
+  const pt = (key) => P(key).map((n) => n.toFixed(1)).join(",");
+  let segs = "", dots = "", names = "";
+  const seen = new Set();
+  STAGES.forEach((st, i) => {
+    const done = p.state === "done" || i < p.idx;
+    segs += `<polyline class="seg${done ? " done" : ""}" stroke-width="${(6 * u).toFixed(2)}" points="${st.path.map(pt).join(" ")}"/>`;
+    if (st.train) segs += `<polyline class="seg train" stroke-width="${(6 * u).toFixed(2)}" points="${pt("nyborg")} ${pt("korsoer")}"/>`;
+    st.path.forEach((k, j) => {
+      if (seen.has(k)) return; seen.add(k);
+      const reached = done || (i === p.idx && j === 0 && p.state === "walking");
+      const [x, y] = P(k);
+      dots += `<circle class="town${reached ? " done" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(7 * u).toFixed(2)}" stroke-width="${(3 * u).toFixed(2)}"/>`;
+      const lab = LABELS[k];
+      if (lab && f("labels") && (allLabels || MAJOR.has(k))) names += `<text class="tname" x="${(x + lab[0] * u).toFixed(1)}" y="${(y + lab[1] * u).toFixed(1)}" font-size="${(fontPx * u).toFixed(2)}" stroke-width="${(5 * u).toFixed(2)}" text-anchor="${lab[0] < -2 ? "end" : lab[0] > 2 ? "start" : "middle"}">${esc(TOWNS[k].name)}</text>`;
+    });
+  });
+  const pos = p.state === "before" ? TOWNS.rosenholm : p.state === "done" ? TOWNS.gavnoe : positionOnStage(s, p.stagePct);
+  const [mx, my] = dkXY(pos.lon, pos.lat);
+  const me = `<circle class="pulse" cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="${(12 * u).toFixed(2)}" stroke-width="${(3 * u).toFixed(2)}"/><circle class="me" cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="${(10 * u).toFixed(2)}" stroke-width="${(4 * u).toFixed(2)}"/>`;
+  const sw = (1.6 * u).toFixed(2);
+  return `<svg class="map" viewBox="${vx.toFixed(1)} ${vy.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}" style="aspect-ratio:${W}/${H}" preserveAspectRatio="xMidYMid slice">
+    <path class="land2" stroke-width="${sw}" d="${DK_NEIGHBORS}"/><path class="land" stroke-width="${sw}" d="${DK_LAND}"/>${segs}${dots}${names}${me}</svg>`;
+}
+
+function worldMap(f) {
+  const [x, y] = worldXY(10.2, 56.0);
+  let grat = "";
+  for (let lon = -150; lon <= 180; lon += 30) { const [gx] = worldXY(lon, 0); grat += `M${gx} 0V${WORLD_VIEW.h}`; }
+  for (let lat = -30; lat <= 60; lat += 30) { const [, gy] = worldXY(0, lat); grat += `M0 ${gy}H${WORLD_VIEW.w}`; }
+  return `<div class="worldbox"><svg class="map" viewBox="0 0 ${WORLD_VIEW.w} ${WORLD_VIEW.h}" style="border-radius:0">
+    <path class="grat" d="${grat}"/><path class="world-land" d="${WORLD_LAND}"/><path class="world-dk" d="${WORLD_DK}"/>
+    <circle class="pulse" cx="${x}" cy="${y}" r="26" stroke-width="4"/><circle cx="${x}" cy="${y}" r="44" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8 7" opacity=".9"/><circle class="me" cx="${x}" cy="${y}" r="11" stroke-width="3"/></svg>
+    <span class="cap">Danmark</span></div>`;
+}
+
+// De tre stats (I dag / I alt / Tilbage) — bruges af v2 og v3.
+function statCells(p, f) {
+  const cells = [];
+  if (f("todayKm")) cells.push(`<div><span>I dag</span><b class="mono">${fmt(p.todayKm)}/${p.stage.km} km</b></div>`);
+  if (f("total")) cells.push(`<div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div>`);
+  if (f("left")) cells.push(`<div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div>`);
+  return cells;
+}
 
 const views = {
   1(p, f) {
@@ -112,7 +198,7 @@ const views = {
     if (f("stay")) parts.push(`overnatning: ${esc(s.stay)}`);
     const tot = f("total") || f("left")
       ? `<div class="tot">${f("total") ? `<b class="mono">${fmt(p.doneKm)}</b> <span>/ ${TOTAL_KM} km</span>` : ""}${f("left") ? `<div class="sub">${fmt(p.kmLeft)} km til Gavnø</div>` : ""}</div>` : "";
-    return `<div class="v1"><div class="row">
+    return `<div class="v1 panel"><div class="row">
       ${f("badge") ? `<div class="day"><span class="pill">${headerNote(p)}</span></div>` : ""}
       <div class="mid"><div class="route">${routeLabel(s)}</div>
         ${parts.length ? `<div class="sub">${parts.join(" · ")}</div>` : ""}
@@ -124,48 +210,18 @@ const views = {
     const s = p.stage;
     const head = f("title") || f("badge")
       ? `<div class="head"><b>${f("title") ? esc(title) : ""}</b>${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>` : "";
-    const foot = f("total") || f("stay")
-      ? `<div class="foot"><span>${f("total") ? `<b class="mono">${fmt(p.doneKm)}</b> <span class="muted">/ ${TOTAL_KM} km</span>` : ""}</span>${f("stay") ? `<span class="muted">${esc(s.stay)}</span>` : ""}</div>` : "";
-    return `<div class="v2">${head}
-      <div class="body"><div class="route">${routeLabel(s)}</div>${f("via") ? `<div class="via">${viaLabel(s) || "&nbsp;"}</div>` : ""}
-      ${f("todayKm") ? `<div class="km"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div>` : ""}
-      ${f("todayBar") ? `<div class="bar"${f("todayKm") ? "" : ' style="margin-top:18px"'}><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
-      ${foot}</div></div>`;
+    const cells = statCells(p, f);
+    return `<div class="v2 panel">${head}
+      <div class="body"><div class="route">${routeLabel(s)}</div>${f("via") && viaLabel(s) ? `<div class="via">${viaLabel(s)}</div>` : ""}
+      ${f("todayBar") ? `<div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
+      ${f("stay") ? `<div class="stay">Overnatning: ${esc(s.stay)}</div>` : ""}</div>
+      ${cells.length ? `<div class="stats" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
   },
   3(p, f) {
     const s = p.stage;
-    const W = 712, H = 400, pad = 36;
-    const pts = Object.values(TOWNS);
-    const kx = Math.cos(56 * Math.PI / 180);
-    const minLon = Math.min(...pts.map((t) => t.lon)), maxLon = Math.max(...pts.map((t) => t.lon));
-    const minLat = Math.min(...pts.map((t) => t.lat)), maxLat = Math.max(...pts.map((t) => t.lat));
-    const sc = Math.min((W - 2 * pad) / ((maxLon - minLon) * kx), (H - 2 * pad) / (maxLat - minLat));
-    const ox = (W - (maxLon - minLon) * kx * sc) / 2, oy = (H - (maxLat - minLat) * sc) / 2;
-    const X = (lon) => ox + (lon - minLon) * kx * sc, Y = (lat) => oy + (maxLat - lat) * sc;
-    const xy = (t) => `${X(t.lon).toFixed(1)},${Y(t.lat).toFixed(1)}`;
-    let segs = "", dots = "", names = "";
-    const seen = new Set();
-    STAGES.forEach((st, i) => {
-      const done = p.state === "done" || i < p.idx;
-      const line = st.path.map((k) => xy(TOWNS[k])).join(" ");
-      segs += `<polyline class="seg${done ? " done" : ""}" points="${line}"/>`;
-      if (st.train) segs += `<polyline class="seg train" points="${xy(TOWNS.nyborg)} ${xy(TOWNS.korsoer)}"/>`;
-      st.path.forEach((k, j) => {
-        if (seen.has(k)) return; seen.add(k);
-        const t = TOWNS[k], reached = done || (i === p.idx && j === 0 && p.state === "walking") || (p.state === "walking" && i < p.idx);
-        dots += `<circle class="town${reached || done ? " done" : ""}" cx="${X(t.lon).toFixed(1)}" cy="${Y(t.lat).toFixed(1)}" r="7"/>`;
-        const lab = LABELS[k];
-        if (lab && f("labels")) names += `<text class="tname" x="${(X(t.lon) + lab[0]).toFixed(1)}" y="${(Y(t.lat) + lab[1]).toFixed(1)}" text-anchor="${lab[0] < 0 ? "end" : "start"}">${esc(t.name)}</text>`;
-      });
-    });
-    const pos = p.state === "before" ? TOWNS.rosenholm : p.state === "done" ? TOWNS.gavnoe : positionOnStage(s, p.stagePct);
-    const me = `<circle class="pulse" cx="${X(pos.lon).toFixed(1)}" cy="${Y(pos.lat).toFixed(1)}" r="12"/><circle class="me" cx="${X(pos.lon).toFixed(1)}" cy="${Y(pos.lat).toFixed(1)}" r="10"/>`;
-    const cells = [];
-    if (f("todayKm")) cells.push(`<div><span>I dag</span><b class="mono">${fmt(p.todayKm)}/${s.km} km</b></div>`);
-    if (f("total")) cells.push(`<div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div>`);
-    if (f("left")) cells.push(`<div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div>`);
-    return `<div class="v3"><div class="top"><div class="route">${routeLabel(s)}</div>${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>
-      <svg viewBox="0 0 ${W} ${H}">${segs}${dots}${names}${me}</svg>
+    const cells = statCells(p, f);
+    return `<div class="v3 panel"><div class="top"><div class="route">${routeLabel(s)}</div>${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>
+      <div class="mapbox">${dkMap(p, f, 732, 400, 20, false)}</div>
       ${cells.length ? `<div class="stats" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
   },
   4(p, f, title) {
@@ -173,28 +229,54 @@ const views = {
       const done = p.state === "done" || i < p.idx, cur = p.state === "walking" && i === p.idx;
       return `<li class="${done ? "done" : cur ? "cur" : ""}"><span class="n">${done ? "✓" : st.day}</span><span>${esc(st.from)}<span class="arrow">→</span>${esc(st.to)}</span>${f("kms") ? `<span class="km mono">${st.km} km</span>` : "<span></span>"}${cur ? `<div class="prog"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}</li>`;
     }).join("");
-    return `<div class="v4">${f("title") ? `<h1>${esc(title)}</h1>` : ""}${f("date") ? `<div class="sum">${headerNote(p)} · ${esc(p.stage.date)}</div>` : ""}<ol>${rows}</ol>
+    return `<div class="v4 panel">${f("title") ? `<h1>${esc(title)}</h1>` : ""}${f("date") ? `<div class="sum">${headerNote(p)} · ${esc(p.stage.date)}</div>` : ""}<ol>${rows}</ol>
       ${f("total") ? `<div class="total"><div><span class="mono"><b>${fmt(p.doneKm)}</b> / ${TOTAL_KM} km</span><span class="muted">${fmt(p.pct * 100, 0)} %</span></div><div class="bar"><i style="width:${pctW(p.pct)}"></i></div></div>` : ""}</div>`;
+  },
+  5(p, f, title) {
+    const s = p.stage;
+    const stats = [];
+    if (f("total")) stats.push(`<div><span>I alt</span><b class="mono">${fmt(p.doneKm)} km</b></div>`);
+    if (f("left")) stats.push(`<div><span>Tilbage</span><b class="mono">${fmt(p.kmLeft)} km</b></div>`);
+    return `<div class="v5 panel">
+      <div class="dkmap">${dkMap(p, f, 880, 640, 22)}</div>
+      <aside>
+        ${f("world") ? worldMap(f) : ""}
+        <div class="info">
+          <div class="ttl">${f("title") ? `<span class="eyebrow">${esc(title)}</span>` : "<span></span>"}${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>
+          <div class="route">${routeLabel(s)}</div>
+          ${f("via") && viaLabel(s) ? `<div class="sub">${viaLabel(s)}</div>` : ""}
+          ${f("todayKm") ? `<div class="kmrow"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div><div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
+          ${stats.length ? `<div class="stats">${stats.join("")}</div>` : ""}
+          ${f("next") && p.state === "walking" && STAGES[p.idx + 1] ? `<div class="sub next">I morgen: <b>${esc(STAGES[p.idx + 1].from)}<span class="arrow">→</span>${esc(STAGES[p.idx + 1].to)}</b> · ${STAGES[p.idx + 1].km} km</div>` : ""}
+          ${f("stay") ? `<div class="sub">Overnatning: ${esc(s.stay)}</div>` : ""}
+        </div></aside></div>`;
   }
 };
 
-// Værdier fra URL'en (?v, ?day, ?km) vinder over kontrolpanelet — bruges af galleriet til demo.
+// Hvor på skærmen hver overlay er forankret — størrelsen skaleres ind mod det hjørne.
+const ORIGIN = { 1: "center bottom", 2: "left top", 3: "right bottom", 4: "left top", 5: "right bottom" };
+const VARIANTS = ["1", "2", "3", "4", "5"];
+
+// Værdier fra URL'en (?v, ?day, ?km, ?scale) vinder over kontrolpanelet — bruges af galleriet til demo.
 const demo = q.has("day") || q.has("km") || q.has("preview");
-let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "" };
+let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1 };
 let lastKey = "";
 
 function render() {
-  const v = ["1", "2", "3", "4"].includes(q.get("v")) ? q.get("v") : live.variant;
+  const v = VARIANTS.includes(q.get("v")) ? q.get("v") : live.variant;
   if (!live.visible && !demo) { if (lastKey !== "hidden") { stage$.innerHTML = ""; lastKey = "hidden"; } return; }
   const day = num(q.get("day"), live.day ?? dayForDate());
   const km = num(q.get("km"), live.km);
+  const scale = Math.min(1.5, Math.max(0.3, num(q.get("scale"), live.scale ?? 1)));
   const fields = live.fields?.[v] || {};
   const f = (k) => fields[k] !== false;
   const title = live.title || DEFAULT_TITLE;
-  const key = JSON.stringify([v, day, km, fields, title]);
+  const key = JSON.stringify([v, day, km, fields, title, scale]);
   if (key === lastKey) return; // undgå at genstarte animationer uden ændringer
   lastKey = key;
   stage$.innerHTML = views[v](progress(day, km), f, title);
+  const root = stage$.firstElementChild;
+  if (root && scale !== 1) { root.style.transformOrigin = ORIGIN[v]; root.style.transform = `scale(${scale})`; }
 }
 
 async function poll() {

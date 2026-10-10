@@ -116,7 +116,9 @@ test("field toggles and title are validated per overlay", () => {
   assert.deepEqual(s.fields[1], { via: true, stay: false });
   assert.equal(applyPatch(s, { title: "x".repeat(99) }).title.length, 40);
   assert.deepEqual(applyPatch(s, { fields: { 1: { via: "ja" } } }).fields[1], { via: true, stay: false });
-  assert.deepEqual(Object.keys(FIELDS), ["1", "2", "3", "4"]);
+  assert.deepEqual(Object.keys(FIELDS), ["1", "2", "3", "4", "5"]);
+  assert.equal(applyPatch(DEFAULT_STATE, { variant: 5 }).variant, "5");
+  assert.equal(applyPatch(DEFAULT_STATE, { variant: "6" }).variant, "1");
 });
 
 test("fields and title reach the overlay via the public state, after login", async () => {
@@ -127,4 +129,37 @@ test("fields and title reach the overlay via the public state, after login", asy
     assert.deepEqual(pub.fields, { 3: { labels: false } });
     assert.equal(pub.title, "Marcel Walk");
   });
+});
+
+import { DK_VIEW, DK_LAND, WORLD_LAND, WORLD_VIEW, dkXY, worldXY } from "../apps/walk/public/geo.js";
+
+test("scale is clamped and survives a bad value", () => {
+  assert.equal(applyPatch(DEFAULT_STATE, { scale: 0.65 }).scale, 0.65);
+  assert.equal(applyPatch(DEFAULT_STATE, { scale: 99 }).scale, 1.5);
+  assert.equal(applyPatch(DEFAULT_STATE, { scale: 0 }).scale, 0.3);
+  assert.equal(applyPatch(DEFAULT_STATE, { scale: "abc" }).scale, 1);
+  assert.equal(effectiveState(applyPatch(DEFAULT_STATE, { scale: 0.5 })).scale, 0.5);
+});
+
+test("every town on the route projects inside the Denmark map, and land data is present", () => {
+  for (const t of Object.values(TOWNS)) {
+    const [x, y] = dkXY(t.lon, t.lat);
+    assert.ok(x > 0 && x < DK_VIEW.w && y > 0 && y < DK_VIEW.h, `${t.name} uden for kortet`);
+  }
+  assert.ok(DK_LAND.length > 5000);
+  const [wx, wy] = worldXY(10.2, 56);
+  assert.ok(wx > 0 && wx < WORLD_VIEW.w && wy > 0 && wy < WORLD_VIEW.h);
+});
+
+test("world map has no polygon wrapped across the dateline", () => {
+  for (const sub of WORLD_LAND.split("M").filter(Boolean)) {
+    const xs = sub.replace("Z", "").split("L").map((p) => Number(p.split(" ")[0]));
+    assert.ok(Math.max(...xs) - Math.min(...xs) < 700, "polygon strækker sig hen over hele kortet");
+  }
+});
+
+test("towns sit near their real location (guards against bad coordinates)", () => {
+  const near = (k, lat, lon) => { const t = TOWNS[k]; assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12, k); };
+  near("rosenholm", 56.333, 10.325); near("aarup", 55.376, 10.049); near("gavnoe", 55.189, 11.725);
+  near("aarhus", 56.157, 10.21); near("odense", 55.40, 10.40); near("herning", 56.139, 8.976);
 });
