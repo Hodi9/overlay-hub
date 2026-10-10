@@ -20,13 +20,12 @@
   .pill{display:inline-block;padding:7px 16px;border-radius:99px;background:linear-gradient(180deg,#f2495f,#cf2a40);box-shadow:0 6px 16px -6px rgba(232,51,74,.8),inset 0 1px 0 rgba(255,255,255,.35);font-weight:800;letter-spacing:.07em;text-transform:uppercase;font-size:22px;white-space:nowrap}
   .pill.pause{background:linear-gradient(180deg,#f6c35b,#d9972a);color:#2a1b00;box-shadow:0 6px 16px -6px rgba(217,151,42,.8),inset 0 1px 0 rgba(255,255,255,.45)}
   .pbars{display:inline-block;width:13px;height:16px;margin-right:8px;vertical-align:-2px;border-left:4.5px solid currentColor;border-right:4.5px solid currentColor}
-  /* Pause: gul pulserende ramme + stort PAUSE henover panelet, så det ikke kan overses */
-  .panel.is-paused{border-color:#f6c35b;animation:pausering 2s ease-in-out infinite}
-  @keyframes pausering{0%,100%{box-shadow:0 24px 60px -18px rgba(0,0,0,.7),0 0 0 0 rgba(246,195,91,0)}50%{box-shadow:0 24px 60px -18px rgba(0,0,0,.7),0 0 0 9px rgba(246,195,91,.5)}}
-  .pauseveil{position:absolute;inset:0;border-radius:inherit;background:rgba(20,17,28,.38);display:grid;place-items:center;z-index:5}
-  .pausebig{display:flex;align-items:center;gap:14px;padding:8px 30px;border-radius:99px;background:linear-gradient(180deg,#f6c35b,#d9972a);color:#2a1b00;font-weight:800;font-size:44px;letter-spacing:.12em;box-shadow:0 14px 40px -10px rgba(0,0,0,.7),inset 0 2px 0 rgba(255,255,255,.45);animation:pausebeat 2s ease-in-out infinite}
-  .pausebig .pbars{width:21px;height:29px;margin:0;border-left-width:8px;border-right-width:8px}
-  @keyframes pausebeat{50%{transform:scale(1.05)}}
+  /* Pause: blød gul ramme + et lille PAUSE-mærke på overlayets kant (dækker ikke noget) */
+  .panel.is-paused{border-color:rgba(246,195,91,.85);animation:pausering 2.8s ease-in-out infinite}
+  @keyframes pausering{0%,100%{box-shadow:0 24px 60px -18px rgba(0,0,0,.7),0 0 0 0 rgba(246,195,91,0)}50%{box-shadow:0 24px 60px -18px rgba(0,0,0,.7),0 0 0 5px rgba(246,195,91,.3)}}
+  .pausetab{position:absolute;z-index:10;transform:translate(-50%,-50%) scale(var(--sc,1));display:flex;align-items:center;gap:12px;padding:5px 22px 5px 18px;border-radius:99px;background:linear-gradient(180deg,#f6c35b,#d9972a);color:#2a1b00;font-weight:800;font-size:26px;letter-spacing:.14em;box-shadow:0 8px 22px -8px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.45);animation:pausefade 2.8s ease-in-out infinite}
+  .pausetab .pbars{width:13px;height:19px;margin:0;border-left-width:5px;border-right-width:5px}
+  @keyframes pausefade{50%{opacity:.8}}
   .pills{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
   .muted{color:var(--muted)}
   .arrow{color:var(--lilac);margin:0 .28em}
@@ -218,8 +217,7 @@ function sumLine(p, f, t) {
   if (f("date")) parts.push(`${headerNote(p)} · ${esc(p.stage.date)}`);
   if (f("pace")) parts.push(`Ø ${t.pace}`);
   if (f("eta") && t.eta !== "–") parts.push(t.eta === "Fremme" ? "snart fremme" : `mål ${t.eta}`);
-  const tag = t.tag(f);
-  return parts.length || tag ? `<div class="sum">${parts.map((x) => `<span>${x}</span>`).join("")}${tag}</div>` : "";
+  return parts.length ? `<div class="sum">${parts.map((x) => `<span>${x}</span>`).join("")}</div>` : "";
 }
 
 const views = {
@@ -239,7 +237,7 @@ const views = {
     const tot = f("total") || f("left")
       ? `<div class="tot">${f("total") ? `<b class="mono">${fmt(p.doneKm)}</b> <span>/ ${TOTAL_KM} km</span>` : ""}${f("left") ? `<div class="sub">${fmt(p.kmLeft)} km til Gavnø</div>` : ""}</div>` : "";
     return `<div class="v1 panel"><div class="row">
-      ${f("badge") || t.tag(f) ? `<div class="day">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}${t.tag(f)}</div>` : ""}
+      ${f("badge") ? `<div class="day">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</div>` : ""}
       <div class="mid"><div class="route">${routeLabel(s)}</div>
         ${parts.length ? `<div class="sub">${parts.join(" · ")}</div>` : ""}
         ${f("todayBar") ? `<div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}</div>
@@ -248,8 +246,8 @@ const views = {
   },
   2(p, f, title, t) {
     const s = p.stage;
-    const head = f("title") || f("badge") || t.tag(f)
-      ? `<div class="head"><b>${f("title") ? esc(title) : ""}</b><span class="pills">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}${t.tag(f)}</span></div>` : "";
+    const head = f("title") || f("badge")
+      ? `<div class="head"><b>${f("title") ? esc(title) : ""}</b><span class="pills">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</span></div>` : "";
     const cells = statCells(p, f, t);
     const paceLine = [f("pace") ? `Ø-tempo <b class="mono">${t.pace}</b>` : "", f("time") ? `gå-tid <b class="mono">${t.time}</b>` : ""].filter(Boolean).join(" · ");
     return `<div class="v2 panel">${head}
@@ -263,7 +261,7 @@ const views = {
   3(p, f, title, t) {
     const s = p.stage;
     const cells = statCells(p, f, t, true);
-    return `<div class="v3 panel"><div class="top"><div class="route">${routeLabel(s)}</div><span class="pills">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}${t.tag(f)}</span></div>
+    return `<div class="v3 panel"><div class="top"><div class="route">${routeLabel(s)}</div><span class="pills">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</span></div>
       <div class="mapbox">${dkMap(p, f, 732, 400, 20, false)}${f("eta") && etaLabel(t) ? `<div class="mapchip">${etaLabel(t)}</div>` : ""}</div>
       ${cells.length ? `<div class="stats${cells.length > 3 ? " four" : ""}" style="grid-template-columns:repeat(${cells.length},1fr)">${cells.join("")}</div>` : ""}</div>`;
   },
@@ -287,7 +285,7 @@ const views = {
       <aside>
         ${f("world") ? worldMap(f) : ""}
         <div class="info">
-          <div class="ttl">${f("title") ? `<span class="eyebrow">${esc(title)}</span>` : "<span></span>"}<span class="pills">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}${t.tag(f)}</span></div>
+          <div class="ttl">${f("title") ? `<span class="eyebrow">${esc(title)}</span>` : "<span></span>"}<span class="pills">${f("badge") ? `<span class="pill">${headerNote(p)}</span>` : ""}</span></div>
           <div class="route">${routeLabel(s)}</div>
           ${f("via") && viaLabel(s) ? `<div class="sub">${viaLabel(s)}</div>` : ""}
           ${f("todayKm") ? `<div class="kmrow"><span>I dag</span><span><b class="mono">${fmt(p.todayKm)}</b> / ${s.km} km</span></div><div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}
@@ -330,17 +328,20 @@ function render() {
   const time = timeText(ms);
   const pr = progress(day, km);
   const etaI = etaInfo({ remainingKm: pr.stage.km - pr.todayKm, ms, kmToday: pr.todayKm, manual: live.eta, nowMs: Date.now(), walking: pr.state !== "done" });
-  const t = { pace, time, status, eta: etaI.text, tag: (ff) => (status === "paused" && ff("pause") ? `<span class="pill pause"><i class="pbars"></i>Pause</span>` : "") };
+  const t = { pace, time, status, eta: etaI.text };
   const key = JSON.stringify([v, day, km, fields, title, scale, pace, time, status, unit, etaI.text]);
   if (key === lastKey) return; // undgå at genstarte animationer uden ændringer
   lastKey = key;
   stage$.innerHTML = views[v](pr, f, title, t);
   const root = stage$.firstElementChild;
-  if (root && status === "paused" && f("pause")) {
-    root.classList.add("is-paused");
-    root.insertAdjacentHTML("beforeend", `<div class="pauseveil"><div class="pausebig"><i class="pbars"></i>PAUSE</div></div>`);
-  }
   if (root && scale !== 1) { root.style.transformOrigin = ORIGIN[v]; root.style.transform = `scale(${scale})`; }
+  if (root && status === "paused" && f("pause")) {
+    // Mærket sidder midt på overlayets overkant (målt efter skalering), så det ikke dækker tal eller kort.
+    root.classList.add("is-paused");
+    const sr = stage$.getBoundingClientRect(), r = root.getBoundingClientRect(), z = sr.width / 1920;
+    const left = (r.left - sr.left + r.width / 2) / z, top = Math.max(30 * scale, (r.top - sr.top) / z);
+    stage$.insertAdjacentHTML("beforeend", `<div class="pausetab" style="left:${left.toFixed(1)}px;top:${top.toFixed(1)}px;--sc:${scale}"><i class="pbars"></i>PAUSE</div>`);
+  }
 }
 
 async function poll() {
