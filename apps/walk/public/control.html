@@ -207,7 +207,7 @@ function render() {
   if (!state) return;
   const day = state.day ?? dayForDate();
   const p = progress(day, liveKm());
-  $("dayNote").textContent = state.day === null ? (p.state === "before" ? "Automatisk: før start (dag 1 = 12/10). Overlayet viser dag 1 og tæller km allerede nu." : "Automatisk følger datoen (dag 1 = 12/10).") + " Skifter du dag, nulstilles dagens km og gå-tid." : "Dagen er sat manuelt — vælg «Automatisk» for at følge datoen.";
+  $("dayNote").textContent = state.day === null ? (p.state === "before" ? "Automatisk: før start (dag 1 = 12/10). Overlayet viser dag 1 og tæller km allerede nu." : "Automatisk følger datoen (dag 1 = 12/10); efter sidste dato bliver den på sidste etape, til du vælger «Fremme».") + " Skifter du dag, nulstilles dagens km og gå-tid." : "Dagen er sat manuelt — vælg «Automatisk» for at følge datoen.";
   $("kmShow").textContent = fmt(p.todayKm);
   $("kmOf").textContent = p.stage.km;
   $("stTotal").textContent = `${fmt(p.doneKm)} / ${TOTAL_KM} km i alt · ${fmt(p.kmLeft)} km tilbage`;
