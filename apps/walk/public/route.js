@@ -1,4 +1,4 @@
-// Rute 4: Rosenholm Slot -> Gavnø Slot. Data fra etapetabellen (12/10 - 25/10). Ændret efter start: Silkeborg-Jelling er skåret fra, og i stedet for toget Nyborg-Korsør går turen over Langeland og Lolland-Falster..
+// Rute 4: Rosenholm Slot -> Gavnø Slot. Data fra etapetabellen (start 12/10; der er ikke længere et fast klokkeslæt for ankomsten, Marcel kommer når han kan). Ændret efter start: Silkeborg-Jelling er skåret fra, og i stedet for toget Nyborg-Korsør går turen over Langeland og Lolland-Falster..
 export const START_DATE = "2026-10-12"; // dag 1
 export const TZ = "Europe/Copenhagen";
 
@@ -39,7 +39,7 @@ export const STAGES = [
   { day: 11, date: "22/10", from: "Maribo", to: "Nykøbing F", km: 30, stay: "Hotel/hostel", path: ["maribo", "nykoebing"] },
   { day: 12, date: "23/10", from: "Nykøbing F", to: "Vordingborg", km: 33, stay: "Hotel/hostel", path: ["nykoebing", "vordingborg"] },
   { day: 13, date: "24/10", from: "Vordingborg", to: "Næstved", km: 33, stay: "Hotel/hostel", path: ["vordingborg", "naestved"] },
-  { day: 14, date: "25/10", from: "Næstved", to: "Gavnø", km: 11, stay: "Gavnø kl. 15", path: ["naestved", "gavnoe"] }
+  { day: 14, date: "25/10", from: "Næstved", to: "Gavnø", km: 11, stay: "Gavnø Slot (målet)", path: ["naestved", "gavnoe"] }
 ];
 
 export const TOTAL_KM = STAGES.reduce((sum, s) => sum + s.km, 0);
@@ -48,11 +48,11 @@ export function copenhagenDate(now = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
-// 0 = før start, 1..STAGES.length = etape, STAGES.length + 1 = færdig.
+// 0 = før start, 1..STAGES.length = etape. Efter sidste dato bliver den på sidste etape: "færdig" (STAGES.length + 1) vælges kun manuelt, for Marcel kommer når han kan.
 export function dayForDate(now = new Date()) {
   const today = Date.parse(copenhagenDate(now) + "T00:00:00Z");
   const diff = Math.round((today - Date.parse(START_DATE + "T00:00:00Z")) / 86400000) + 1;
-  return Math.max(0, Math.min(STAGES.length + 1, diff));
+  return Math.max(0, Math.min(STAGES.length, diff));
 }
 
 // Samlet status ud fra dag + km gået i dag.

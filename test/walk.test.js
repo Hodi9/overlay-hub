@@ -12,7 +12,7 @@ test("dayForDate maps Copenhagen dates to stages", () => {
   assert.equal(dayForDate(new Date("2026-10-12T08:00:00+02:00")), 1);
   assert.equal(dayForDate(new Date("2026-10-11T23:30:00Z")), 1); // 01:30 dansk tid 12/10
   assert.equal(dayForDate(new Date("2026-10-25T12:00:00+01:00")), 14);
-  assert.equal(dayForDate(new Date("2026-10-27T12:00:00Z")), 15);
+  assert.equal(dayForDate(new Date("2026-10-27T12:00:00Z")), 14); // bliver på sidste etape; "Fremme" vælges kun manuelt
 });
 
 test("progress accumulates earlier stages and clamps today's km", () => {
