@@ -38,7 +38,7 @@ export function applyPatch(state, patch = {}, now = new Date()) {
   const hold = () => { if (!kmSet) { next.km = round3(live.km); rebase = true; next.kmDate = today; } };
   if ("day" in patch) {
     if (patch.day === null || patch.day === "auto") next.day = null;
-    else if (Number.isInteger(Number(patch.day)) && Number(patch.day) >= 0 && Number(patch.day) <= 15) next.day = Number(patch.day);
+    else if (Number.isInteger(Number(patch.day)) && Number(patch.day) >= 0 && Number(patch.day) <= STAGES.length + 1) next.day = Number(patch.day);
   }
   if ("km" in patch && patch.km !== "" && patch.km !== null && Number.isFinite(Number(patch.km))) {
     next.km = round1(Math.min(100, Math.max(0, Number(patch.km))));
