@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { STAGES, TOTAL_KM, WAYPOINTS, LEGS, stageBetween, nextPlanned, prevPlanned, progress, positionOnStage, TOWNS } from "../apps/walk/public/route.js";
 
 test("route has 14 stages and sums the table's km", () => {
-  assert.equal(STAGES.length, 15);
-  assert.equal(TOTAL_KM, 430);
+  assert.equal(STAGES.length, 9);
+  assert.equal(TOTAL_KM, 250);
 });
 
 test("stageBetween joins the towns on the way and adds up the km", () => {
@@ -16,8 +16,9 @@ test("stageBetween joins the towns on the way and adds up the km", () => {
   assert.equal(stageBetween("xx", "vejle"), null);
   const all = stageBetween("rosenholm", "gavnoe");
   assert.equal(all.km, TOTAL_KM); // en etape fra start til mål er hele ruten
-  assert.deepEqual(stageBetween("svendborg", "maribo").ride, { label: "Færge Spodsbjerg → Tårs", from: "spodsbjerg", to: "taars" });
-  assert.equal(stageBetween("svendborg", "maribo").km, 28 + 12 + 0 + 8 + 28); // færgen tæller 0 km
+  assert.deepEqual(stageBetween("odense", "slagelse").ride, { label: "Tog Nyborg → Korsør", from: "nyborg", to: "korsoer" });
+  assert.equal(stageBetween("odense", "slagelse").km, 19 + 0 + 11); // toget tæller 0 km
+  assert.equal(STAGES[7].ride.label, "Tog Nyborg → Korsør"); // etapen efter toget viser, hvordan han kom dertil
   assert.equal(nextPlanned(STAGES[2]).n, 4);
   assert.equal(nextPlanned(c).n, 5); // efter Skanderborg -> Vejle kommer Vejle -> Middelfart
   assert.equal(prevPlanned(c).n, 2);
@@ -59,7 +60,7 @@ test("applyPatch validates and clamps panel input", () => {
   s = applyPatch(s, { km: 9999, variant: "9", stage: "abc", from: "xx", visible: "nej" }, now);
   assert.deepEqual([s.km, s.variant, s.from, s.to, s.visible], [100, "3", "rosenholm", "aarhus", false]);
   const seven = applyPatch(s, { stage: 7 });
-  assert.deepEqual([seven.from, seven.to], ["aarup", "odense"]);
+  assert.deepEqual([seven.from, seven.to], ["aarup", "nyborg"]);
   assert.deepEqual([applyPatch(s, { stage: 99 }).from, applyPatch(s, { stage: 0 }).from], ["rosenholm", "rosenholm"]);
   const own = applyPatch(s, { from: "skanderborg", to: "vejle" });
   assert.deepEqual([own.from, own.to], ["skanderborg", "vejle"]);
@@ -183,8 +184,7 @@ test("towns sit near their real location (guards against bad coordinates)", () =
   const near = (k, lat, lon) => { const t = TOWNS[k]; assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12, k); };
   near("rosenholm", 56.333, 10.325); near("aarup", 55.376, 10.049); near("gavnoe", 55.189, 11.725);
   near("aarhus", 56.157, 10.21); near("odense", 55.40, 10.40); near("horsens", 55.861, 9.851);
-  near("svendborg", 55.06, 10.607); near("ringe", 55.24, 10.48); near("rudkoebing", 54.938, 10.721); near("spodsbjerg", 54.935, 10.83); near("taars", 54.885, 11.115);
-  near("nakskov", 54.83, 11.153); near("maribo", 54.776, 11.501); near("nykoebing", 54.769, 11.874); near("vordingborg", 55.008, 11.91);
+  near("nyborg", 55.31, 10.79); near("korsoer", 55.33, 11.14); near("slagelse", 55.4, 11.35); near("naestved", 55.23, 11.76);
 });
 
 import { paceText, timeText, timerStatus, speedKmh } from "../apps/walk/public/pace.js";
@@ -280,7 +280,7 @@ test("km counts on any stage, also beyond the planned length, and arrival comple
   assert.equal(first.state, "walking");
   assert.equal(first.doneKm, 12.5);
   assert.equal(progress(STAGES[0], 30).todayKm, 30); // også ud over etapens 22 km
-  assert.equal(progress(STAGES[13], 3, true).todayKm, STAGES[13].km); // efter målet er hele etapen altid gået
+  assert.equal(progress(STAGES.at(-1), 3, true).todayKm, STAGES.at(-1).km); // efter målet er hele etapen altid gået
 });
 
 import { kmLive } from "../apps/walk/state.js";
@@ -363,23 +363,23 @@ test("default tempo is 4.5 km/t from the start, and a saved tempo is kept", () =
 import { pathUpTo } from "../apps/walk/public/route.js";
 
 test("pathUpTo draws the walked part of a stage, growing with the km", () => {
-  const s = stageBetween("aarup", "svendborg"); // Aarup -> Odense -> Ringe -> Svendborg (27 + 24 + 24 km)
+  const s = STAGES[6]; // etape 7: Aarup -> Odense -> Nyborg (15 + 19 km)
   assert.equal(pathUpTo(s, 0).length, 2); // kun startpunktet (to ens punkter)
   const half = pathUpTo(s, 0.5);
   const full = pathUpTo(s, 1);
-  assert.deepEqual(full.at(-1), { lat: TOWNS.svendborg.lat, lon: TOWNS.svendborg.lon }); // ender i målet
+  assert.deepEqual(full.at(-1), { lat: TOWNS.nyborg.lat, lon: TOWNS.nyborg.lon }); // ender i målet
   assert.ok(full.some((p) => p.lat === TOWNS.odense.lat && p.lon === TOWNS.odense.lon)); // og går via Odense
   assert.ok(half.length <= full.length);
   const len = (pts) => pts.slice(1).reduce((a, p, i) => a + Math.hypot(p.lat - pts[i].lat, (p.lon - pts[i].lon) * 0.56), 0);
   assert.ok(len(pathUpTo(s, 0.25)) < len(half) && len(half) < len(pathUpTo(s, 0.75)) && len(pathUpTo(s, 0.75)) < len(full));
-  assert.deepEqual(positionOnStage(s, 27 / 75), { lat: TOWNS.odense.lat, lon: TOWNS.odense.lon }); // 27 af 75 km = Odense
+  assert.deepEqual(positionOnStage(s, 15 / 34), { lat: TOWNS.odense.lat, lon: TOWNS.odense.lon }); // 15 af 34 km = Odense
   assert.deepEqual(positionOnStage(s, 0.5), half.at(-1)); // prikken sidder for enden af sporet
   assert.deepEqual(pathUpTo(s, 7).at(-1), full.at(-1)); // fraction klemmes
   assert.deepEqual(pathUpTo(s, -1)[0], { lat: TOWNS.aarup.lat, lon: TOWNS.aarup.lon });
-  // en færge (0 km) springes over i ét hop: lige før og lige efter ligger på hver sin side
-  const f = stageBetween("rudkoebing", "maribo"); // 12 + 0 (færge) + 8 + 28
-  assert.deepEqual(positionOnStage(f, 12 / 48), { lat: TOWNS.spodsbjerg.lat, lon: TOWNS.spodsbjerg.lon });
-  assert.ok(positionOnStage(f, 13 / 48).lon > TOWNS.taars.lon - 0.2 && positionOnStage(f, 13 / 48).lat < TOWNS.spodsbjerg.lat);
+  // et tog (0 km) springes over i ét hop: lige efter Nyborg ligger prikken allerede ved Korsør
+  const f = stageBetween("odense", "slagelse"); // 19 + 0 (tog) + 11
+  assert.deepEqual(positionOnStage(f, 19 / 30), { lat: TOWNS.nyborg.lat, lon: TOWNS.nyborg.lon });
+  assert.ok(positionOnStage(f, 20 / 30).lon > TOWNS.korsoer.lon - 0.1 && positionOnStage(f, 20 / 30).lon < TOWNS.slagelse.lon);
 });
 
 test("overlays 3 and 5 can switch between the whole route and a zoom on today's stage", () => {
@@ -429,6 +429,6 @@ test("the route is a chain of towns, and the planned stages cover it without gap
   });
   assert.equal(STAGES.at(-1).endKm, TOTAL_KM);
   assert.equal(STAGES[2].from + STAGES[2].to, "SkanderborgHorsens"); // etape 3: Silkeborg-Jelling er skåret fra
-  assert.ok(!JSON.stringify(STAGES).match(/Silkeborg|Ikast|Herning|Brande|Give|Jelling|Korsør/));
-  assert.equal(STAGES.find((x) => x.ride).ride.label, "Færge Spodsbjerg → Tårs");
+  assert.ok(!JSON.stringify(STAGES).match(/Silkeborg|Ikast|Herning|Brande|Give|Jelling|Svendborg|Spodsbjerg|Tårs|Maribo|Nykøbing/));
+  assert.equal(STAGES.find((x) => x.ride).ride.label, "Tog Nyborg → Korsør");
 });
