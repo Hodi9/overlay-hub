@@ -1,5 +1,5 @@
-// Rute 4: Rosenholm Slot -> Gavnø Slot. Data fra etapetabellen (start 12/10; der er ikke længere et fast klokkeslæt for ankomsten, Marcel kommer når han kan). Ændret efter start: Silkeborg-Jelling er skåret fra, og i stedet for toget Nyborg-Korsør går turen over Langeland og Lolland-Falster..
-export const START_DATE = "2026-10-12"; // dag 1
+// Rute 4: Rosenholm Slot -> Gavnø Slot (start 12/10). Ruten er en kæde af byer med km mellem dem; en etape er blot et start- og målpunkt på kæden.
+// Der er ikke længere noget fast tidspunkt eller datoer: Marcel kommer når han kan.
 export const TZ = "Europe/Copenhagen";
 
 export const TOWNS = {
@@ -24,59 +24,80 @@ export const TOWNS = {
   gavnoe: { name: "Gavnø", lat: 55.1888, lon: 11.7252 }
 };
 
-// path = byer etapen går igennem (bruges til position på kortet). ride = færge/tog til etapens start (tegnes stiplet).
-export const STAGES = [
-  { day: 1, date: "12/10", from: "Rosenholm", to: "Aarhus", km: 22, stay: "Hotel/hostel", path: ["rosenholm", "aarhus"] },
-  { day: 2, date: "13/10", from: "Aarhus", to: "Skanderborg", km: 30, stay: "Hotel/shelter", path: ["aarhus", "skanderborg"] },
-  { day: 3, date: "14/10", from: "Skanderborg", to: "Horsens", km: 27, stay: "Hotel/hostel", path: ["skanderborg", "horsens"] },
-  { day: 4, date: "15/10", from: "Horsens", to: "Vejle", km: 30, stay: "Danhostel Vejle", path: ["horsens", "vejle"] },
-  { day: 5, date: "16/10", from: "Vejle", to: "Middelfart", km: 34, stay: "Hotel/hostel", path: ["vejle", "middelfart"] },
-  { day: 6, date: "17/10", from: "Middelfart", to: "Aarup", km: 29, stay: "Hotel/shelter", path: ["middelfart", "aarup"] },
-  { day: 7, date: "18/10", from: "Aarup", to: "Nyborg", via: "Odense", km: 34, stay: "Hotel", path: ["aarup", "odense", "nyborg"] },
-  { day: 8, date: "19/10", from: "Nyborg", to: "Svendborg", km: 38, stay: "Hotel/hostel", path: ["nyborg", "svendborg"] },
-  { day: 9, date: "20/10", from: "Svendborg", to: "Spodsbjerg", via: "Rudkøbing", km: 40, stay: "Hotel/hostel", path: ["svendborg", "rudkoebing", "spodsbjerg"] },
-  { day: 10, date: "21/10", from: "Tårs", to: "Maribo", via: "Nakskov", km: 36, stay: "Hotel/hostel", ride: { label: "Færge Spodsbjerg → Tårs", from: "spodsbjerg", to: "taars" }, path: ["taars", "nakskov", "maribo"] },
-  { day: 11, date: "22/10", from: "Maribo", to: "Nykøbing F", km: 30, stay: "Hotel/hostel", path: ["maribo", "nykoebing"] },
-  { day: 12, date: "23/10", from: "Nykøbing F", to: "Vordingborg", km: 33, stay: "Hotel/hostel", path: ["nykoebing", "vordingborg"] },
-  { day: 13, date: "24/10", from: "Vordingborg", to: "Næstved", km: 33, stay: "Hotel/hostel", path: ["vordingborg", "naestved"] },
-  { day: 14, date: "25/10", from: "Næstved", to: "Gavnø", km: 11, stay: "Gavnø Slot (målet)", path: ["naestved", "gavnoe"] }
-];
-
-export const TOTAL_KM = STAGES.reduce((sum, s) => sum + s.km, 0);
-
 export function copenhagenDate(now = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
-// 0 = før start, 1..STAGES.length = etape. Efter sidste dato bliver den på sidste etape: "færdig" (STAGES.length + 1) vælges kun manuelt, for Marcel kommer når han kan.
-export function dayForDate(now = new Date()) {
-  const today = Date.parse(copenhagenDate(now) + "T00:00:00Z");
-  const diff = Math.round((today - Date.parse(START_DATE + "T00:00:00Z")) / 86400000) + 1;
-  return Math.max(0, Math.min(STAGES.length, diff));
+// Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; en færge tæller 0 km).
+export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "horsens", "vejle", "middelfart", "aarup", "odense", "nyborg", "svendborg", "rudkoebing", "spodsbjerg", "taars", "nakskov", "maribo", "nykoebing", "vordingborg", "naestved", "gavnoe"];
+export const LEGS = [
+  { km: 22 }, { km: 30 }, { km: 27 }, { km: 30 }, { km: 34 }, { km: 29 }, { km: 15 }, { km: 19 }, { km: 38 }, { km: 28 }, { km: 12 },
+  { km: 0, ride: "Færge Spodsbjerg → Tårs" },
+  { km: 8 }, { km: 28 }, { km: 30 }, { km: 33 }, { km: 33 }, { km: 11 }
+];
+// Km fra start til hver by.
+export const CUM = WAYPOINTS.map((_, i) => LEGS.slice(0, i).reduce((sum, l) => sum + l.km, 0));
+export const TOTAL_KM = CUM[CUM.length - 1];
+const wi = (key) => WAYPOINTS.indexOf(key);
+
+// Samler en etape fra by til by. Byerne på vejen tages automatisk med, og km er summen af stykkerne.
+// Ugyldigt (ukendt by, eller målet ligger før starten) giver null.
+export function stageBetween(fromKey, toKey) {
+  const i = wi(fromKey), j = wi(toKey);
+  if (i < 0 || j <= i) return null;
+  const path = WAYPOINTS.slice(i, j + 1);
+  const legs = LEGS.slice(i, j);
+  const rideLeg = legs.findIndex((l) => l.ride);
+  const preset = PRESETS.findIndex((p) => p.i === i && p.j === j);
+  return {
+    n: preset + 1, // 0 = egen etape (ikke en af de planlagte)
+    from: TOWNS[fromKey].name, to: TOWNS[toKey].name, fromKey, toKey,
+    km: CUM[j] - CUM[i], startKm: CUM[i], endKm: CUM[j],
+    path, legs,
+    via: path.slice(1, -1).map((k) => TOWNS[k].name).join(", "),
+    // Færge/tog på etapen — eller lige før dens start (så etapen kan vise, hvordan Marcel kom hertil).
+    ride: rideLeg >= 0 ? { label: legs[rideLeg].ride, from: path[rideLeg], to: path[rideLeg + 1] } : i > 0 && LEGS[i - 1].ride ? { label: LEGS[i - 1].ride, from: WAYPOINTS[i - 1], to: WAYPOINTS[i] } : null,
+    stay: preset >= 0 ? PRESETS[preset].stay : ""
+  };
 }
 
-// Samlet status ud fra dag + km gået i dag.
-export function progress(day, kmToday = 0) {
-  const state = day < 1 ? "before" : day > STAGES.length ? "done" : "walking";
-  const idx = state === "before" ? 0 : state === "done" ? STAGES.length - 1 : day - 1;
-  const stage = STAGES[idx];
+// De planlagte etaper (kan ændres i kontrolpanelet ved at vælge andre byer).
+const PRESETS = [
+  { i: 0, j: 1, stay: "Hotel/hostel" }, { i: 1, j: 2, stay: "Hotel/shelter" }, { i: 2, j: 3, stay: "Hotel/hostel" }, { i: 3, j: 4, stay: "Danhostel Vejle" },
+  { i: 4, j: 5, stay: "Hotel/hostel" }, { i: 5, j: 6, stay: "Hotel/shelter" }, { i: 6, j: 8, stay: "Hotel" }, { i: 8, j: 9, stay: "Hotel/hostel" },
+  { i: 9, j: 11, stay: "Hotel/hostel" }, { i: 12, j: 14, stay: "Hotel/hostel" }, { i: 14, j: 15, stay: "Hotel/hostel" }, { i: 15, j: 16, stay: "Hotel/hostel" },
+  { i: 16, j: 17, stay: "Hotel/hostel" }, { i: 17, j: 18, stay: "Gavnø Slot (målet)" }
+];
+export const STAGES = PRESETS.map((p) => stageBetween(WAYPOINTS[p.i], WAYPOINTS[p.j]));
+export const DEFAULT_STAGE = { from: STAGES[0].fromKey, to: STAGES[0].toKey };
+
+// Den planlagte etape, der ligger efter denne (den første, der starter ved eller efter etapens mål) — eller null.
+export const nextPlanned = (stage) => STAGES.find((s) => s.startKm >= stage.endKm - 1e-9) || null;
+// Den planlagte etape før denne (den sidste, der slutter ved eller før etapens start) — eller null.
+export const prevPlanned = (stage) => [...STAGES].reverse().find((s) => s.endKm <= stage.startKm + 1e-9) || null;
+
+// Samlet status ud fra etapen + km gået på den. `arrived` = Marcel er fremme.
+export function progress(stage, kmToday = 0, arrived = false) {
+  const state = arrived ? "done" : "walking";
   // Km kan overstige etapens planlagte længde (tabellen er kun et estimat); barer og kort stopper dog ved målet.
-  const todayKm = state === "done" ? stage.km : Math.max(0, Math.min(kmToday, 100)); // også før start (ellers ser man ingen ændring, når man tester)
-  const before = STAGES.slice(0, idx).reduce((sum, s) => sum + s.km, 0);
-  const doneKm = before + todayKm;
-  return { state, idx, stage, todayKm, doneKm, totalKm: TOTAL_KM, pct: Math.min(1, doneKm / TOTAL_KM), stagePct: Math.min(1, todayKm / stage.km), kmLeft: Math.max(0, TOTAL_KM - doneKm) };
+  const todayKm = arrived ? stage.km : Math.max(0, Math.min(kmToday, 100));
+  const doneKm = arrived ? TOTAL_KM : stage.startKm + todayKm;
+  const pos = Math.min(doneKm, TOTAL_KM);
+  let idx = 0;
+  STAGES.forEach((s, i) => { if (s.startKm <= pos + 1e-9) idx = i; }); // den planlagte etape, Marcel er på
+  return { state, idx, stage, todayKm, doneKm, posKm: pos, totalKm: TOTAL_KM, pct: Math.min(1, doneKm / TOTAL_KM), stagePct: Math.min(1, todayKm / stage.km), kmLeft: Math.max(0, TOTAL_KM - doneKm) };
 }
 
-// Stien fra etapens start og så langt som `fraction` (0..1) — byerne på vejen og til sidst det interpolerede punkt.
-// Bruges til at tegne det stykke af dagens rute, der er gået (lineær pr. segment efter luftlinje).
+// Stien fra etapens start og så langt som `fraction` (0..1) af etapens km — byerne på vejen og til sidst det interpolerede punkt.
+// Bruges til at tegne det stykke af etapen, der er gået. En færge (0 km) springes over i ét hop.
 export function pathUpTo(stage, fraction) {
   const pts = stage.path.map((k) => TOWNS[k]);
-  const lens = [];
-  for (let i = 1; i < pts.length; i++) lens.push(Math.hypot(pts[i].lat - pts[i - 1].lat, (pts[i].lon - pts[i - 1].lon) * 0.56));
-  let target = Math.max(0, Math.min(1, fraction)) * lens.reduce((a, b) => a + b, 0);
+  const lens = stage.legs.map((l) => l.km);
+  const total = lens.reduce((a, b) => a + b, 0);
+  let target = Math.max(0, Math.min(1, fraction)) * total;
   const out = [{ lat: pts[0].lat, lon: pts[0].lon }];
   for (let i = 0; i < lens.length; i++) {
-    if (target <= lens[i] || i === lens.length - 1) {
+    if ((lens[i] > 0 && target <= lens[i]) || i === lens.length - 1) {
       const t = lens[i] ? Math.min(1, target / lens[i]) : 0;
       out.push({ lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * t, lon: pts[i].lon + (pts[i + 1].lon - pts[i].lon) * t });
       return out;
