@@ -85,11 +85,11 @@
   .v4 h1{margin:0 0 4px;font-size:32px;letter-spacing:-.01em}.v4 .sum{font-size:22px;color:var(--muted);margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .v4 .sum{column-gap:16px;row-gap:4px}.v4 .sum span{white-space:nowrap}
   .v4 .sum .pill{font-size:17px;padding:4px 12px}
-  .v4 ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;flex:1;min-height:0}
-  .v4 li{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:5px 10px;border-radius:14px;font-size:21px;white-space:nowrap;font-weight:600;color:var(--muted)}
+  .v4 ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
+  .v4 li{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:7px 10px;border-radius:14px;font-size:21px;white-space:nowrap;font-weight:600;color:var(--muted)}
   .v4 li .n{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);font-size:19px;font-weight:800}
   .v4 li.done{opacity:.55}.v4 li.done .n{background:var(--lilac);border-color:var(--lilac);color:var(--ink)}
-  .v4 li.cur{background:var(--panel2);border:1.5px solid var(--lilac);box-shadow:0 0 22px -6px var(--glow);color:var(--cream);padding:9px 10px}
+  .v4 li.cur{background:var(--panel2);border:1.5px solid var(--lilac);box-shadow:0 0 22px -6px var(--glow);color:var(--cream);padding:11px 10px}
   .v4 li.cur .n{background:var(--red);border-color:var(--red);color:#fff}
   .v4 li .km{font-size:20px;color:var(--muted)}
   .v4 li.cur .prog{grid-column:2/4;height:8px;margin-top:2px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
@@ -296,9 +296,9 @@ function headerNote(p) {
 }
 
 // Etiketter på kortet: [dx, dy] i skærm-px fra byen (skaleres med kortets zoom).
-const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], horsens: [-16, 14], vejle: [16, 24], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], ringe: [16, 6], naestved: [14, -12], svendborg: [-16, 6], spodsbjerg: [16, -10], taars: [-16, 12], maribo: [0, -16], nykoebing: [0, 30], vordingborg: [14, -12], gavnoe: [-14, 24] };
+const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], horsens: [-16, 14], vejle: [16, 24], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], nyborg: [0, 30], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
 
-const MAJOR = new Set(["rosenholm", "aarhus", "horsens", "vejle", "odense", "svendborg", "maribo", "naestved", "gavnoe"]);
+const MAJOR = new Set(["rosenholm", "aarhus", "horsens", "vejle", "odense", "naestved", "gavnoe"]);
 
 // Tegner Danmark (rigtig kystlinje) med ruten. W×H er visningsstørrelsen i px.
 function dkMap(p, f, W, H, fontPx, allLabels = true) {
