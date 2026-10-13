@@ -11,7 +11,7 @@ export const TOWNS = {
   middelfart: { name: "Middelfart", lat: 55.505, lon: 9.73 },
   aarup: { name: "Aarup", lat: 55.376, lon: 10.049 },
   odense: { name: "Odense", lat: 55.4, lon: 10.39 },
-  nyborg: { name: "Nyborg", lat: 55.31, lon: 10.79 },
+  ringe: { name: "Ringe", lat: 55.24, lon: 10.48 },
   svendborg: { name: "Svendborg", lat: 55.06, lon: 10.607 },
   rudkoebing: { name: "Rudkøbing", lat: 54.938, lon: 10.721 },
   spodsbjerg: { name: "Spodsbjerg", lat: 54.935, lon: 10.83 },
@@ -29,9 +29,9 @@ export function copenhagenDate(now = new Date()) {
 }
 
 // Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; en færge tæller 0 km).
-export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "horsens", "vejle", "middelfart", "aarup", "odense", "nyborg", "svendborg", "rudkoebing", "spodsbjerg", "taars", "nakskov", "maribo", "nykoebing", "vordingborg", "naestved", "gavnoe"];
+export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "horsens", "vejle", "middelfart", "aarup", "odense", "ringe", "svendborg", "rudkoebing", "spodsbjerg", "taars", "nakskov", "maribo", "nykoebing", "vordingborg", "naestved", "gavnoe"];
 export const LEGS = [
-  { km: 22 }, { km: 30 }, { km: 27 }, { km: 30 }, { km: 34 }, { km: 29 }, { km: 15 }, { km: 19 }, { km: 38 }, { km: 28 }, { km: 12 },
+  { km: 22 }, { km: 30 }, { km: 27 }, { km: 30 }, { km: 34 }, { km: 29 }, { km: 27 }, { km: 24 }, { km: 24 }, { km: 28 }, { km: 12 },
   { km: 0, ride: "Færge Spodsbjerg → Tårs" },
   { km: 8 }, { km: 28 }, { km: 30 }, { km: 33 }, { km: 33 }, { km: 11 }
 ];
@@ -64,7 +64,7 @@ export function stageBetween(fromKey, toKey) {
 // De planlagte etaper (kan ændres i kontrolpanelet ved at vælge andre byer).
 const PRESETS = [
   { i: 0, j: 1, stay: "Hotel/hostel" }, { i: 1, j: 2, stay: "Hotel/shelter" }, { i: 2, j: 3, stay: "Hotel/hostel" }, { i: 3, j: 4, stay: "Danhostel Vejle" },
-  { i: 4, j: 5, stay: "Hotel/hostel" }, { i: 5, j: 6, stay: "Hotel/shelter" }, { i: 6, j: 8, stay: "Hotel" }, { i: 8, j: 9, stay: "Hotel/hostel" },
+  { i: 4, j: 5, stay: "Hotel/hostel" }, { i: 5, j: 6, stay: "Hotel/shelter" }, { i: 6, j: 7, stay: "Hotel" }, { i: 7, j: 8, stay: "Hotel/hostel" }, { i: 8, j: 9, stay: "Hotel/hostel" },
   { i: 9, j: 11, stay: "Hotel/hostel" }, { i: 12, j: 14, stay: "Hotel/hostel" }, { i: 14, j: 15, stay: "Hotel/hostel" }, { i: 15, j: 16, stay: "Hotel/hostel" },
   { i: 16, j: 17, stay: "Hotel/hostel" }, { i: 17, j: 18, stay: "Gavnø Slot (målet)" }
 ];
