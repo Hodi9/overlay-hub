@@ -262,7 +262,7 @@ $("ovs").innerHTML = Object.entries(FIELDS).map(([v, list]) => `<div class="box 
   <div class="row" style="margin-top:12px"><button class="btn sec" data-all="${v}">Vis alt</button></div></div>
   <div class="prev"><iframe loading="lazy" title="Eksempel ${VARIANT_NAMES[v]}" src="overlay.html?v=${v}&preview=1"></iframe></div></div></div>`).join("");
 $("daySel").innerHTML = `<option value="auto">Automatisk (efter dato)</option><option value="0">Før start</option>` +
-  STAGES.map((s) => `<option value="${s.day}">Dag ${s.day} · ${s.from} → ${s.to}</option>`).join("") + `<option value="15">Fremme</option>`;
+  STAGES.map((s) => `<option value="${s.day}">Dag ${s.day} · ${s.from} → ${s.to}</option>`).join("") + `<option value="${STAGES.length + 1}">Fremme</option>`;
 $("variants").innerHTML = Object.entries(NAMES).map(([v, n]) => `<button class="btn sec" data-v="${v}">${v}. ${n}</button>`).join("");
 $("titleIn").placeholder = DEFAULT_TITLE;
 $("lnkOverlay").textContent = $("lnkOverlay").href = new URL("overlay.html", location.href).href;

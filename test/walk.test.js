@@ -4,7 +4,7 @@ import { STAGES, TOTAL_KM, dayForDate, progress, positionOnStage, TOWNS } from "
 
 test("route has 14 stages and sums the table's km", () => {
   assert.equal(STAGES.length, 14);
-  assert.equal(TOTAL_KM, 412);
+  assert.equal(TOTAL_KM, 427);
 });
 
 test("dayForDate maps Copenhagen dates to stages", () => {
@@ -19,7 +19,7 @@ test("progress accumulates earlier stages and clamps today's km", () => {
   const p = progress(3, 10);
   assert.equal(p.doneKm, 22 + 30 + 10);
   assert.equal(progress(3, 999).todayKm, 100); // højst 100 km på én dag
-  assert.equal(progress(3, 40).todayKm, 40); // må gerne overstige etapens 32 km (tabellen er et estimat)
+  assert.equal(progress(3, 40).todayKm, 40); // må gerne overstige etapens 27 km (tabellen er et estimat)
   assert.equal(progress(3, 40).stagePct, 1); // men baren stopper ved 100 %
   assert.equal(progress(0).doneKm, 0);
   assert.equal(progress(15).doneKm, TOTAL_KM);
@@ -163,7 +163,9 @@ test("world map has no polygon wrapped across the dateline", () => {
 test("towns sit near their real location (guards against bad coordinates)", () => {
   const near = (k, lat, lon) => { const t = TOWNS[k]; assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12, k); };
   near("rosenholm", 56.333, 10.325); near("aarup", 55.376, 10.049); near("gavnoe", 55.189, 11.725);
-  near("aarhus", 56.157, 10.21); near("odense", 55.40, 10.40); near("herning", 56.139, 8.976);
+  near("aarhus", 56.157, 10.21); near("odense", 55.40, 10.40); near("horsens", 55.861, 9.851);
+  near("svendborg", 55.06, 10.607); near("rudkoebing", 54.938, 10.721); near("spodsbjerg", 54.935, 10.83); near("taars", 54.885, 11.115);
+  near("nakskov", 54.83, 11.153); near("maribo", 54.776, 11.501); near("nykoebing", 54.769, 11.874); near("vordingborg", 55.008, 11.91);
 });
 
 import { paceText, timeText, timerStatus, speedKmh } from "../apps/walk/public/pace.js";
@@ -269,7 +271,7 @@ import { DEFAULT_SPEED } from "../apps/walk/public/pace.js";
 
 test("km counts up by itself while the clock runs, freezes on pause, and continues from a correction", () => {
   const at = (h, m = 0) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+02:00`);
-  let s = applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(10)); // dag 3 = 32 km, 5 km/t
+  let s = applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(10)); // dag 3 = 27 km, 5 km/t
   assert.equal(effectiveState(s, at(10, 30)).km, 0); // uret er ikke startet
   s = applyPatch(s, { timer: "start" }, at(11));
   assert.equal(effectiveState(s, at(11, 30)).km, 2.5); // 0,5 t × 5 km/t
@@ -283,14 +285,14 @@ test("km counts up by itself while the clock runs, freezes on pause, and continu
   s = applyPatch(s, { speed: 4 }, at(16)); // nyt tempo: intet hop
   assert.equal(effectiveState(s, at(16)).km, 9.2);
   assert.equal(effectiveState(s, at(17)).km, 13.2);
-  assert.equal(effectiveState(s, at(23)).km, 32); // stopper ved etapens planlagte km
+  assert.equal(effectiveState(s, at(23)).km, 27); // stopper ved etapens planlagte km
   assert.equal(effectiveState(s, at(23)).kmRate, 0);
 });
 
 test("a correction above the planned km is kept, and auto-count can be switched off", () => {
   const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
   let s = applyPatch(applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(9)), { timer: "start" }, at(9));
-  s = applyPatch(s, { km: 35 }, at(10)); // ruten blev længere end de 32 km i tabellen
+  s = applyPatch(s, { km: 35 }, at(10)); // ruten blev længere end de 27 km i tabellen
   assert.equal(effectiveState(s, at(12)).km, 35); // optællingen går ikke længere end det, du selv har sat
   s = applyPatch(DEFAULT_STATE, { day: 3, speed: 5 }, at(9));
   s = applyPatch(s, { timer: "start" }, at(9));
@@ -338,19 +340,19 @@ test("default tempo is 4.5 km/t from the start, and a saved tempo is kept", () =
 import { pathUpTo } from "../apps/walk/public/route.js";
 
 test("pathUpTo draws the walked part of a stage, growing with the fraction", () => {
-  const s = STAGES[6]; // dag 7: Brande -> Give -> Jelling
+  const s = STAGES[6]; // dag 7: Aarup -> Odense -> Nyborg
   assert.equal(pathUpTo(s, 0).length, 2); // kun startpunktet (to ens punkter)
   const half = pathUpTo(s, 0.5);
   const full = pathUpTo(s, 1);
-  assert.deepEqual(full.at(-1), { lat: TOWNS.jelling.lat, lon: TOWNS.jelling.lon }); // ender i målet
-  assert.ok(full.some((p) => p.lat === TOWNS.give.lat && p.lon === TOWNS.give.lon)); // og går via Give
+  assert.deepEqual(full.at(-1), { lat: TOWNS.nyborg.lat, lon: TOWNS.nyborg.lon }); // ender i målet
+  assert.ok(full.some((p) => p.lat === TOWNS.odense.lat && p.lon === TOWNS.odense.lon)); // og går via Odense
   assert.ok(half.length <= full.length);
   const len = (pts) => pts.slice(1).reduce((a, p, i) => a + Math.hypot(p.lat - pts[i].lat, (p.lon - pts[i].lon) * 0.56), 0);
   assert.ok(len(pathUpTo(s, 0.25)) < len(half) && len(half) < len(pathUpTo(s, 0.75)) && len(pathUpTo(s, 0.75)) < len(full));
   assert.ok(Math.abs(len(half) - len(full) / 2) < 1e-9); // 50 % af km = 50 % af stien
   assert.deepEqual(positionOnStage(s, 0.5), half.at(-1)); // prikken sidder for enden af sporet
   assert.deepEqual(pathUpTo(s, 7).at(-1), full.at(-1)); // fraction klemmes
-  assert.deepEqual(pathUpTo(s, -1)[0], { lat: TOWNS.brande.lat, lon: TOWNS.brande.lon });
+  assert.deepEqual(pathUpTo(s, -1)[0], { lat: TOWNS.aarup.lat, lon: TOWNS.aarup.lon });
 });
 
 test("overlays 3 and 5 can switch between the whole route and a zoom on today's stage", () => {
@@ -387,4 +389,19 @@ test("the live map update only touches the Denmark map, never the world inset (r
   assert.ok(tick.includes('svg.dk .me, svg.dk .pulse') && tick.includes('svg.dk .seg.cur'));
   assert.ok(!/querySelector(All)?\("\.me|querySelector(All)?\("\.seg/.test(tick), "mapTick må ikke vælge .me/.seg globalt");
   assert.ok(html.includes('<svg class="map dk"'));
+});
+
+test("the route is continuous: every stage starts where the last ended, or after a ferry/train leg", () => {
+  STAGES.forEach((st, i) => {
+    assert.equal(st.day, i + 1);
+    st.path.forEach((k) => assert.ok(TOWNS[k], k));
+    if (st.ride) { assert.ok(TOWNS[st.ride.from] && TOWNS[st.ride.to] && st.ride.label); assert.equal(st.path[0], st.ride.to); }
+    if (i === 0) return;
+    const prev = STAGES[i - 1];
+    assert.equal(prev.path.at(-1), st.ride ? st.ride.from : st.path[0], `etape ${st.day} hænger ikke sammen med etape ${prev.day}`);
+  });
+  assert.equal(STAGES.at(-1).path.at(-1), "gavnoe");
+  assert.equal(STAGES[2].from + STAGES[2].to, "SkanderborgHorsens"); // dag 3: Silkeborg-Jelling er skåret fra
+  assert.ok(!JSON.stringify(STAGES).match(/Silkeborg|Ikast|Herning|Brande|Give|Jelling|Korsør/));
+  assert.equal(STAGES.find((x) => x.ride).ride.label, "Færge Spodsbjerg → Tårs");
 });

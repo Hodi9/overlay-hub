@@ -38,7 +38,7 @@
   .v1 .route{font-size:44px;font-weight:800;letter-spacing:-.01em}.v1 .sub{font-size:24px;color:var(--muted);margin-top:4px}
   .v1 .bar{margin-top:14px}
   .v1 .tot{text-align:right}.v1 .tot b{font-size:50px}.v1 .tot span{font-size:24px;color:var(--muted)}
-  .v1 .trail{display:grid;grid-template-columns:repeat(14,1fr);gap:6px;margin-top:20px}
+  .v1 .trail{display:grid;grid-template-columns:repeat(var(--n,14),1fr);gap:6px;margin-top:20px}
   .v1 .trail i{height:10px;border-radius:99px;background:rgba(255,255,255,.12);position:relative;overflow:hidden}
   .v1 .trail i.done{background:var(--lilac);box-shadow:0 0 10px var(--glow)}.v1 .trail i.cur::after{content:"";position:absolute;inset:0;width:var(--p);background:linear-gradient(90deg,var(--lilac),var(--pink))}
 
@@ -287,7 +287,7 @@ function fit() { stage$.style.transform = `scale(${Math.min(innerWidth / 1920, i
 addEventListener("resize", fit); fit();
 
 const routeLabel = (s) => `${esc(s.from)}<span class="arrow">→</span>${esc(s.to)}`;
-const viaLabel = (s) => [s.train, s.via ? "via " + s.via : ""].filter(Boolean).map(esc).join(" · ");
+const viaLabel = (s) => [s.ride?.label, s.via ? "via " + s.via : ""].filter(Boolean).map(esc).join(" · ");
 const pctW = (p) => `${Math.max(0, Math.min(1, p)) * 100}%`;
 
 function headerNote(p) {
@@ -297,9 +297,9 @@ function headerNote(p) {
 }
 
 // Etiketter på kortet: [dx, dy] i skærm-px fra byen (skaleres med kortets zoom).
-const LABELS = { rosenholm: [16, -8], aarhus: [16, 24], skanderborg: [14, 24], silkeborg: [0, -16], ikast: [0, 30], herning: [-16, 6], brande: [-16, 6], jelling: [-16, 10], give: [16, 6], horsens: [16, -8], vejle: [16, 24], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], nyborg: [0, 30], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
+const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], horsens: [-16, 14], vejle: [16, 24], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], nyborg: [0, 30], naestved: [14, -12], svendborg: [-16, 6], spodsbjerg: [16, -10], taars: [-16, 12], maribo: [0, -16], nykoebing: [0, 30], vordingborg: [14, -12], gavnoe: [-14, 24] };
 
-const MAJOR = new Set(["rosenholm", "aarhus", "silkeborg", "herning", "vejle", "odense", "naestved", "gavnoe"]);
+const MAJOR = new Set(["rosenholm", "aarhus", "horsens", "vejle", "odense", "svendborg", "maribo", "naestved", "gavnoe"]);
 
 // Tegner Danmark (rigtig kystlinje) med ruten. W×H er visningsstørrelsen i px.
 function dkMap(p, f, W, H, fontPx, allLabels = true) {
@@ -308,7 +308,7 @@ function dkMap(p, f, W, H, fontPx, allLabels = true) {
   const xy = (overview ? Object.values(TOWNS) : s.path.map((k) => TOWNS[k])).map((t) => dkXY(t.lon, t.lat));
   const minX = Math.min(...xy.map((a) => a[0])), maxX = Math.max(...xy.map((a) => a[0]));
   const minY = Math.min(...xy.map((a) => a[1])), maxY = Math.max(...xy.map((a) => a[1]));
-  const padX = 118, padY = 66; // luft til bynavne (Herning til venstre, Gavnø til højre)
+  const padX = 118, padY = 66; // luft til bynavne (Middelfart til venstre, Gavnø til højre)
   const bw = Math.max(maxX - minX, overview ? 0 : 330), bh = Math.max(maxY - minY, overview ? 0 : 230); // en kort etape zoomes ikke ind i det uendelige
   const z = Math.min((W - 2 * padX) / bw, (H - 2 * padY) / bh); // px pr. kort-enhed
   const u = 1 / z; // kort-enheder pr. skærm-px
@@ -320,7 +320,7 @@ function dkMap(p, f, W, H, fontPx, allLabels = true) {
   STAGES.forEach((st, i) => {
     const done = p.state === "done" || i < p.idx;
     segs += `<polyline class="seg${done ? " done" : ""}" stroke-width="${(6 * u).toFixed(2)}" points="${st.path.map(pt).join(" ")}"/>`;
-    if (st.train) segs += `<polyline class="seg train" stroke-width="${(6 * u).toFixed(2)}" points="${pt("nyborg")} ${pt("korsoer")}"/>`;
+    if (st.ride) segs += `<polyline class="seg train" stroke-width="${(6 * u).toFixed(2)}" points="${pt(st.ride.from)} ${pt(st.ride.to)}"/>`;
     st.path.forEach((k, j) => {
       if (seen.has(k)) return; seen.add(k);
       const reached = done || (i === p.idx && j === 0 && p.state === "walking");
@@ -407,7 +407,7 @@ const views = {
         ${parts.length ? `<div class="sub">${parts.join(" · ")}</div>` : ""}
         ${f("todayBar") ? `<div class="bar"><i style="width:${pctW(p.stagePct)}"></i></div>` : ""}</div>
       ${tot}
-    </div>${f("trail") ? `<div class="trail">${trail}</div>` : ""}</div>`;
+    </div>${f("trail") ? `<div class="trail" style="--n:${STAGES.length}">${trail}</div>` : ""}</div>`;
   },
   2(p, f, title, t) {
     const s = p.stage;
