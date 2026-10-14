@@ -434,22 +434,18 @@ test("the route is a chain of towns, and the planned stages cover it without gap
 });
 
 test("etape 3.1 Skanderborg -> Bredal is an alternative to etape 3, on the same km scale as the main route", () => {
-  const a = stageBetween("skanderborg", "bredal"), b = stageBetween("bredal", "vejle");
+  const a = stageBetween("skanderborg", "bredal");
   assert.deepEqual([a.label, a.km, a.startKm, a.endKm, a.alt, a.instead, a.n], ["3.1", 39, 52, 91, true, 3, 0]);
-  assert.deepEqual([b.label, b.km, b.startKm, b.endKm, b.instead], ["4.1", 11, 91, 102, 4]);
+  assert.equal(stageBetween("bredal", "vejle"), null); // der er ingen 4.1
   assert.equal(STAGES.length, 9); // hovedruten er uændret
   assert.equal(TOTAL_KM, 250);
-  assert.equal(ALTS.length, 2);
-  assert.equal(nextPlanned(a), b); // 3.1 -> 4.1 -> etape 5
-  assert.equal(nextPlanned(b).n, 5);
+  assert.equal(ALTS.length, 1);
+  assert.equal(nextPlanned(a).n, 5); // efter 3.1 kommer etape 5 (Vejle -> Middelfart)
   assert.equal(prevPlanned(a).n, 2);
-  assert.equal(prevPlanned(b), a);
   assert.deepEqual(altLines(a), [{ from: "skanderborg", to: "bredal", done: false }]);
-  assert.equal(altLines(b).length, 2);
   assert.deepEqual(altLines(STAGES[2]), []);
-  // samlet km: Skanderborg er 52 km inde, så 3.1 efter 20 km = 72 km i alt, og i mål ved Vejle via 4.1 = 102 km (den alternative vej er 7 km kortere end hovedruten)
+  // samlet km: Skanderborg er 52 km inde, så 3.1 efter 20 km = 72 km i alt
   assert.equal(progress(a, 20).doneKm, 72);
-  assert.equal(progress(b, 11).doneKm, 102);
   near(TOWNS.bredal, 55.76, 9.62);
   function near(t, lat, lon) { assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12); }
   // den kan vælges i panelet, og som alle etapeskift starter den forfra: ur og km nulstilles, så «Start gåtur» virker igen
@@ -499,4 +495,11 @@ test("saved state with the old name hedensted (etape 3.1 before it was Bredal) i
   assert.deepEqual([r.from, r.to, r.km], ["skanderborg", "bredal", 3.6]);
   const bad = restoreState({ from: "skanderborg", to: "ukendt", km: 3.6 }); // ukendt by: standard-etapen, men km bevares
   assert.deepEqual([bad.from, bad.to, bad.km], ["rosenholm", "aarhus", 3.6]);
+});
+
+test("URL values for stage, km and time only apply together with ?preview=1, so an old test URL in OBS cannot override the panel", () => {
+  const html = fs.readFileSync(new URL("../apps/walk/public/overlay.html", import.meta.url), "utf8");
+  assert.ok(html.includes("const demo = q.has(\"preview\");"));
+  for (const k of ["etape", "day", "from", "to", "km", "min", "paused", "arrived"]) assert.ok(!html.includes(`q.get("${k}")`) && !html.includes(`q.has("${k}")`), k);
+  assert.ok(html.includes('qd("etape")') && html.includes('qd("km")'));
 });

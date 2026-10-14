@@ -471,7 +471,11 @@ const ORIGIN = { 1: "center bottom", 2: "left top", 3: "right bottom", 4: "left 
 const VARIANTS = ["1", "2", "3", "4", "5"];
 
 // Værdier fra URL'en (?v, ?day, ?km, ?scale) vinder over kontrolpanelet — bruges af galleriet til demo.
-const demo = q.has("day") || q.has("km") || q.has("preview");
+// URL-værdier for etape, km og gå-tid (?etape, ?day, ?from, ?to, ?km, ?min, ?paused, ?arrived) gælder kun sammen med ?preview=1. Ellers kunne en gammel testadresse i OBS
+// overstyre panelet for evigt. ?v, ?look, ?bri og ?scale gælder altid.
+const demo = q.has("preview");
+const qd = (k) => (demo ? q.get(k) : null);
+const qdHas = (k) => demo && q.has(k);
 let live = { day: null, km: 0, variant: "1", visible: true, fields: {}, title: "", scale: 1, paceUnit: "kmh", look: "nu", brightness: 1, eta: null, kmRate: 0, kmCap: 100, timer: { running: false, ms: 0 } };
 let fetchedAt = Date.now();
 let lastKey = "";
@@ -480,25 +484,25 @@ function render() {
   const v = VARIANTS.includes(q.get("v")) ? q.get("v") : live.variant;
   if (!live.visible && !demo) { if (lastKey !== "hidden") { stage$.innerHTML = ""; lastKey = "hidden"; } return; }
   // Etape: ?etape=N (en af de planlagte, ?day=N virker stadig) eller ?from=&to= vinder over panelet (demo).
-  const planned = num(q.get("etape") ?? q.get("day"), 0);
+  const planned = num(qd("etape") ?? qd("day"), 0);
   // Kan etapen ikke genkendes (fx data fra en anden udgave), beholder vi den sidste gyldige i stedet for at hoppe tilbage til etape 1.
-  const stage = (planned >= 1 && STAGES[Math.min(planned, STAGES.length) - 1]) || stageBetween(q.get("from") || live.from, q.get("to") || live.to) || lastStage || STAGES[0];
+  const stage = (planned >= 1 && STAGES[Math.min(planned, STAGES.length) - 1]) || stageBetween(qd("from") || live.from, qd("to") || live.to) || lastStage || STAGES[0];
   lastStage = stage;
-  const arrived = planned > STAGES.length || q.get("arrived") === "1" || (!planned && !q.has("from") && live.arrived === true);
+  const arrived = planned > STAGES.length || qd("arrived") === "1" || (!planned && !qdHas("from") && live.arrived === true);
   // Km tæller selv op mellem hentningerne, mens uret kører (serveren giver km, tempo og loft). ?km= i URL'en vinder (demo).
   const liveKm = Math.min((live.km || 0) + ((live.kmRate || 0) * (Date.now() - fetchedAt)) / 3600000, live.kmCap ?? 100);
-  const km = Math.round(num(q.get("km"), liveKm) * 10) / 10;
+  const km = Math.round(num(qd("km"), liveKm) * 10) / 10;
   const scale = Math.min(1.5, Math.max(0.3, num(q.get("scale"), live.scale ?? 1)));
   const fields = live.fields?.[v] || {};
   const f = (k) => fields[k] !== false;
   const title = live.title || DEFAULT_TITLE;
   // Gå-tid: serverens værdi + tiden siden vi hentede den, hvis uret løber. ?min= (+ ?paused=1) bruges til demo.
-  const demoTimer = q.has("min") ? { running: q.get("paused") !== "1", ms: num(q.get("min"), 0) * 60000 } : null;
+  const demoTimer = qdHas("min") ? { running: qd("paused") !== "1", ms: num(qd("min"), 0) * 60000 } : null;
   const tm = demoTimer || live.timer || { running: false, ms: 0 };
   const ms = tm.ms + (tm.running && !demoTimer ? Date.now() - fetchedAt : 0);
   const status = timerStatus({ running: tm.running, ms });
   const unit = live.paceUnit || "kmh";
-  const kmS = q.has("km") ? km : liveKm; // uafrundet km: tempo, ankomst og kortets spor regnes ud fra den (ellers svinger tallene mellem 0,1-trinene)
+  const kmS = qdHas("km") ? km : liveKm; // uafrundet km: tempo, ankomst og kortets spor regnes ud fra den (ellers svinger tallene mellem 0,1-trinene)
   const pace = paceText(kmS, ms, unit);
   const time = timeText(ms);
   const pr = progress(stage, km, arrived);
