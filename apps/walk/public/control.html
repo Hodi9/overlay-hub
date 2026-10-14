@@ -171,7 +171,7 @@ const NAMES = VARIANT_NAMES;
 const fmt = (n) => new Intl.NumberFormat("da-DK", { maximumFractionDigits: 1 }).format(n);
 const getKey = () => { try { return localStorage.getItem(KEY) || ""; } catch { return ""; } };
 const setKey = (v) => { try { localStorage.setItem(KEY, v); } catch {} };
-let state = null, authed = false, fetchedAt = Date.now(), eta = "–";
+let build = null, state = null, authed = false, fetchedAt = Date.now(), eta = "–";
 
 // Dagens km lige nu: serverens værdi + det, der er talt op siden vi hentede den (mens uret kører).
 function liveKm() {
@@ -269,7 +269,15 @@ function tick() {
 }
 
 async function refresh() {
-  try { const r = await fetch("api/state", { cache: "no-store" }); if (r.ok) { state = await r.json(); fetchedAt = Date.now(); render(); } } catch {}
+  try {
+    const r = await fetch("api/state", { cache: "no-store" });
+    if (r.ok) {
+      state = await r.json(); fetchedAt = Date.now();
+      // Ny version på serveren: genindlæs, men ikke mens du taster i et felt.
+      if (state.build) { if (!build) build = state.build; else if (state.build !== build && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "")) { location.reload(); return; } }
+      render();
+    }
+  } catch {}
 }
 
 // opbygning

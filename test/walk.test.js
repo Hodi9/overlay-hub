@@ -465,3 +465,14 @@ test("etape 3.1 Skanderborg -> Bredal is an alternative to etape 3, on the same 
   const back = applyPatch(started, { stage: 3 }, at(13)); // tilbage til etape 3 nulstiller også
   assert.equal(back.timer.running, false);
 });
+
+test("the live state carries a build id, so an open overlay can notice a new deploy and reload", async () => {
+  await withWalk("hemmelig-kode", async (base) => {
+    const a = await (await fetch(`${base}/api/state`)).json();
+    const b = await (await fetch(`${base}/api/state`)).json();
+    assert.match(a.build, /^[0-9a-f]{12}$/);
+    assert.equal(a.build, b.build); // samme version = samme id (ellers ville overlayet genindlæse i ring)
+    const html = fs.readFileSync(new URL("../apps/walk/public/overlay.html", import.meta.url), "utf8");
+    assert.ok(html.includes("location.reload()") && html.includes("live.build"));
+  });
+});

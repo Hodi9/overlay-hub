@@ -523,10 +523,15 @@ function render() {
   }
 }
 
+let build = null;
 async function poll() {
   try {
     const r = await fetch("api/state", { cache: "no-store" });
-    if (r.ok) { live = await r.json(); fetchedAt = Date.now(); }
+    if (r.ok) {
+      live = await r.json(); fetchedAt = Date.now();
+      // Er der kommet en ny version på serveren, så genindlæs siden (ellers bliver en åben OBS-kilde ved at køre gammel kode).
+      if (live.build) { if (!build) build = live.build; else if (live.build !== build) { location.reload(); return; } }
+    }
   } catch {}
   render();
 }
