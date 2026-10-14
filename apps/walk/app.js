@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -6,6 +7,17 @@ import pg from "pg";
 import { DEFAULT_STATE, applyPatch, effectiveState, restoreState } from "./state.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Id for den udgave af overlay og panel, der ligger på serveren. Ændrer sig, når filerne ændrer sig (altså ved en ny deploy),
+// så en side, der allerede er åben (fx i OBS), kan se, at den er gammel, og genindlæse sig selv.
+function buildId() {
+  const dir = path.join(__dirname, "public"), h = crypto.createHash("sha1");
+  for (const f of fs.readdirSync(dir).sort()) {
+    const file = path.join(dir, f);
+    if (fs.statSync(file).isFile()) h.update(f).update(fs.readFileSync(file));
+  }
+  return h.digest("hex").slice(0, 12);
+}
+const BUILD = buildId();
 const MAX_FAILS = 10;
 const FAIL_WINDOW_MS = 10 * 60 * 1000;
 
@@ -73,7 +85,7 @@ export function createWalkApp() {
   router.use(express.json({ limit: "4kb" }));
 
   // Offentlig (overlayet læser den): kun det der skal vises.
-  router.get("/api/state", (_req, res) => res.json({ ...effectiveState(state), passwordSet: Boolean(controlPassword) }));
+  router.get("/api/state", (_req, res) => res.json({ ...effectiveState(state), passwordSet: Boolean(controlPassword), build: BUILD }));
 
   // Panelet bruger den til at tjekke koden, før den gemmes.
   router.post("/api/login", requireControlAuth, (_req, res) => res.json({ ok: true }));
@@ -81,7 +93,7 @@ export function createWalkApp() {
   router.post("/api/state", requireControlAuth, (req, res) => {
     state = applyPatch(state, req.body || {});
     persist();
-    res.json({ ...effectiveState(state), passwordSet: true });
+    res.json({ ...effectiveState(state), passwordSet: true, build: BUILD });
   });
 
   router.use(express.static(path.join(__dirname, "public"), { index: "index.html", extensions: ["html"] }));
