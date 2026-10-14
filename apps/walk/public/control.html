@@ -311,12 +311,9 @@ $("speedAvg").onclick = () => {
 $("kmZero").onclick = () => patch({ km: 0 }, $("kmMsg"));
 // Skifter etape (patch indeholder from/to eller stage). Km og gå-tid nulstilles, så spørg først, hvis der er noget at miste.
 function changeStage(patchData) {
-  // Skifter han kun mål (samme startsted, fx Skanderborg → Horsens til Skanderborg → Bredal), fortsætter gåturen: km og gå-tid bevares.
-  const cur = curStage();
-  const newFrom = patchData.from ?? (patchData.stage ? STAGES[patchData.stage - 1].fromKey : cur.fromKey);
+  // Alle etapeskift (også 3 → 3.1) starter forfra, så «Start gåtur» virker igen: km og gå-tid nulstilles.
   customOpen = false;
-  if (newFrom === cur.fromKey && state?.arrived !== true) return patch({ ...patchData, arrived: false }, $("kmMsg"));
-  const resets = liveKm() > 0.05 || (state?.timer?.ms || 0) > 0;
+  const resets = liveKm() > 0.05 || (state?.timer?.ms || 0) > 0 || state?.timer?.running;
   if (resets && !confirm("Skift etape? Km og gå-tid nulstilles.")) return render();
   patch({ ...patchData, arrived: false, km: 0 }, $("kmMsg"));
 }
