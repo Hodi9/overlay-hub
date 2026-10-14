@@ -297,9 +297,9 @@ function headerNote(p) {
 }
 
 // Etiketter på kortet: [dx, dy] i skærm-px fra byen (skaleres med kortets zoom).
-const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], horsens: [-16, 14], vejle: [16, 24], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], nyborg: [0, 30], hedensted: [-16, 10], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
+const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], horsens: [-16, 14], vejle: [16, 24], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], nyborg: [0, 30], bredal: [-16, 10], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
 
-const MAJOR = new Set(["rosenholm", "aarhus", "horsens", "hedensted", "vejle", "odense", "naestved", "gavnoe"]);
+const MAJOR = new Set(["rosenholm", "aarhus", "horsens", "bredal", "vejle", "odense", "naestved", "gavnoe"]);
 
 // Tegner Danmark (rigtig kystlinje) med ruten. W×H er visningsstørrelsen i px.
 function dkMap(p, f, W, H, fontPx, allLabels = true) {
@@ -322,12 +322,12 @@ function dkMap(p, f, W, H, fontPx, allLabels = true) {
     const gone = p.state === "done" || i < (s.alt ? s.chainDone : fromIdx);
     segs += `<polyline class="seg${leg.ride ? " train" : ""}${gone ? " done" : ""}" stroke-width="${(6 * u).toFixed(2)}" points="${pt(WAYPOINTS[i])} ${pt(WAYPOINTS[i + 1])}"/>`;
   });
-  // En alternativ etape (fx Skanderborg → Hedensted) tegnes ved siden af hovedruten, og byer den springer over tændes ikke.
+  // En alternativ etape (fx Skanderborg → Bredal) tegnes ved siden af hovedruten, og byer den springer over tændes ikke.
   altLines(s).forEach((l) => {
     segs += `<polyline class="seg${l.done ? " done" : ""}" stroke-width="${(6 * u).toFixed(2)}" points="${pt(l.from)} ${pt(l.to)}"/>`;
   });
-  (s.alt ? [...WAYPOINTS, "hedensted"] : WAYPOINTS).forEach((k, i) => {
-    const km = k === "hedensted" ? ALTS[0].endKm : CUM[i];
+  (s.alt ? [...WAYPOINTS, "bredal"] : WAYPOINTS).forEach((k, i) => {
+    const km = k === "bredal" ? ALTS[0].endKm : CUM[i];
     const reached = p.state === "done" || (km <= p.posKm + 1e-9 && !(s.skip || []).includes(k));
     const [x, y] = P(k);
     dots += `<circle class="town${reached ? " done" : ""}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(7 * u).toFixed(2)}" stroke-width="${(3 * u).toFixed(2)}"/>`;
