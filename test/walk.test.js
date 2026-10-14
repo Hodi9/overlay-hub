@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { STAGES, TOTAL_KM, WAYPOINTS, LEGS, stageBetween, nextPlanned, prevPlanned, progress, positionOnStage, TOWNS } from "../apps/walk/public/route.js";
+import { STAGES, ALTS, altLines, TOTAL_KM, WAYPOINTS, LEGS, stageBetween, nextPlanned, prevPlanned, progress, positionOnStage, TOWNS } from "../apps/walk/public/route.js";
 
 test("route has 14 stages and sums the table's km", () => {
   assert.equal(STAGES.length, 9);
@@ -431,4 +431,34 @@ test("the route is a chain of towns, and the planned stages cover it without gap
   assert.equal(STAGES[2].from + STAGES[2].to, "SkanderborgHorsens"); // etape 3: Silkeborg-Jelling er skåret fra
   assert.ok(!JSON.stringify(STAGES).match(/Silkeborg|Ikast|Herning|Brande|Give|Jelling|Svendborg|Spodsbjerg|Tårs|Maribo|Nykøbing/));
   assert.equal(STAGES.find((x) => x.ride).ride.label, "Tog Nyborg → Korsør");
+});
+
+test("etape 3.1 Skanderborg -> Hedensted is an alternative to etape 3, on the same km scale as the main route", () => {
+  const a = stageBetween("skanderborg", "hedensted"), b = stageBetween("hedensted", "vejle");
+  assert.deepEqual([a.label, a.km, a.startKm, a.endKm, a.alt, a.instead, a.n], ["3.1", 39, 52, 91, true, 3, 0]);
+  assert.deepEqual([b.label, b.km, b.startKm, b.endKm, b.instead], ["4.1", 18, 91, 109, 4]);
+  assert.equal(STAGES.length, 9); // hovedruten er uændret
+  assert.equal(TOTAL_KM, 250);
+  assert.equal(ALTS.length, 2);
+  assert.equal(nextPlanned(a), b); // 3.1 -> 4.1 -> etape 5
+  assert.equal(nextPlanned(b).n, 5);
+  assert.equal(prevPlanned(a).n, 2);
+  assert.equal(prevPlanned(b), a);
+  assert.deepEqual(altLines(a), [{ from: "skanderborg", to: "hedensted", done: false }]);
+  assert.equal(altLines(b).length, 2);
+  assert.deepEqual(altLines(STAGES[2]), []);
+  // samlet km: Skanderborg er 52 km inde, så 3.1 efter 20 km = 72 km i alt, og i mål ved Vejle via 4.1 = 109 km som på hovedruten
+  assert.equal(progress(a, 20).doneKm, 72);
+  assert.equal(progress(b, 18).doneKm, 109);
+  near(TOWNS.hedensted, 55.77, 9.7);
+  function near(t, lat, lon) { assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12); }
+  // den kan vælges i panelet, og et skift af mål med samme start nulstiller hverken km eller gå-tid
+  const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { stage: 3 }, at(9)), { timer: "start" }, at(9));
+  const alt = applyPatch(s, { from: "skanderborg", to: "hedensted" }, at(11));
+  assert.deepEqual([alt.from, alt.to], ["skanderborg", "hedensted"]);
+  assert.equal(alt.timer.running, true); // samme gåtur
+  assert.equal(effectiveState(alt, at(11)).km, 9); // 2 t × 4,5 km/t beholdes
+  const next = applyPatch(alt, { from: "hedensted", to: "vejle" }, at(12)); // nyt startsted = ny etape
+  assert.equal(next.timer.running, false);
 });
