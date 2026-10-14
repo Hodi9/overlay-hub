@@ -166,7 +166,7 @@
 </div>
 
 <script type="module">
-import { STAGES, ALTS, WAYPOINTS, TOWNS, TOTAL_KM, stageBetween, nextPlanned, prevPlanned, progress } from "./route.js";
+import { STAGES, WAYPOINTS, TOWNS, TOTAL_KM, stageBetween, nextPlanned, prevPlanned, progress } from "./route.js";
 import { paceText, timeText, timerStatus, etaInfo, shiftClock, isClock, speedKmh, DEFAULT_SPEED } from "./pace.js";
 import { FIELDS, VARIANT_NAMES, DEFAULT_TITLE, SCALE_MIN, SCALE_MAX, LOOKS, BRIGHTNESS_MIN } from "./fields.js";
 
@@ -214,15 +214,15 @@ let customOpen = false; // «Egen etape» er valgt i menuen (viser Fra/Til)
 const townOpts = (keys, sel) => keys.map((k) => `<option value="${k}"${k === sel ? " selected" : ""}>${TOWNS[k].name}</option>`).join("");
 function renderStage(stage) {
   const arrived = state.arrived === true;
-  const custom = !arrived && !stage.alt && (stage.n === 0 || customOpen);
-  if (document.activeElement !== $("stageSel")) $("stageSel").value = arrived ? "arrived" : stage.alt ? "a" + stage.label : custom ? "custom" : "p" + stage.n;
+  const custom = !arrived && (stage.n === 0 || customOpen);
+  if (document.activeElement !== $("stageSel")) $("stageSel").value = arrived ? "arrived" : custom ? "custom" : "p" + stage.n;
   $("customRow").style.display = custom ? "flex" : "none";
   if (custom && document.activeElement !== $("fromSel") && document.activeElement !== $("toSel")) {
     $("fromSel").innerHTML = townOpts(WAYPOINTS.slice(0, -1), stage.fromKey);
     $("toSel").innerHTML = townOpts(WAYPOINTS.slice(WAYPOINTS.indexOf(stage.fromKey) + 1), stage.toKey);
   }
   const names = stage.path.map((k) => TOWNS[k].name).join(" → ");
-  $("stageNote").textContent = arrived ? "Marcel er nået frem. Vælg en etape igen for at gå videre." : `${names} · ${fmt(stage.km)} km${stage.ride ? " · " + stage.ride.label : ""}${stage.alt ? " · alternativ til etape " + stage.instead : ""}. Byerne på vejen tages automatisk med, og km er summen af stykkerne.`;
+  $("stageNote").textContent = arrived ? "Marcel er nået frem. Vælg en etape igen for at gå videre." : `${names} · ${fmt(stage.km)} km${stage.ride ? " · " + stage.ride.label : ""}. Byerne på vejen tages automatisk med, og km er summen af stykkerne.`;
 }
 
 function render() {
@@ -290,7 +290,7 @@ $("ovs").innerHTML = Object.entries(FIELDS).map(([v, list]) => `<div class="box 
   <div><h3>${v}. ${VARIANT_NAMES[v]}</h3><div class="checks">${list.map(([k, label]) => `<label><input type="checkbox" data-v="${v}" data-k="${k}"> ${label}</label>`).join("")}</div>
   <div class="row" style="margin-top:12px"><button class="btn sec" data-all="${v}">Vis alt</button></div></div>
   <div class="prev"><iframe loading="lazy" title="Eksempel ${VARIANT_NAMES[v]}" src="overlay.html?v=${v}&preview=1"></iframe></div></div></div>`).join("");
-$("stageSel").innerHTML = STAGES.map((st) => `<option value="p${st.n}">Etape ${st.n} · ${st.from} → ${st.to} (${st.km} km)</option>` + ALTS.filter((a) => a.instead === st.n).map((a) => `<option value="a${a.label}">Etape ${a.label} · ${a.from} → ${a.to} (${a.km} km, alternativ)</option>`).join("")).join("") + `<option value="custom">Egen etape …</option><option value="arrived">Fremme</option>`;
+$("stageSel").innerHTML = STAGES.map((st) => `<option value="p${st.n}">Etape ${st.n} · ${st.from} → ${st.to} (${st.km} km)</option>` ).join("") + `<option value="custom">Egen etape …</option><option value="arrived">Fremme</option>`;
 $("variants").innerHTML = Object.entries(NAMES).map(([v, n]) => `<button class="btn sec" data-v="${v}">${v}. ${n}</button>`).join("");
 $("titleIn").placeholder = DEFAULT_TITLE;
 $("lnkOverlay").textContent = $("lnkOverlay").href = new URL("overlay.html", location.href).href;
@@ -349,7 +349,6 @@ $("stageSel").onchange = () => {
   const v = $("stageSel").value;
   if (v === "custom") { customOpen = true; return render(); }
   if (v === "arrived") { customOpen = false; return patch({ arrived: true }, $("kmMsg")); }
-  if (v[0] === "a") { const alt = ALTS.find((a) => "a" + a.label === v); return changeStage({ from: alt.fromKey, to: alt.toKey }); }
   changeStage({ stage: Number(v.slice(1)) });
 };
 $("fromSel").onchange = () => {
@@ -360,7 +359,7 @@ $("toSel").onchange = () => changeStage({ from: curStage().fromKey, to: $("toSel
 const stepStage = (d) => {
   if (state?.arrived) return d < 0 ? patch({ arrived: false }, $("kmMsg")) : undefined;
   const st = curStage(), target = d < 0 ? prevPlanned(st) : nextPlanned(st);
-  if (target) changeStage(target.alt ? { from: target.fromKey, to: target.toKey } : { stage: target.n });
+  if (target) changeStage({ stage: target.n });
   else if (d > 0) patch({ arrived: true }, $("kmMsg"));
 };
 $("stPrev").onclick = () => stepStage(-1);

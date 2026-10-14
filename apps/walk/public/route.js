@@ -6,7 +6,6 @@ export const TOWNS = {
   rosenholm: { name: "Rosenholm", lat: 56.333, lon: 10.325 },
   aarhus: { name: "Aarhus", lat: 56.157, lon: 10.211 },
   skanderborg: { name: "Skanderborg", lat: 56.045, lon: 9.927 },
-  horsens: { name: "Horsens", lat: 55.861, lon: 9.851 },
   vejle: { name: "Vejle", lat: 55.709, lon: 9.536 },
   middelfart: { name: "Middelfart", lat: 55.505, lon: 9.73 },
   aarup: { name: "Aarup", lat: 55.376, lon: 10.049 },
@@ -24,9 +23,9 @@ export function copenhagenDate(now = new Date()) {
 }
 
 // Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; en færge tæller 0 km).
-export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "horsens", "vejle", "middelfart", "aarup", "odense", "nyborg", "korsoer", "slagelse", "naestved", "gavnoe"];
+export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "bredal", "vejle", "middelfart", "aarup", "odense", "nyborg", "korsoer", "slagelse", "naestved", "gavnoe"];
 export const LEGS = [
-  { km: 22 }, { km: 30 }, { km: 27 }, { km: 30 }, { km: 34 }, { km: 29 }, { km: 15 }, { km: 19 },
+  { km: 22 }, { km: 30 }, { km: 39 }, { km: 11 }, { km: 34 }, { km: 29 }, { km: 15 }, { km: 19 },
   { km: 0, ride: "Tog Nyborg → Korsør" },
   { km: 11 }, { km: 22 }, { km: 11 }
 ];
@@ -38,8 +37,6 @@ const wi = (key) => WAYPOINTS.indexOf(key);
 // Samler en etape fra by til by. Byerne på vejen tages automatisk med, og km er summen af stykkerne.
 // Ugyldigt (ukendt by, eller målet ligger før starten) giver null.
 export function stageBetween(fromKey, toKey) {
-  const alt = ALTS.find((a) => a.fromKey === fromKey && a.toKey === toKey);
-  if (alt) return alt;
   const i = wi(fromKey), j = wi(toKey);
   if (i < 0 || j <= i) return null;
   const path = WAYPOINTS.slice(i, j + 1);
@@ -58,27 +55,10 @@ export function stageBetween(fromKey, toKey) {
   };
 }
 
-// Alternative etaper: en anden vej mellem to byer på ruten. Bredal (Bredal Kro ved Hedensted) ligger ikke på hovedruten via Horsens,
-// men starter i hovedrutens km-skala (Skanderborg ved 52 km), så «I alt» og tidslinjen passer.
-// 3.1 Skanderborg → Bredal (39 km, fra Google Maps) kan vælges i stedet for etape 3. Næste etape derfra er etape 5 (Vejle → Middelfart);
-// der er ikke en etape for de sidste km fra Bredal til Vejle, så «I alt» springer til 109 km, når etape 5 begynder.
-const altStage = (label, instead, fromKey, toKey, startKm, km) => ({
-  n: 0, label, instead, alt: true, from: TOWNS[fromKey].name, to: TOWNS[toKey].name, fromKey, toKey,
-  km, startKm, endKm: startKm + km, path: [fromKey, toKey], legs: [{ km }], via: "", ride: null, stay: "",
-  skip: ["horsens"], // hovedrutens by, der ikke besøges på den alternative vej
-  chainDone: wi("skanderborg") // hovedrutens stykker før dette er gået
-});
-export const ALTS = [
-  altStage("3.1", 3, "skanderborg", "bredal", CUM[wi("skanderborg")], 39)
-];
-// Stykket på den alternative vej, der tegnes ved siden af hovedruten.
-export const altLines = (stage) => stage.alt ? [{ from: stage.fromKey, to: stage.toKey, done: false }] : [];
-
 // De planlagte etaper (kan ændres i kontrolpanelet ved at vælge andre byer).
 const PRESETS = [
-  { i: 0, j: 1, stay: "Hotel/hostel" }, { i: 1, j: 2, stay: "Hotel/shelter" }, { i: 2, j: 3, stay: "Hotel/hostel" }, { i: 3, j: 4, stay: "Danhostel Vejle" },
-  { i: 4, j: 5, stay: "Hotel/hostel" }, { i: 5, j: 6, stay: "Hotel/shelter" }, { i: 6, j: 8, stay: "Hotel" }, { i: 9, j: 11, stay: "Hotel/shelter" },
-  { i: 11, j: 12, stay: "Gavnø Slot (målet)" }
+  { i: 0, j: 1, stay: "Hotel/hostel" }, { i: 1, j: 2, stay: "Hotel/shelter" }, { i: 2, j: 3, stay: "Hotel/hostel" }, { i: 3, j: 5, stay: "Hotel/hostel" },
+  { i: 5, j: 6, stay: "Hotel/shelter" }, { i: 6, j: 8, stay: "Hotel" }, { i: 9, j: 11, stay: "Hotel/shelter" }, { i: 11, j: 12, stay: "Gavnø Slot (målet)" }
 ];
 export const STAGES = PRESETS.map((p) => stageBetween(WAYPOINTS[p.i], WAYPOINTS[p.j]));
 export const DEFAULT_STAGE = { from: STAGES[0].fromKey, to: STAGES[0].toKey };

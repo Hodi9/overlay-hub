@@ -123,8 +123,8 @@ export function restoreState(data = {}, now = new Date()) {
     if (day > STAGES.length) legacy = { stage: STAGES.length, arrived: true };
     else legacy = { stage: Math.max(1, day || 1) };
   }
-  // Byer, der har skiftet navn: gemt tilstand med «hedensted» (etape 3.1, før den hed Bredal) skal ikke falde tilbage til etape 1.
-  const rename = { hedensted: "bredal" };
+  // Byer, der er udgået eller har skiftet navn: gemt tilstand med «hedensted» (før den hed Bredal) eller «horsens» skal ikke falde tilbage til etape 1.
+  const rename = { hedensted: "bredal", horsens: "bredal" }; // Horsens er ude af ruten: Marcel gik over Bredal
   if (typeof data.to === "string" && rename[data.to]) data = { ...data, to: rename[data.to] };
   if (typeof data.from === "string" && rename[data.from]) data = { ...data, from: rename[data.from] };
   const old = legacyAuto && data.kmDate !== copenhagenDate(now); // dengang nulstillede automatisk dag gårsdagens km

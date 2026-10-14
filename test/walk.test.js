@@ -1,16 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { STAGES, ALTS, altLines, TOTAL_KM, WAYPOINTS, LEGS, stageBetween, nextPlanned, prevPlanned, progress, positionOnStage, TOWNS } from "../apps/walk/public/route.js";
+import { STAGES, TOTAL_KM, WAYPOINTS, LEGS, stageBetween, nextPlanned, prevPlanned, progress, positionOnStage, TOWNS } from "../apps/walk/public/route.js";
 
-test("route has 14 stages and sums the table's km", () => {
-  assert.equal(STAGES.length, 9);
-  assert.equal(TOTAL_KM, 250);
+test("route has 8 planned stages and sums their km", () => {
+  assert.equal(STAGES.length, 8);
+  assert.equal(TOTAL_KM, 243);
+  assert.equal(STAGES.reduce((sum, st) => sum + st.km, 0), TOTAL_KM);
 });
 
 test("stageBetween joins the towns on the way and adds up the km", () => {
-  const c = stageBetween("skanderborg", "vejle"); // Skanderborg -> Horsens -> Vejle
-  assert.deepEqual([c.km, c.path.join(">"), c.via, c.n], [57, "skanderborg>horsens>vejle", "Horsens", 0]);
-  assert.equal(stageBetween("skanderborg", "horsens").n, 3); // en af de planlagte etaper
+  const c = stageBetween("skanderborg", "vejle"); // Skanderborg -> Bredal -> Vejle
+  assert.deepEqual([c.km, c.path.join(">"), c.via, c.n], [50, "skanderborg>bredal>vejle", "Bredal", 0]);
+  assert.equal(stageBetween("skanderborg", "bredal").n, 3); // en af de planlagte etaper
   assert.equal(stageBetween("vejle", "skanderborg"), null); // målet skal ligge efter starten
   assert.equal(stageBetween("vejle", "vejle"), null);
   assert.equal(stageBetween("xx", "vejle"), null);
@@ -18,9 +19,9 @@ test("stageBetween joins the towns on the way and adds up the km", () => {
   assert.equal(all.km, TOTAL_KM); // en etape fra start til mål er hele ruten
   assert.deepEqual(stageBetween("odense", "slagelse").ride, { label: "Tog Nyborg → Korsør", from: "nyborg", to: "korsoer" });
   assert.equal(stageBetween("odense", "slagelse").km, 19 + 0 + 11); // toget tæller 0 km
-  assert.equal(STAGES[7].ride.label, "Tog Nyborg → Korsør"); // etapen efter toget viser, hvordan han kom dertil
+  assert.equal(STAGES[6].ride.label, "Tog Nyborg → Korsør"); // etapen efter toget viser, hvordan han kom dertil
   assert.equal(nextPlanned(STAGES[2]).n, 4);
-  assert.equal(nextPlanned(c).n, 5); // efter Skanderborg -> Vejle kommer Vejle -> Middelfart
+  assert.equal(nextPlanned(c).n, 5); // efter Skanderborg -> Vejle (slutter ved 102 km) kommer Middelfart -> Aarup
   assert.equal(prevPlanned(c).n, 2);
   assert.equal(nextPlanned(STAGES.at(-1)), null);
   assert.equal(prevPlanned(STAGES[0]), null);
@@ -59,8 +60,8 @@ test("applyPatch validates and clamps panel input", () => {
   assert.deepEqual([s.km, s.variant, s.visible, s.kmDate], [12.3, "3", false, "2026-10-13"]);
   s = applyPatch(s, { km: 9999, variant: "9", stage: "abc", from: "xx", visible: "nej" }, now);
   assert.deepEqual([s.km, s.variant, s.from, s.to, s.visible], [100, "3", "rosenholm", "aarhus", false]);
-  const seven = applyPatch(s, { stage: 7 });
-  assert.deepEqual([seven.from, seven.to], ["aarup", "nyborg"]);
+  const six = applyPatch(s, { stage: 6 });
+  assert.deepEqual([six.from, six.to], ["aarup", "nyborg"]);
   assert.deepEqual([applyPatch(s, { stage: 99 }).from, applyPatch(s, { stage: 0 }).from], ["rosenholm", "rosenholm"]);
   const own = applyPatch(s, { from: "skanderborg", to: "vejle" });
   assert.deepEqual([own.from, own.to], ["skanderborg", "vejle"]);
@@ -183,7 +184,7 @@ test("world map has no polygon wrapped across the dateline", () => {
 test("towns sit near their real location (guards against bad coordinates)", () => {
   const near = (k, lat, lon) => { const t = TOWNS[k]; assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12, k); };
   near("rosenholm", 56.333, 10.325); near("aarup", 55.376, 10.049); near("gavnoe", 55.189, 11.725);
-  near("aarhus", 56.157, 10.21); near("odense", 55.40, 10.40); near("horsens", 55.861, 9.851);
+  near("aarhus", 56.157, 10.21); near("odense", 55.40, 10.40); near("bredal", 55.76, 9.62); near("vejle", 55.709, 9.536);
   near("nyborg", 55.31, 10.79); near("korsoer", 55.33, 11.14); near("slagelse", 55.4, 11.35); near("naestved", 55.23, 11.76);
 });
 
@@ -288,7 +289,7 @@ import { DEFAULT_SPEED } from "../apps/walk/public/pace.js";
 
 test("km counts up by itself while the clock runs, freezes on pause, and continues from a correction", () => {
   const at = (h, m = 0) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+02:00`);
-  let s = applyPatch(DEFAULT_STATE, { stage: 3, speed: 5 }, at(10)); // etape 3 = 27 km, 5 km/t
+  let s = applyPatch(DEFAULT_STATE, { stage: 3, speed: 5 }, at(10)); // etape 3 = 39 km, 5 km/t
   assert.equal(effectiveState(s, at(10, 30)).km, 0); // uret er ikke startet
   s = applyPatch(s, { timer: "start" }, at(11));
   assert.equal(effectiveState(s, at(11, 30)).km, 2.5); // 0,5 t × 5 km/t
@@ -302,15 +303,15 @@ test("km counts up by itself while the clock runs, freezes on pause, and continu
   s = applyPatch(s, { speed: 4 }, at(16)); // nyt tempo: intet hop
   assert.equal(effectiveState(s, at(16)).km, 9.2);
   assert.equal(effectiveState(s, at(17)).km, 13.2);
-  assert.equal(effectiveState(s, at(23)).km, 27); // stopper ved etapens planlagte km
-  assert.equal(effectiveState(s, at(23)).kmRate, 0);
+  assert.equal(effectiveState(s, new Date("2026-10-16T23:00:00+02:00")).km, 39); // stopper ved etapens planlagte km, også efter lang tid
+  assert.equal(effectiveState(s, new Date("2026-10-16T23:00:00+02:00")).kmRate, 0);
 });
 
 test("a correction above the planned km is kept, and auto-count can be switched off", () => {
   const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
   let s = applyPatch(applyPatch(DEFAULT_STATE, { stage: 3, speed: 5 }, at(9)), { timer: "start" }, at(9));
-  s = applyPatch(s, { km: 35 }, at(10)); // ruten blev længere end de 27 km i tabellen
-  assert.equal(effectiveState(s, at(12)).km, 35); // optællingen går ikke længere end det, du selv har sat
+  s = applyPatch(s, { km: 45 }, at(10)); // ruten blev længere end de 39 km i tabellen
+  assert.equal(effectiveState(s, at(12)).km, 45); // optællingen går ikke længere end det, du selv har sat
   s = applyPatch(DEFAULT_STATE, { stage: 3, speed: 5 }, at(9));
   s = applyPatch(s, { timer: "start" }, at(9));
   s = applyPatch(s, { kmAuto: false }, at(10)); // holder de 5 optalte km fast
@@ -342,11 +343,11 @@ test("auto-count and speed survive a restart, and an old day-based state is conv
   assert.equal(kmLive(restoreState({}), at(14, 9)).km, 0);
   // gammel tilstand med dag-nummer: dag 3 -> etape 3, dag 16 (efter sidste etape) -> fremme
   const old3 = restoreState({ day: 3, km: 5, kmDate: "2026-10-14" }, at(14, 9));
-  assert.deepEqual([old3.from, old3.to, old3.km, old3.arrived], ["skanderborg", "horsens", 5, false]);
+  assert.deepEqual([old3.from, old3.to, old3.km, old3.arrived], ["skanderborg", "bredal", 5, false]);
   assert.deepEqual([restoreState({ day: 16 }).arrived, restoreState({ day: 16 }).to], [true, "gavnoe"]);
   // gammel automatisk dag følger datoen én gang, og gårsdagens km er væk
   const auto = restoreState({ day: null, km: 7, kmDate: "2026-10-13" }, at(14, 9));
-  assert.deepEqual([auto.from, auto.to, auto.km], ["skanderborg", "horsens", 0]);
+  assert.deepEqual([auto.from, auto.to, auto.km], ["skanderborg", "bredal", 0]);
 });
 
 test("default tempo is 4.5 km/t from the start, and a saved tempo is kept", () => {
@@ -363,7 +364,7 @@ test("default tempo is 4.5 km/t from the start, and a saved tempo is kept", () =
 import { pathUpTo } from "../apps/walk/public/route.js";
 
 test("pathUpTo draws the walked part of a stage, growing with the km", () => {
-  const s = STAGES[6]; // etape 7: Aarup -> Odense -> Nyborg (15 + 19 km)
+  const s = STAGES[5]; // etape 6: Aarup -> Odense -> Nyborg (15 + 19 km)
   assert.equal(pathUpTo(s, 0).length, 2); // kun startpunktet (to ens punkter)
   const half = pathUpTo(s, 0.5);
   const full = pathUpTo(s, 1);
@@ -428,35 +429,34 @@ test("the route is a chain of towns, and the planned stages cover it without gap
     if (st.ride) assert.ok(TOWNS[st.ride.from] && TOWNS[st.ride.to] && st.ride.label);
   });
   assert.equal(STAGES.at(-1).endKm, TOTAL_KM);
-  assert.equal(STAGES[2].from + STAGES[2].to, "SkanderborgHorsens"); // etape 3: Silkeborg-Jelling er skåret fra
+  assert.equal(STAGES[2].from + STAGES[2].to, "SkanderborgBredal"); // etape 3: Marcel gik over Bredal
   assert.ok(!JSON.stringify(STAGES).match(/Silkeborg|Ikast|Herning|Brande|Give|Jelling|Svendborg|Spodsbjerg|Tårs|Maribo|Nykøbing/));
   assert.equal(STAGES.find((x) => x.ride).ride.label, "Tog Nyborg → Korsør");
 });
 
-test("etape 3.1 Skanderborg -> Bredal is an alternative to etape 3, on the same km scale as the main route", () => {
-  const a = stageBetween("skanderborg", "bredal");
-  assert.deepEqual([a.label, a.km, a.startKm, a.endKm, a.alt, a.instead, a.n], ["3.1", 39, 52, 91, true, 3, 0]);
-  assert.equal(stageBetween("bredal", "vejle"), null); // der er ingen 4.1
-  assert.equal(STAGES.length, 9); // hovedruten er uændret
-  assert.equal(TOTAL_KM, 250);
-  assert.equal(ALTS.length, 1);
-  assert.equal(nextPlanned(a).n, 5); // efter 3.1 kommer etape 5 (Vejle -> Middelfart)
-  assert.equal(prevPlanned(a).n, 2);
-  assert.deepEqual(altLines(a), [{ from: "skanderborg", to: "bredal", done: false }]);
-  assert.deepEqual(altLines(STAGES[2]), []);
-  // samlet km: Skanderborg er 52 km inde, så 3.1 efter 20 km = 72 km i alt
+test("Marcel went Skanderborg -> Bredal, so the main route goes via Bredal and Vejle (not Horsens)", () => {
+  assert.equal(STAGES.length, 8);
+  assert.equal(TOTAL_KM, 243);
+  const a = STAGES[2], b = STAGES[3];
+  assert.deepEqual([a.from, a.to, a.km, a.startKm, a.endKm], ["Skanderborg", "Bredal", 39, 52, 91]);
+  assert.deepEqual([b.from, b.to, b.km, b.via, b.startKm, b.endKm], ["Bredal", "Middelfart", 45, "Vejle", 91, 136]); // 11 + 34
+  assert.ok(!JSON.stringify(STAGES).includes("Horsens"));
+  assert.ok(!WAYPOINTS.includes("horsens") && !("horsens" in TOWNS));
+  assert.deepEqual(stageBetween("skanderborg", "middelfart").path, ["skanderborg", "bredal", "vejle", "middelfart"]);
+  assert.equal(stageBetween("skanderborg", "middelfart").km, 39 + 11 + 34);
   assert.equal(progress(a, 20).doneKm, 72);
   near(TOWNS.bredal, 55.76, 9.62);
   function near(t, lat, lon) { assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12); }
-  // den kan vælges i panelet, og som alle etapeskift starter den forfra: ur og km nulstilles, så «Start gåtur» virker igen
+  // et etapeskift fra panelet starter forfra: ur og km nulstilles, så «Start gåtur» virker igen
   const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
   let s = applyPatch(applyPatch(DEFAULT_STATE, { stage: 3, speed: 4.5 }, at(9)), { timer: "start" }, at(9));
-  s = applyPatch(s, { timer: "pause" }, at(11)); // pause efter 2 t på etape 3
-  const alt = applyPatch(s, { from: "skanderborg", to: "bredal", km: 0 }, at(11));
-  assert.deepEqual([alt.from, alt.to], ["skanderborg", "bredal"]);
-  assert.deepEqual(alt.timer, { running: false, ms: 0, startedAt: null, date: null }); // helt nyt ur
-  assert.equal(effectiveState(alt, at(11)).km, 0);
-  const started = applyPatch(alt, { timer: "start" }, at(12));
+  s = applyPatch(s, { timer: "pause" }, at(11)); // pause efter 2 t på etape 3 (Skanderborg -> Bredal)
+  const next = applyPatch(s, { from: "bredal", to: "middelfart", km: 0 }, at(11)); // næste etape: Bredal -> Middelfart
+  assert.deepEqual([next.from, next.to], ["bredal", "middelfart"]);
+  assert.deepEqual(next.timer, { running: false, ms: 0, startedAt: null, date: null }); // helt nyt ur
+  assert.equal(effectiveState(next, at(11)).km, 0);
+  assert.equal(effectiveState(next, at(11)).kmCap, 45);
+  const started = applyPatch(next, { timer: "start" }, at(12));
   assert.equal(effectiveState(started, at(13)).km, 4.5); // og nu tæller den fra 0
   const back = applyPatch(started, { stage: 3 }, at(13)); // tilbage til etape 3 nulstiller også
   assert.equal(back.timer.running, false);
@@ -493,6 +493,8 @@ test("the module scripts in the overlay and the control panel parse (a script er
 test("saved state with the old name hedensted (etape 3.1 before it was Bredal) is kept, not reset to etape 1", () => {
   const r = restoreState({ from: "skanderborg", to: "hedensted", km: 3.6 });
   assert.deepEqual([r.from, r.to, r.km], ["skanderborg", "bredal", 3.6]);
+  const old = restoreState({ from: "skanderborg", to: "horsens", km: 8 }); // etape 3 før ruten gik over Bredal
+  assert.deepEqual([old.from, old.to, old.km], ["skanderborg", "bredal", 8]);
   const bad = restoreState({ from: "skanderborg", to: "ukendt", km: 3.6 }); // ukendt by: standard-etapen, men km bevares
   assert.deepEqual([bad.from, bad.to, bad.km], ["rosenholm", "aarhus", 3.6]);
 });
