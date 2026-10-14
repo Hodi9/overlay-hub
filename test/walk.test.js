@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { STAGES, TOTAL_KM, WAYPOINTS, LEGS, stageBetween, nextPlanned, prevPlanned, progress, positionOnStage, TOWNS } from "../apps/walk/public/route.js";
 
-test("route has 9 planned stages and sums their km", () => {
-  assert.equal(STAGES.length, 9);
-  assert.equal(TOTAL_KM, 263);
+test("route has 10 planned stages and sums their km", () => {
+  assert.equal(STAGES.length, 10);
+  assert.equal(TOTAL_KM, 282);
   assert.equal(STAGES.reduce((sum, st) => sum + st.km, 0), TOTAL_KM);
 });
 
@@ -18,7 +18,7 @@ test("stageBetween joins the towns on the way and adds up the km", () => {
   const all = stageBetween("rosenholm", "gavnoe");
   assert.equal(all.km, TOTAL_KM); // en etape fra start til mål er hele ruten
   assert.deepEqual(stageBetween("odense", "slagelse").ride, { label: "Tog Nyborg → Korsør", from: "nyborg", to: "korsoer" });
-  assert.equal(stageBetween("odense", "slagelse").km, 34 + 0 + 11); // toget tæller 0 km
+  assert.equal(stageBetween("odense", "slagelse").km, 34 + 0 + 19); // toget tæller 0 km
   assert.equal(STAGES[7].ride.label, "Tog Nyborg → Korsør"); // etapen efter toget viser, hvordan han kom dertil
   assert.equal(nextPlanned(STAGES[2]).n, 4);
   assert.equal(nextPlanned(c).n, 5); // efter Skanderborg -> Middelfart kommer Middelfart -> Aarup
@@ -378,9 +378,9 @@ test("pathUpTo draws the walked part of a stage, growing with the km", () => {
   assert.deepEqual(pathUpTo(s, 7).at(-1), full.at(-1)); // fraction klemmes
   assert.deepEqual(pathUpTo(s, -1)[0], { lat: TOWNS.aarup.lat, lon: TOWNS.aarup.lon });
   // et tog (0 km) springes over i ét hop: lige efter Nyborg ligger prikken allerede ved Korsør
-  const f = stageBetween("odense", "slagelse"); // 34 + 0 (tog) + 11
-  assert.deepEqual(positionOnStage(f, 34 / 45), { lat: TOWNS.nyborg.lat, lon: TOWNS.nyborg.lon });
-  assert.ok(positionOnStage(f, 35 / 45).lon > TOWNS.korsoer.lon - 0.1 && positionOnStage(f, 35 / 45).lon < TOWNS.slagelse.lon);
+  const f = stageBetween("odense", "slagelse"); // 34 + 0 (tog) + 19
+  assert.deepEqual(positionOnStage(f, 34 / 53), { lat: TOWNS.nyborg.lat, lon: TOWNS.nyborg.lon });
+  assert.ok(positionOnStage(f, 35 / 53).lon > TOWNS.korsoer.lon - 0.1 && positionOnStage(f, 35 / 53).lon < TOWNS.slagelse.lon);
 });
 
 test("overlays 3 and 5 can switch between the whole route and a zoom on today's stage", () => {
@@ -435,8 +435,8 @@ test("the route is a chain of towns, and the planned stages cover it without gap
 });
 
 test("Marcel went Skanderborg -> Bredal, so the main route goes via Bredal (not Horsens) straight to Middelfart", () => {
-  assert.equal(STAGES.length, 9);
-  assert.equal(TOTAL_KM, 263);
+  assert.equal(STAGES.length, 10);
+  assert.equal(TOTAL_KM, 282);
   const a = STAGES[2], b = STAGES[3];
   assert.deepEqual([a.from, a.to, a.km, a.startKm, a.endKm], ["Skanderborg", "Bredal", 39, 52, 91]);
   assert.deepEqual([b.from, b.to, b.km, b.via, b.startKm, b.endKm], ["Bredal", "Middelfart", 38, "", 91, 129]); // Google Maps: 38,1 km til fods
