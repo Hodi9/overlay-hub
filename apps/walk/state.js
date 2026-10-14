@@ -123,6 +123,10 @@ export function restoreState(data = {}, now = new Date()) {
     if (day > STAGES.length) legacy = { stage: STAGES.length, arrived: true };
     else legacy = { stage: Math.max(1, day || 1) };
   }
+  // Byer, der har skiftet navn: gemt tilstand med «hedensted» (etape 3.1, før den hed Bredal) skal ikke falde tilbage til etape 1.
+  const rename = { hedensted: "bredal" };
+  if (typeof data.to === "string" && rename[data.to]) data = { ...data, to: rename[data.to] };
+  if (typeof data.from === "string" && rename[data.from]) data = { ...data, from: rename[data.from] };
   const old = legacyAuto && data.kmDate !== copenhagenDate(now); // dengang nulstillede automatisk dag gårsdagens km
   return { ...applyPatch(DEFAULT_STATE, { ...data, ...legacy }), km: old ? 0 : km, speed, kmAnchorMs: old ? 0 : kmAnchorMs, kmAuto: data.kmAuto !== false, kmDate: data.kmDate ?? null, timer: old ? { ...IDLE_TIMER } : timer, eta: !old && isClock(data.eta) ? data.eta : null, etaDate: typeof data.etaDate === "string" ? data.etaDate : null };
 }
