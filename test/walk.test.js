@@ -452,13 +452,16 @@ test("etape 3.1 Skanderborg -> Bredal is an alternative to etape 3, on the same 
   assert.equal(progress(b, 11).doneKm, 102);
   near(TOWNS.bredal, 55.76, 9.62);
   function near(t, lat, lon) { assert.ok(Math.abs(t.lat - lat) < 0.08 && Math.abs(t.lon - lon) < 0.12); }
-  // den kan vælges i panelet, og et skift af mål med samme start nulstiller hverken km eller gå-tid
+  // den kan vælges i panelet, og som alle etapeskift starter den forfra: ur og km nulstilles, så «Start gåtur» virker igen
   const at = (h) => new Date(`2026-10-14T${String(h).padStart(2, "0")}:00:00+02:00`);
-  let s = applyPatch(applyPatch(DEFAULT_STATE, { stage: 3 }, at(9)), { timer: "start" }, at(9));
-  const alt = applyPatch(s, { from: "skanderborg", to: "bredal" }, at(11));
+  let s = applyPatch(applyPatch(DEFAULT_STATE, { stage: 3, speed: 4.5 }, at(9)), { timer: "start" }, at(9));
+  s = applyPatch(s, { timer: "pause" }, at(11)); // pause efter 2 t på etape 3
+  const alt = applyPatch(s, { from: "skanderborg", to: "bredal", km: 0 }, at(11));
   assert.deepEqual([alt.from, alt.to], ["skanderborg", "bredal"]);
-  assert.equal(alt.timer.running, true); // samme gåtur
-  assert.equal(effectiveState(alt, at(11)).km, 9); // 2 t × 4,5 km/t beholdes
-  const next = applyPatch(alt, { from: "bredal", to: "vejle" }, at(12)); // nyt startsted = ny etape
-  assert.equal(next.timer.running, false);
+  assert.deepEqual(alt.timer, { running: false, ms: 0, startedAt: null, date: null }); // helt nyt ur
+  assert.equal(effectiveState(alt, at(11)).km, 0);
+  const started = applyPatch(alt, { timer: "start" }, at(12));
+  assert.equal(effectiveState(started, at(13)).km, 4.5); // og nu tæller den fra 0
+  const back = applyPatch(started, { stage: 3 }, at(13)); // tilbage til etape 3 nulstiller også
+  assert.equal(back.timer.running, false);
 });
