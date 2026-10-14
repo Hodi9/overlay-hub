@@ -493,3 +493,10 @@ test("the module scripts in the overlay and the control panel parse (a script er
     finally { fs.rmSync(file, { force: true }); }
   }
 });
+
+test("saved state with the old name hedensted (etape 3.1 before it was Bredal) is kept, not reset to etape 1", () => {
+  const r = restoreState({ from: "skanderborg", to: "hedensted", km: 3.6 });
+  assert.deepEqual([r.from, r.to, r.km], ["skanderborg", "bredal", 3.6]);
+  const bad = restoreState({ from: "skanderborg", to: "ukendt", km: 3.6 }); // ukendt by: standard-etapen, men km bevares
+  assert.deepEqual([bad.from, bad.to, bad.km], ["rosenholm", "aarhus", 3.6]);
+});
