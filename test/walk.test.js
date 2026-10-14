@@ -476,3 +476,20 @@ test("the live state carries a build id, so an open overlay can notice a new dep
     assert.ok(html.includes("location.reload()") && html.includes("live.build"));
   });
 });
+
+import { execFileSync } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
+
+test("the module scripts in the overlay and the control panel parse (a script error silently kills the whole page)", () => {
+  for (const name of ["overlay.html", "control.html"]) {
+    const html = fs.readFileSync(new URL(`../apps/walk/public/${name}`, import.meta.url), "utf8");
+    const m = html.match(/<script type="module">([\s\S]*?)<\/script>/);
+    assert.ok(m, name);
+    const file = path.join(os.tmpdir(), `walk-syntax-${process.pid}-${name}.mjs`);
+    fs.writeFileSync(file, m[1]);
+    try { execFileSync(process.execPath, ["--check", file], { stdio: "pipe" }); }
+    catch (e) { assert.fail(`${name}: ${String(e.stderr).split("\n").slice(0, 6).join("\n")}`); }
+    finally { fs.rmSync(file, { force: true }); }
+  }
+});

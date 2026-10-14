@@ -481,7 +481,9 @@ function render() {
   if (!live.visible && !demo) { if (lastKey !== "hidden") { stage$.innerHTML = ""; lastKey = "hidden"; } return; }
   // Etape: ?etape=N (en af de planlagte, ?day=N virker stadig) eller ?from=&to= vinder over panelet (demo).
   const planned = num(q.get("etape") ?? q.get("day"), 0);
-  const stage = (planned >= 1 && STAGES[Math.min(planned, STAGES.length) - 1]) || stageBetween(q.get("from") || live.from, q.get("to") || live.to) || STAGES[0];
+  // Kan etapen ikke genkendes (fx data fra en anden udgave), beholder vi den sidste gyldige i stedet for at hoppe tilbage til etape 1.
+  const stage = (planned >= 1 && STAGES[Math.min(planned, STAGES.length) - 1]) || stageBetween(q.get("from") || live.from, q.get("to") || live.to) || lastStage || STAGES[0];
+  lastStage = stage;
   const arrived = planned > STAGES.length || q.get("arrived") === "1" || (!planned && !q.has("from") && live.arrived === true);
   // Km tæller selv op mellem hentningerne, mens uret kører (serveren giver km, tempo og loft). ?km= i URL'en vinder (demo).
   const liveKm = Math.min((live.km || 0) + ((live.kmRate || 0) * (Date.now() - fetchedAt)) / 3600000, live.kmCap ?? 100);
@@ -523,7 +525,7 @@ function render() {
   }
 }
 
-let build = null;
+let build = null, lastStage = null;
 async function poll() {
   try {
     const r = await fetch("api/state", { cache: "no-store" });
