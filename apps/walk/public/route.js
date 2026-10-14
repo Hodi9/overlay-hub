@@ -14,6 +14,7 @@ export const TOWNS = {
   nyborg: { name: "Nyborg", lat: 55.31, lon: 10.79 },
   korsoer: { name: "Korsør", lat: 55.33, lon: 11.14 },
   slagelse: { name: "Slagelse", lat: 55.4, lon: 11.35 },
+  hedensted: { name: "Hedensted", lat: 55.77, lon: 9.7 },
   naestved: { name: "Næstved", lat: 55.23, lon: 11.76 },
   gavnoe: { name: "Gavnø", lat: 55.1888, lon: 11.7252 }
 };
@@ -37,6 +38,8 @@ const wi = (key) => WAYPOINTS.indexOf(key);
 // Samler en etape fra by til by. Byerne på vejen tages automatisk med, og km er summen af stykkerne.
 // Ugyldigt (ukendt by, eller målet ligger før starten) giver null.
 export function stageBetween(fromKey, toKey) {
+  const alt = ALTS.find((a) => a.fromKey === fromKey && a.toKey === toKey);
+  if (alt) return alt;
   const i = wi(fromKey), j = wi(toKey);
   if (i < 0 || j <= i) return null;
   const path = WAYPOINTS.slice(i, j + 1);
@@ -55,6 +58,24 @@ export function stageBetween(fromKey, toKey) {
   };
 }
 
+// Alternative etaper: en anden vej mellem to byer på ruten. Hedensted ligger ikke på hovedruten via Horsens, men km regnes ind
+// i hovedrutens km-skala (Skanderborg 52 km, Vejle 109 km), så «I alt» og tidslinjen passer, uanset hvilken vej Marcel vælger.
+// 3.1 Skanderborg → Hedensted (39 km, fra Google Maps) kan vælges i stedet for etape 3 (og 4.1 Hedensted → Vejle i stedet for etape 4).
+const altStage = (label, instead, fromKey, toKey, startKm, km) => ({
+  n: 0, label, instead, alt: true, from: TOWNS[fromKey].name, to: TOWNS[toKey].name, fromKey, toKey,
+  km, startKm, endKm: startKm + km, path: [fromKey, toKey], legs: [{ km }], via: "", ride: null, stay: "",
+  skip: ["horsens"], // hovedrutens by, der ikke besøges på den alternative vej
+  chainDone: wi("skanderborg") // hovedrutens stykker før dette er gået
+});
+export const ALTS = [
+  altStage("3.1", 3, "skanderborg", "hedensted", CUM[wi("skanderborg")], 39),
+  altStage("4.1", 4, "hedensted", "vejle", CUM[wi("skanderborg")] + 39, CUM[wi("vejle")] - (CUM[wi("skanderborg")] + 39))
+];
+// Stykkerne på den alternative vej, der tegnes ved siden af hovedruten (done = allerede gået).
+export const altLines = (stage) => !stage.alt ? [] : stage.label === "4.1"
+  ? [{ from: "skanderborg", to: "hedensted", done: true }, { from: "hedensted", to: "vejle", done: false }]
+  : [{ from: "skanderborg", to: "hedensted", done: false }];
+
 // De planlagte etaper (kan ændres i kontrolpanelet ved at vælge andre byer).
 const PRESETS = [
   { i: 0, j: 1, stay: "Hotel/hostel" }, { i: 1, j: 2, stay: "Hotel/shelter" }, { i: 2, j: 3, stay: "Hotel/hostel" }, { i: 3, j: 4, stay: "Danhostel Vejle" },
@@ -65,9 +86,9 @@ export const STAGES = PRESETS.map((p) => stageBetween(WAYPOINTS[p.i], WAYPOINTS[
 export const DEFAULT_STAGE = { from: STAGES[0].fromKey, to: STAGES[0].toKey };
 
 // Den planlagte etape, der ligger efter denne (den første, der starter ved eller efter etapens mål) — eller null.
-export const nextPlanned = (stage) => STAGES.find((s) => s.startKm >= stage.endKm - 1e-9) || null;
+export const nextPlanned = (stage) => stage.alt && stage.label === "3.1" ? ALTS[1] : STAGES.find((s) => s.startKm >= stage.endKm - 1e-9) || null;
 // Den planlagte etape før denne (den sidste, der slutter ved eller før etapens start) — eller null.
-export const prevPlanned = (stage) => [...STAGES].reverse().find((s) => s.endKm <= stage.startKm + 1e-9) || null;
+export const prevPlanned = (stage) => stage.alt && stage.label === "4.1" ? ALTS[0] : [...STAGES].reverse().find((s) => s.endKm <= stage.startKm + 1e-9) || null;
 
 // Samlet status ud fra etapen + km gået på den. `arrived` = Marcel er fremme.
 export function progress(stage, kmToday = 0, arrived = false) {

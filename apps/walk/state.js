@@ -69,8 +69,10 @@ export function applyPatch(state, patch = {}, now = new Date()) {
     if (patch.eta === null || patch.eta === "" || patch.eta === "auto") { next.eta = null; next.etaDate = null; }
     else if (isClock(patch.eta)) { next.eta = patch.eta; next.etaDate = copenhagenDate(now); }
   }
-  // Ny etape fra panelet = nyt ur og ny forventet ankomst.
-  if (next.from !== state.from || next.to !== state.to || next.arrived !== state.arrived) { hold(); next.timer = { ...IDLE_TIMER }; next.eta = null; next.etaDate = null; }
+  // Ny etape (nyt startsted) fra panelet = nyt ur og ny forventet ankomst. Skifter han kun mål (fx Horsens → Hedensted),
+  // fortsætter samme gåtur, så km og gå-tid bevares.
+  if (next.from === state.from && next.to !== state.to && next.arrived === state.arrived) hold();
+  if (next.from !== state.from || next.arrived !== state.arrived) { hold(); next.timer = { ...IDLE_TIMER }; next.eta = null; next.etaDate = null; }
   if ("variant" in patch && VARIANTS.includes(String(patch.variant))) next.variant = String(patch.variant);
   if (typeof patch.visible === "boolean") next.visible = patch.visible;
   if (patch.fields && typeof patch.fields === "object") {
