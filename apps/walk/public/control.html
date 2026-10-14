@@ -87,6 +87,7 @@
           <div class="row nowrap"><button class="btn sec" id="stPrev" aria-label="Forrige etape">◀</button><select id="stageSel" style="flex:1;min-width:0"></select><button class="btn sec" id="stNext" aria-label="Næste etape">▶</button></div>
           <div class="row nowrap" id="customRow" style="margin-top:8px;display:none"><span>Fra</span><select id="fromSel" style="flex:1;min-width:0"></select><span>Til</span><select id="toSel" style="flex:1;min-width:0"></select></div>
           <p class="hint" style="margin:6px 0 0" id="stageNote"></p>
+          <div class="msg" id="stageMsg"></div>
         </div>
 
         <div class="lc">
@@ -200,8 +201,8 @@ async function login() {
 }
 
 async function patch(body, el) {
-  try { state = await api("api/state", body); fetchedAt = Date.now(); render(); if (el) msg(el, "Gemt ✓", "ok"); }
-  catch (e) { if (e.status === 401) setAuthed(false); msg(el || $("loginMsg"), e.message, "err"); }
+  try { state = await api("api/state", body); fetchedAt = Date.now(); render(); if (el) msg(el, "Gemt ✓", "ok"); return true; }
+  catch (e) { if (e.status === 401) setAuthed(false); msg(el || $("loginMsg"), e.message, "err"); return false; }
 }
 
 const curStage = () => stageBetween(state?.from, state?.to) || STAGES[0];
@@ -318,12 +319,16 @@ $("speedAvg").onclick = () => {
 };
 $("kmZero").onclick = () => patch({ km: 0 }, $("kmMsg"));
 // Skifter etape (patch indeholder from/to eller stage). Km og gå-tid nulstilles, så spørg først, hvis der er noget at miste.
-function changeStage(patchData) {
+async function changeStage(patchData) {
   // Alle etapeskift (også 3 → 3.1) starter forfra, så «Start gåtur» virker igen: km og gå-tid nulstilles.
   customOpen = false;
   const resets = liveKm() > 0.05 || (state?.timer?.ms || 0) > 0 || state?.timer?.running;
   if (resets && !confirm("Skift etape? Km og gå-tid nulstilles.")) return render();
-  patch({ ...patchData, arrived: false, km: 0 }, $("kmMsg"));
+  const want = patchData.stage ? STAGES[patchData.stage - 1] : { fromKey: patchData.from, toKey: patchData.to };
+  if (await patch({ ...patchData, arrived: false, km: 0 }, $("stageMsg")) && (state.from !== want.fromKey || state.to !== want.toKey)) {
+    // Serveren svarede, men tog ikke imod etapen (fx en gammel version, der ikke kender den). Det skal ikke ske i det skjulte.
+    msg($("stageMsg"), "Serveren skiftede ikke etape. Genindlæs siden (Ctrl+F5) og prøv igen. Hjælper det ikke, kører serveren en gammel version.", "err");
+  }
 }
 $("stageSel").onchange = () => {
   const v = $("stageSel").value;
