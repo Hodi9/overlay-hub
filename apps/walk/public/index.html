@@ -20,7 +20,7 @@
 </head>
 <body>
 <h1>Marcel Walk · overlay-varianter</h1>
-<p>Demo: etape 5, 9 km gået. I OBS: Browser Source 1920×1080, brug linket under hver variant. Tilføj <code>?etape=7&amp;km=20</code> (eller <code>?from=skanderborg&amp;to=vejle</code>) for at teste andre tilstande.</p>
+<p>Demo: etape 5, 9 km gået. I OBS: Browser Source 1920×1080, brug linket under hver variant. Tilføj <code>?preview=1&amp;etape=7&amp;km=20</code> (eller <code>?preview=1&amp;from=skanderborg&amp;to=vejle</code>; uden <code>preview=1</code> gælder kun panelet) for at teste andre tilstande.</p>
 <p><a href="control.html" style="color:#c7b6ff">Åbn kontrolpanel (adgangskode) →</a></p>
 <div class="grid" id="g"></div>
 <script>
@@ -29,7 +29,7 @@
   for (const [v, name, desc] of V) {
     const url = new URL("overlay.html?v=" + v, location.href).href;
     const f = document.createElement("figure");
-    f.innerHTML = `<div class="frame"><iframe loading="lazy" src="overlay.html?v=${v}&etape=5&km=9&min=110" scrolling="no"></iframe></div><figcaption><b>${v}. ${name}</b><span>${desc}</span></figcaption><figcaption><code>${url}</code></figcaption>`;
+    f.innerHTML = `<div class="frame"><iframe loading="lazy" src="overlay.html?v=${v}&preview=1&etape=5&km=9&min=110" scrolling="no"></iframe></div><figcaption><b>${v}. ${name}</b><span>${desc}</span></figcaption><figcaption><code>${url}</code></figcaption>`;
     g.append(f);
   }
 </script>
