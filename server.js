@@ -21,6 +21,7 @@ import { createRdr2App } from "./apps/rdr2/app.js";
 import { createSubathonApp } from "./apps/subathon/app.js";
 import { createWalkApp } from "./apps/walk/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
+import { createSiteGate } from "./siteGate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -31,6 +32,10 @@ app.disable("x-powered-by");
 const server = http.createServer(app);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// Valgfri adgangskode på forsiden (SITE_PASSWORD). Overlays og kontrolpaneler er ikke
+// låst bag den — se siteGate.js. Skal ligge før alt der kan servere forsiden.
+app.use(createSiteGate({ password: process.env.SITE_PASSWORD }));
 
 // "Kopiér link"-knap på alle overlay-sider. Knappen vises kun i en almindelig
 // browser — aldrig i OBS (window.obsstudio / OBS user agent) eller i en iframe

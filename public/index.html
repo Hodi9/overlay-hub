@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Overview — brucewayne5k.xyz</title>
+<title>Overlay</title>
 <meta name="description" content="Browser sources og kontrolpaneler til OBS og Pogly.">
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0b0b0d">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23151518'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%23ffd60a' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%23ffd60a'/%3E%3Cpath d='M24 51h16' stroke='%23ffd60a' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +23,6 @@
     --mint-soft: #2b2509;
     --mint-dark: #ffd60a;
     --on-accent: #0b0b0d;
-    --red: #ff2a3a;
     --shadow: 0 1px 0 rgba(0,0,0,.25), 0 10px 26px -14px rgba(0,0,0,.6);
   }
   * { box-sizing: border-box; }
@@ -38,16 +38,14 @@
     -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 56px; }
 
   /* Wordmark */
   .wordmark-block { padding: 26px 0 0; }
   .wordmark {
-    margin: 0; font-size: clamp(22px, 6.2vw, 78px); font-weight: 800;
+    margin: 0; font-size: clamp(38px, 8.5vw, 78px); font-weight: 800;
     letter-spacing: -.03em; line-height: 1; text-transform: uppercase;
   }
-  .wordmark .accent { color: var(--mint-dark); }
-  .red { color: var(--red); }
   .wordmark-tag { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
 
   /* Top bar */
@@ -156,41 +154,6 @@
   .tip b { display: block; margin-bottom: 4px; }
   .tip span { color: var(--muted); font-size: 14px; }
 
-  footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 40px 0 110px; color: var(--muted); font-size: 14px; }
-  footer a { color: var(--ink); font-weight: 600; }
-
-  /* Contact */
-  .contact-fab {
-    position: fixed; right: 20px; bottom: 20px; z-index: 20;
-    display: inline-flex; align-items: center; gap: 8px;
-    font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
-    background: var(--mint); color: var(--on-accent); border: 2px solid var(--ink);
-    padding: 12px 18px; border-radius: 999px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.6);
-  }
-  .contact-fab svg { width: 18px; height: 18px; }
-  .popover {
-    position: fixed; right: 20px; bottom: 84px; z-index: 21; width: min(340px, calc(100vw - 40px));
-    background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: 20px;
-    box-shadow: 0 24px 60px -20px rgba(0,0,0,.7);
-    opacity: 0; transform: translateY(8px) scale(.98); pointer-events: none; transition: opacity .15s, transform .15s;
-  }
-  .popover.open { opacity: 1; transform: none; pointer-events: auto; }
-  .pop-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .popover h3 { margin: 2px 0 0; font-size: 21px; letter-spacing: -.015em; }
-  .popover p { margin: 10px 0 14px; color: var(--muted); font-size: 14px; }
-  .close { border: 0; background: var(--bg); width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 18px; color: var(--ink); flex-shrink: 0; }
-  .handle { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 8px 8px 8px 14px; }
-  .handle strong { font-family: "JetBrains Mono", monospace; font-size: 15px; }
-  .handle .btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; border: 0; border-radius: 10px; padding: 8px 12px; background: var(--mint); color: var(--on-accent); }
-  .handle .btn:hover { background: var(--mint-dark); }
-  .handle .btn svg { width: 14px; height: 14px; }
-  .pop-actions { display: grid; gap: 8px; margin-top: 10px; }
-  .pop-actions a { display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 700; padding: 12px; border-radius: 14px; }
-  .pop-actions .primary { background: var(--mint); color: var(--on-accent); }
-  .pop-actions .secondary { border: 1px solid var(--line); }
-  .pop-actions svg { width: 15px; height: 15px; }
-
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 30;
     background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
@@ -201,8 +164,6 @@
   :focus-visible { outline: 2px solid var(--mint-dark); outline-offset: 2px; }
   @media (max-width: 520px) {
     .hero { padding-top: 16px; }
-    .contact-fab span { display: none; }
-    .contact-fab { padding: 14px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
@@ -210,8 +171,8 @@
 <body>
   <div class="wrap">
     <div class="wordmark-block">
-      <p class="wordmark">brucewayne<span class="red">5k</span><span class="accent">.xyz</span></p>
-      <p class="wordmark-tag">Overlays &amp; værktøjer til livestreams.</p>
+      <p class="wordmark">Overlay</p>
+      <p class="wordmark-tag">Egnet til livestreams: større events, spil og konkurrencer/challenges afholdt på Twitch.</p>
     </div>
 
     <header class="top">
@@ -224,7 +185,7 @@
 
     <section class="hero">
       <h1>Overlays til <em>livestreams</em>, klar til OBS.</h1>
-      <p>Browser sources og kontrolpaneler til alle de overlays, der kører på denne service. Skriv til mig for at få adgang.</p>
+      <p>Browser sources og kontrolpaneler til alle de overlays, der kører på denne service.</p>
     </section>
 
     <div class="toolbar">
@@ -248,30 +209,6 @@
       <div class="tip"><b>Anbefalet størrelse</b><span>Sæt browser sourcen til 1920 × 1080 og skalér den i OBS.</span></div>
       <div class="tip"><b>Live-opdatering</b><span>Ændringer i kontrolpanelerne sendes med det samme til alle åbne overlays.</span></div>
     </section>
-
-    <footer>
-      <span>Overview · brucewayne<span class="red">5k</span>.xyz</span>
-    </footer>
-  </div>
-
-  <button class="contact-fab" id="contact-btn" aria-expanded="false" aria-controls="contact">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>
-    <span>Kontakt</span>
-  </button>
-
-  <div class="popover" id="contact" role="dialog" aria-labelledby="contact-title">
-    <div class="pop-head">
-      <div>
-        <div class="eyebrow">Kontakt</div>
-        <h3 id="contact-title">Skriv til mig på Discord</h3>
-      </div>
-      <button class="close" id="contact-close" aria-label="Luk">×</button>
-    </div>
-    <p>Send en venneanmodning til mit brugernavn, så vender jeg tilbage.</p>
-    <div class="handle">
-      <strong id="discord-name">brucewayne5k1999</strong>
-      <button class="btn" id="copy-discord"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Kopiér</button>
-    </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -286,6 +223,7 @@ const OVERLAYS = [
     control: "/brosvsbros/panel",
     info: "Skriv holdnavne og upload et logo (PNG med gennemsigtig baggrund virker bedst) i kontrolpanelet. Samme panel-kode som Bro vs Bro." },
   { id: "minecraft", cat: "spil", tag: "Spil", title: "Minecraft Boss Tracker", sub: "Warden · Elder Guardian · Wither · Ender Dragon",
+    image: { src: "/img/minecraft.webp" },
     links: [["Overlay", "/minecraft/overlay"], ["Wither Skulls", "/minecraft/wither-overlay"], ["Run Stats", "/minecraft/stats-overlay"]],
     control: "/minecraft/control" },
   { id: "rdr2", cat: "spil", tag: "Spil", title: "RDR2 Marathon Tracker", hidden: true, sub: "Story-progression — auto-opdateres via save-fil",
@@ -308,9 +246,11 @@ const OVERLAYS = [
     links: [["Overlay", "/tlou2/"]], control: "/tlou2/control.html",
     info: "Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
   { id: "gta5", cat: "spil", tag: "Spil", title: "GTA V Story Tracker", sub: "Story-progression — auto-opdateres via save-fil",
+    image: { src: "/img/gta5.jpg" },
     links: [["Overlay", "/gta5/"]], control: "/gta5/control.html",
     info: "Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
   { id: "mafia", cat: "spil", tag: "Spil", title: "Mafia Trilogy Trackers", sub: "Story-progression — auto-opdateres via OCR",
+    image: { src: "/img/mafia.webp" },
     links: [["Mafia I", "/mafia1/"], ["Mafia II", "/mafia2/"], ["Mafia III", "/mafia3/"]],
     controls: [["Panel I", "/mafia1/control.html"], ["Panel II", "/mafia2/control.html"], ["Panel III", "/mafia3/control.html"]],
     info: "Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne." },
@@ -394,7 +334,6 @@ document.getElementById("chips").addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.key === "/" && document.activeElement !== q) { e.preventDefault(); q.focus(); }
-  if (e.key === "Escape") setContact(false);
 });
 
 // Copy helpers
@@ -417,16 +356,6 @@ grid.addEventListener("click", e => {
   const b = e.target.closest("[data-copy]"); if (!b) return;
   copy(b.dataset.copy, b, "Link kopieret");
 });
-
-// Contact popover
-const pop = document.getElementById("contact");
-const fab = document.getElementById("contact-btn");
-function setContact(open) { pop.classList.toggle("open", open); fab.setAttribute("aria-expanded", open); }
-fab.addEventListener("click", () => setContact(!pop.classList.contains("open")));
-document.getElementById("contact-close").addEventListener("click", () => setContact(false));
-document.addEventListener("click", e => { if (!pop.contains(e.target) && !fab.contains(e.target)) setContact(false); });
-document.getElementById("copy-discord").addEventListener("click", e =>
-  copy(document.getElementById("discord-name").textContent, e.currentTarget, "Discord-navn kopieret"));
 
 // Server status
 async function checkServer() {
