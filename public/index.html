@@ -3,25 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Overlay Hub — twitchoverlays.xyz</title>
+<title>Overview — twitchoverlays.xyz</title>
 <meta name="description" content="Browser sources og kontrolpaneler til OBS og Pogly.">
-<meta name="theme-color" content="#0a1020">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2316233a'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%232dd4bf' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%232dd4bf'/%3E%3Cpath d='M24 51h16' stroke='%232dd4bf' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#140b26">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23231642'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%23c084fc' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%23c084fc'/%3E%3Cpath d='M24 51h16' stroke='%23c084fc' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0a1020;
-    --paper: #121a2e;
-    --ink: #e9eefb;
-    --muted: #93a0bd;
-    --line: #25314d;
-    --mint: #2dd4bf;
-    --mint-soft: #12353a;
-    --mint-dark: #5eead4;
-    --on-accent: #052421;
+    --bg: #140b26;
+    --paper: #1d1236;
+    --ink: #f3edff;
+    --muted: #a99bcb;
+    --line: #35265a;
+    --mint: #c084fc;
+    --mint-soft: #2e1a52;
+    --mint-dark: #d8b4fe;
+    --on-accent: #1a0833;
     --shadow: 0 1px 0 rgba(0,0,0,.25), 0 10px 26px -14px rgba(0,0,0,.6);
   }
   * { box-sizing: border-box; }
@@ -71,7 +71,7 @@
     margin: 0; max-width: 16ch;
     font-size: clamp(36px, 6.5vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800;
   }
-  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, rgba(45,212,191,.38) 62%); padding: 0 .08em; }
+  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, rgba(192,132,252,.4) 62%); padding: 0 .08em; }
   .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
 
   /* Toolbar */
@@ -98,9 +98,9 @@
     padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column;
     transition: transform .15s, border-color .15s;
   }
-  .card:hover { transform: translateY(-2px); border-color: #3b4c73; }
+  .card:hover { transform: translateY(-2px); border-color: #54408a; }
   .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-  .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--mint-soft); color: var(--mint-dark); border: 1px solid #1d4f52; }
+  .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--mint-soft); color: var(--mint-dark); border: 1px solid #4a3380; }
   .logo svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mint-dark); background: var(--mint-soft); padding: 4px 9px; border-radius: 999px; }
   .card h2 { margin: 0; font-size: 20px; letter-spacing: -.015em; line-height: 1.2; }
@@ -209,8 +209,8 @@
 
     <header class="top">
       <a class="brand" href="/">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#16233a"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#2dd4bf" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#2dd4bf"/><path d="M24 51h16" stroke="#2dd4bf" stroke-width="4" stroke-linecap="round"/></svg>
-        Overlay Hub
+        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#231642"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#c084fc" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#c084fc"/><path d="M24 51h16" stroke="#c084fc" stroke-width="4" stroke-linecap="round"/></svg>
+        Overview
       </a>
       <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
     </header>
@@ -243,7 +243,7 @@
     </section>
 
     <footer>
-      <span>Overlay Hub · twitchoverlays.xyz</span>
+      <span>Overview · twitchoverlays.xyz</span>
     </footer>
   </div>
 
@@ -274,14 +274,14 @@ const OVERLAYS = [
   { id: "brovsbro", cat: "show", tag: "Show", title: "Bro vs Bro", sub: "Aggo vs Marcelo — score-overlay",
     links: [["Scoreboard", "/brovsbro/overlay"], ["Duel bar", "/brovsbro/overlay?view=duel"], ["Fightcard", "/brovsbro/overlay?view=fightcard"]],
     control: "/brovsbro/panel" },
-  { id: "brosvsbros", cat: "show", tag: "Show", title: "Bros vs Bros", sub: "Hold mod hold — egne holdnavne og logoer",
+  { id: "brosvsbros", cat: "show", tag: "Show", title: "Bros vs Bros", hidden: true, sub: "Hold mod hold — egne holdnavne og logoer",
     links: [["Scoreboard", "/brosvsbros/overlay"], ["Duel bar", "/brosvsbros/overlay?view=duel"], ["Fightcard", "/brosvsbros/overlay?view=fightcard"]],
     control: "/brosvsbros/panel",
     info: "Skriv holdnavne og upload et logo (PNG med gennemsigtig baggrund virker bedst) i kontrolpanelet. Samme panel-kode som Bro vs Bro." },
   { id: "minecraft", cat: "spil", tag: "Spil", title: "Minecraft Boss Tracker", sub: "Warden · Elder Guardian · Wither · Ender Dragon",
     links: [["Overlay", "/minecraft/overlay"], ["Wither Skulls", "/minecraft/wither-overlay"], ["Run Stats", "/minecraft/stats-overlay"]],
     control: "/minecraft/control" },
-  { id: "rdr2", cat: "spil", tag: "Spil", title: "RDR2 Marathon Tracker", sub: "Story-progression — auto-opdateres via save-fil",
+  { id: "rdr2", cat: "spil", tag: "Spil", title: "RDR2 Marathon Tracker", hidden: true, sub: "Story-progression — auto-opdateres via save-fil",
     links: [["Overlay", "/rdr2/"], ["Dødstæller", "/rdr2-deaths/?bg=black"]],
     control: "/rdr2/control.html",
     extra: [["Dødstæller kontrolpanel", "/rdr2-deaths/control.html"], ["Opret din egen dødstæller", "/rdr2-deaths/setup.html"]],
