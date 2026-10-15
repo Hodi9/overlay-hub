@@ -239,7 +239,8 @@ const OVERLAYS = [
   { id: "gear", cat: "stream", tag: "Stream", title: "Wendels Power Gear", hidden: true, sub: "Automatisk produktrotation med chatkommandoer",
     links: [["Overlay", "/gear/"]], control: "/gear/control.html",
     info: "Viser ét produkt i 7 sekunder ad gangen. Sekvensen gentages automatisk hvert 15. minut." },
-  { id: "gauntlet", cat: "show", tag: "Event", title: "Gaming Gauntlet", sub: "Multi-game challenge-badges + dødstæller",
+  { id: "gauntlet", cat: "show", tag: "Event", title: "God Gamer Gauntlet", sub: "Multi-game challenge-badges + dødstæller",
+    image: { src: "/img/gauntlet.jpg", aspect: "960 / 853" },
     links: [["Overlay", "/gauntlet/"], ["Dødstæller", "/gauntlet/deaths.html"]], control: "/gauntlet/control.html",
     info: "Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS." },
   { id: "tlou2", cat: "spil", tag: "Spil", title: "The Last of Us Part II", sub: "Story-progression — auto-opdateres via OCR",
@@ -299,7 +300,7 @@ function card(o) {
   const info = o.info || o.extra ? `<details><summary>Opsætning &amp; info</summary>${o.info ? `<p>${o.info}</p>` : ""}${extra}</details>` : "";
   const search = [o.title, o.sub, o.tag, ...o.links.map(l => l[0])].join(" ").toLowerCase();
   const cover = o.image
-    ? `<figure class="cover"><img src="${esc(o.image.src)}" alt="" loading="lazy">` +
+    ? `<figure class="cover"><img src="${esc(o.image.src)}" alt="" loading="lazy"${o.image.aspect ? ` style="aspect-ratio:${esc(o.image.aspect)}"` : ""}>` +
       (o.image.credit ? `<figcaption>Billede fra <a href="${esc(o.image.url)}" target="_blank" rel="noopener">${esc(o.image.credit)}</a></figcaption>` : "") +
       `</figure>` : "";
   return `<article class="card" data-cat="${o.cat}" data-search="${esc(search)}">
