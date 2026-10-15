@@ -21,7 +21,7 @@ import { createRdr2App } from "./apps/rdr2/app.js";
 import { createSubathonApp } from "./apps/subathon/app.js";
 import { createWalkApp } from "./apps/walk/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
-import { createSiteGate } from "./siteGate.js";
+import { createSiteGate, collapseLeadingSlashes } from "./siteGate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -30,6 +30,9 @@ const { createBrosvsbrosApp } = brosvsbrosModule;
 const app = express();
 app.disable("x-powered-by");
 const server = http.createServer(app);
+
+// Skal ligge allerførst, så alt efter (også adgangskoden på forsiden) ser den rene sti.
+app.use(collapseLeadingSlashes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
