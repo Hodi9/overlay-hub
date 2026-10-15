@@ -101,6 +101,11 @@
     transition: transform .15s, border-color .15s;
   }
   .card:hover { transform: translateY(-2px); border-color: #43434b; }
+  .cover { margin: 0 0 14px; }
+  .cover img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
+  .cover figcaption { margin-top: 6px; font-size: 11px; line-height: 1.3; color: var(--muted); }
+  .cover figcaption a { color: inherit; text-underline-offset: 2px; }
+  .cover figcaption a:hover { color: var(--mint-dark); }
   .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
   .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--mint-soft); color: var(--mint-dark); border: 1px solid #5a4a0a; }
   .logo svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -299,6 +304,7 @@ const OVERLAYS = [
     links: [["Overlay", "/gauntlet/"], ["Dødstæller", "/gauntlet/deaths.html"]], control: "/gauntlet/control.html",
     info: "Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS." },
   { id: "tlou2", cat: "spil", tag: "Spil", title: "The Last of Us Part II", sub: "Story-progression — auto-opdateres via OCR",
+    image: { src: "/img/tlou2.jpg", credit: "soniagipi.artstation.com", url: "https://soniagipi.artstation.com" },
     links: [["Overlay", "/tlou2/"]], control: "/tlou2/control.html",
     info: "Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
   { id: "gta5", cat: "spil", tag: "Spil", title: "GTA V Story Tracker", sub: "Story-progression — auto-opdateres via save-fil",
@@ -351,7 +357,12 @@ function card(o) {
   const extra = o.extra ? `<div class="extra">${o.extra.map(([n, h]) => `<a href="${esc(h)}" target="_blank" rel="noopener">${esc(n)} ${ICON_ARROW}</a>`).join("")}</div>` : "";
   const info = o.info || o.extra ? `<details><summary>Opsætning &amp; info</summary>${o.info ? `<p>${o.info}</p>` : ""}${extra}</details>` : "";
   const search = [o.title, o.sub, o.tag, ...o.links.map(l => l[0])].join(" ").toLowerCase();
+  const cover = o.image
+    ? `<figure class="cover"><img src="${esc(o.image.src)}" alt="" loading="lazy">` +
+      (o.image.credit ? `<figcaption>Billede fra <a href="${esc(o.image.url)}" target="_blank" rel="noopener">${esc(o.image.credit)}</a></figcaption>` : "") +
+      `</figure>` : "";
   return `<article class="card" data-cat="${o.cat}" data-search="${esc(search)}">
+    ${cover}
     <div class="card-top"><div class="logo" aria-hidden="true">${ICONS[o.id] || ""}</div><span class="tag">${esc(o.tag)}</span></div>
     <h2>${esc(o.title)}</h2><p class="sub">${esc(o.sub)}</p>
     <div class="links">${o.links.map(link).join("")}</div>
