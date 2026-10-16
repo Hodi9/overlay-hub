@@ -24,9 +24,9 @@ export function copenhagenDate(now = new Date()) {
 // Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; en færge tæller 0 km).
 export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "bredal", "middelfart", "blommenslyst", "odense", "nyborg", "korsoer", "slagelse", "naestved", "gavnoe"];
 // Km er gangafstande i hele km. Kilder: Google Maps (Skanderborg → Bredal, Bredal → Middelfart), Rome2Rio (Slagelse → Næstved 35,3 km i bil),
-// stien Næstved → Gavnø (ca. 8,5 km), resten fra den oprindelige etapetabel eller regnet fra afstand på kortet. Ret et tal her, hvis Google Maps siger noget andet.
+// stien Næstved → Gavnø (ca. 8,5 km), Blommenslyst → Nyborg station er ca. 38 km (9 til Odense + 29 videre), resten fra den oprindelige etapetabel eller regnet fra afstand på kortet. Ret et tal her, hvis Google Maps siger noget andet.
 export const LEGS = [
-  { km: 22 }, { km: 30 }, { km: 39 }, { km: 38 }, { km: 42 }, { km: 9 }, { km: 34 },
+  { km: 22 }, { km: 30 }, { km: 39 }, { km: 38 }, { km: 42 }, { km: 9 }, { km: 29 },
   { km: 0, ride: "Tog Nyborg → Korsør" },
   { km: 19 }, { km: 35 }, { km: 9 }
 ];
@@ -59,7 +59,7 @@ export function stageBetween(fromKey, toKey) {
 // De planlagte etaper (kan ændres i kontrolpanelet ved at vælge andre byer).
 const PRESETS = [
   { i: 0, j: 1, stay: "Hotel/hostel" }, { i: 1, j: 2, stay: "Hotel/shelter" }, { i: 2, j: 3, stay: "Hotel/hostel" }, { i: 3, j: 4, stay: "Hotel/hostel" },
-  { i: 4, j: 5, stay: "Hotel/shelter" }, { i: 5, j: 6, stay: "Hotel" }, { i: 6, j: 7, stay: "Hotel" }, { i: 8, j: 9, stay: "Hotel" }, { i: 9, j: 10, stay: "Hotel/shelter" }, { i: 10, j: 11, stay: "Gavnø Slot (målet)" }
+  { i: 4, j: 5, stay: "Hotel/shelter" }, { i: 5, j: 7, stay: "Hotel" }, { i: 8, j: 9, stay: "Hotel" }, { i: 9, j: 10, stay: "Hotel/shelter" }, { i: 10, j: 11, stay: "Gavnø Slot (målet)" }
 ];
 export const STAGES = PRESETS.map((p) => stageBetween(WAYPOINTS[p.i], WAYPOINTS[p.j]));
 export const DEFAULT_STAGE = { from: STAGES[0].fromKey, to: STAGES[0].toKey };
