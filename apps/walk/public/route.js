@@ -14,20 +14,20 @@ export const TOWNS = {
   slagelse: { name: "Slagelse", lat: 55.4, lon: 11.35 },
   bredal: { name: "Bredal", lat: 55.764, lon: 9.622 }, // Bredal Kro, Horsensvej 581 (ved Vejle)
   naestved: { name: "Næstved", lat: 55.23, lon: 11.76 },
-  gavnoe: { name: "Gavnø", lat: 55.1888, lon: 11.7252 }
+  gavnoe: { name: "Gavnø Slot", lat: 55.1888, lon: 11.7252 }
 };
 
 export function copenhagenDate(now = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
-// Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; en færge tæller 0 km).
+// Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; et stykke uden km, som togturen, tegnes ikke).
 export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "bredal", "middelfart", "blommenslyst", "odense", "nyborg", "korsoer", "slagelse", "naestved", "gavnoe"];
 // Km er gangafstande i hele km. Kilder: Google Maps (Skanderborg → Bredal, Bredal → Middelfart), Rome2Rio (Slagelse → Næstved 35,3 km i bil),
 // stien Næstved → Gavnø (ca. 8,5 km), Blommenslyst → Nyborg station er ca. 38 km (9 til Odense + 29 videre), resten fra den oprindelige etapetabel eller regnet fra afstand på kortet. Ret et tal her, hvis Google Maps siger noget andet.
 export const LEGS = [
   { km: 22 }, { km: 30 }, { km: 39 }, { km: 38 }, { km: 42 }, { km: 9 }, { km: 29 },
-  { km: 0, ride: "Tog Nyborg → Korsør" },
+  { km: 0 }, // Nyborg → Korsør: togturen tages offstream, så den tæller 0 km og tegnes ikke på overlayet
   { km: 19 }, { km: 35 }, { km: 9 }
 ];
 // Km fra start til hver by.
@@ -42,7 +42,6 @@ export function stageBetween(fromKey, toKey) {
   if (i < 0 || j <= i) return null;
   const path = WAYPOINTS.slice(i, j + 1);
   const legs = LEGS.slice(i, j);
-  const rideLeg = legs.findIndex((l) => l.ride);
   const preset = PRESETS.findIndex((p) => p.i === i && p.j === j);
   return {
     n: preset + 1, // 0 = egen etape (ikke en af de planlagte)
@@ -50,8 +49,6 @@ export function stageBetween(fromKey, toKey) {
     km: CUM[j] - CUM[i], startKm: CUM[i], endKm: CUM[j],
     path, legs,
     via: path.slice(1, -1).map((k) => TOWNS[k].name).join(", "),
-    // Færge/tog på etapen — eller lige før dens start (så etapen kan vise, hvordan Marcel kom hertil).
-    ride: rideLeg >= 0 ? { label: legs[rideLeg].ride, from: path[rideLeg], to: path[rideLeg + 1] } : i > 0 && LEGS[i - 1].ride ? { label: LEGS[i - 1].ride, from: WAYPOINTS[i - 1], to: WAYPOINTS[i] } : null,
     stay: preset >= 0 ? PRESETS[preset].stay : ""
   };
 }

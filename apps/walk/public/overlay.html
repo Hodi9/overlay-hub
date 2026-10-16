@@ -63,7 +63,7 @@
   .land{fill:rgba(199,182,255,.2);stroke:rgba(199,182,255,.5);stroke-linejoin:round}
   .land2{fill:rgba(255,255,255,.05);stroke:rgba(255,255,255,.14);stroke-linejoin:round}
   .seg{fill:none;stroke:rgba(255,255,255,.28);stroke-linecap:round;stroke-linejoin:round}
-  .seg.done{stroke:var(--pink);filter:drop-shadow(0 0 4px rgba(255,154,196,.7))}.seg.train{stroke-dasharray:1 2.4;stroke-width:inherit}
+  .seg.done{stroke:var(--pink);filter:drop-shadow(0 0 4px rgba(255,154,196,.7))}
   .town{fill:var(--ink);stroke:#d9d0ec}.town.done{stroke:var(--pink);fill:var(--pink)}
   .tname{font-family:"Schibsted Grotesk",sans-serif;font-weight:700;fill:var(--cream);paint-order:stroke;stroke:rgba(20,17,28,.95);stroke-linejoin:round}
   .me{fill:var(--red);stroke:#fff}.me,.pulse{transition:cx 1s linear,cy 1s linear}.pulse{fill:none;stroke:var(--red);animation:pulse 1.8s ease-out infinite;transform-box:fill-box;transform-origin:center}
@@ -173,7 +173,7 @@
   #stage[data-look="bp"] .land{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.85)}
   #stage[data-look="bp"] .land2{fill:transparent;stroke:rgba(255,255,255,.3)}
   #stage[data-look="bp"] .seg{stroke:rgba(255,255,255,.45)}
-  #stage[data-look="bp"] .seg:not(.done):not(.train){stroke-dasharray:3 2.2}
+  #stage[data-look="bp"] .seg:not(.done){stroke-dasharray:3 2.2}
   #stage[data-look="bp"] .seg.done{stroke:#fff;filter:none}
   #stage[data-look="bp"] .town{fill:#0a3463;stroke:#fff}#stage[data-look="bp"] .town.done{fill:#fff;stroke:#fff}
   #stage[data-look="bp"] .tname{fill:#fff;stroke:#0a3463}
@@ -287,7 +287,7 @@ function fit() { stage$.style.transform = `scale(${Math.min(innerWidth / 1920, i
 addEventListener("resize", fit); fit();
 
 const routeLabel = (s) => `${esc(s.from)}<span class="arrow">→</span><wbr>${esc(s.to)}`; // <wbr>: lange byer må brydes efter pilen i stedet for at blive klippet af
-const viaLabel = (s) => [s.ride?.label, s.via ? "via " + s.via : ""].filter(Boolean).map(esc).join(" · ");
+const viaLabel = (s) => (s.via ? esc("via " + s.via) : "");
 const pctW = (p) => `${Math.max(0, Math.min(1, p)) * 100}%`;
 
 function headerNote(p) {
@@ -316,10 +316,11 @@ function dkMap(p, f, W, H, fontPx, allLabels = true) {
   const pt = (key) => P(key).map((n) => n.toFixed(1)).join(",");
   let segs = "", dots = "", names = "";
   const fromIdx = WAYPOINTS.indexOf(s.fromKey);
-  // Stykkerne mellem byerne: de, der ligger før etapens start, er gået (et færgestykke tegnes stiplet).
+  // Stykkerne mellem byerne: de, der ligger før etapens start, er gået. Et stykke uden km (togturen) tegnes ikke.
   LEGS.forEach((leg, i) => {
+    if (!leg.km) return;
     const gone = p.state === "done" || i < fromIdx;
-    segs += `<polyline class="seg${leg.ride ? " train" : ""}${gone ? " done" : ""}" stroke-width="${(6 * u).toFixed(2)}" points="${pt(WAYPOINTS[i])} ${pt(WAYPOINTS[i + 1])}"/>`;
+    segs += `<polyline class="seg${gone ? " done" : ""}" stroke-width="${(6 * u).toFixed(2)}" points="${pt(WAYPOINTS[i])} ${pt(WAYPOINTS[i + 1])}"/>`;
   });
   WAYPOINTS.forEach((k, i) => {
     const reached = p.state === "done" || CUM[i] <= p.posKm + 1e-9;
