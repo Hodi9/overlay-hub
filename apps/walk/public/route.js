@@ -7,7 +7,7 @@ export const TOWNS = {
   aarhus: { name: "Aarhus", lat: 56.157, lon: 10.211 },
   skanderborg: { name: "Skanderborg", lat: 56.045, lon: 9.927 },
   middelfart: { name: "Middelfart", lat: 55.505, lon: 9.73 },
-  aarup: { name: "Aarup", lat: 55.376, lon: 10.049 },
+  skovsgaarde: { name: "Skovsgårde", lat: 55.47, lon: 10.06 }, // landsby ved Søndersø på Nordfyn (placering ca., ret den hvis prikken sidder skævt)
   odense: { name: "Odense", lat: 55.4, lon: 10.39 },
   nyborg: { name: "Nyborg", lat: 55.31, lon: 10.79 },
   korsoer: { name: "Korsør", lat: 55.33, lon: 11.14 },
@@ -22,11 +22,11 @@ export function copenhagenDate(now = new Date()) {
 }
 
 // Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; en færge tæller 0 km).
-export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "bredal", "middelfart", "aarup", "odense", "nyborg", "korsoer", "slagelse", "naestved", "gavnoe"];
+export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "bredal", "middelfart", "skovsgaarde", "odense", "nyborg", "korsoer", "slagelse", "naestved", "gavnoe"];
 // Km er gangafstande i hele km. Kilder: Google Maps (Skanderborg → Bredal, Bredal → Middelfart), Rome2Rio (Slagelse → Næstved 35,3 km i bil),
 // stien Næstved → Gavnø (ca. 8,5 km), resten fra den oprindelige etapetabel eller regnet fra afstand på kortet. Ret et tal her, hvis Google Maps siger noget andet.
 export const LEGS = [
-  { km: 22 }, { km: 30 }, { km: 39 }, { km: 38 }, { km: 29 }, { km: 27 }, { km: 34 },
+  { km: 22 }, { km: 30 }, { km: 39 }, { km: 38 }, { km: 25 }, { km: 27 }, { km: 34 },
   { km: 0, ride: "Tog Nyborg → Korsør" },
   { km: 19 }, { km: 35 }, { km: 9 }
 ];
