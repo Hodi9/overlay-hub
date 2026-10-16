@@ -17,9 +17,9 @@ test("stageBetween joins the towns on the way and adds up the km", () => {
   assert.equal(stageBetween("xx", "blommenslyst"), null);
   const all = stageBetween("rosenholm", "gavnoe");
   assert.equal(all.km, TOTAL_KM); // en etape fra start til mål er hele ruten
-  assert.deepEqual(stageBetween("odense", "slagelse").ride, { label: "Tog Nyborg → Korsør", from: "nyborg", to: "korsoer" });
-  assert.equal(stageBetween("odense", "slagelse").km, 29 + 0 + 19); // toget tæller 0 km
-  assert.equal(STAGES[6].ride.label, "Tog Nyborg → Korsør"); // etapen efter toget viser, hvordan han kom dertil
+  assert.equal(stageBetween("odense", "slagelse").km, 29 + 0 + 19); // togturen Nyborg -> Korsør tages offstream og tæller 0 km
+  assert.equal(stageBetween("odense", "slagelse").via, "Nyborg, Korsør");
+  assert.deepEqual([STAGES[5].to, STAGES[6].from, STAGES[5].endKm === STAGES[6].startKm], ["Nyborg", "Korsør", true]); // etape 7 starter i Korsør lige efter etape 6
   assert.equal(nextPlanned(STAGES[2]).n, 4);
   assert.equal(nextPlanned(c).n, 5); // efter Skanderborg -> Middelfart kommer Middelfart -> Blommenslyst
   assert.equal(prevPlanned(c).n, 2);
@@ -426,12 +426,13 @@ test("the route is a chain of towns, and the planned stages cover it without gap
   STAGES.forEach((st, i) => {
     assert.equal(st.n, i + 1);
     assert.equal(st.startKm, i === 0 ? 0 : STAGES[i - 1].endKm, `etape ${st.n} hænger ikke sammen med etapen før`); // en færge tæller 0 km
-    if (st.ride) assert.ok(TOWNS[st.ride.from] && TOWNS[st.ride.to] && st.ride.label);
   });
   assert.equal(STAGES.at(-1).endKm, TOTAL_KM);
   assert.equal(STAGES[2].from + STAGES[2].to, "SkanderborgBredal"); // etape 3: Marcel gik over Bredal
   assert.ok(!JSON.stringify(STAGES).match(/Silkeborg|Ikast|Herning|Brande|Give|Jelling|Svendborg|Spodsbjerg|Tårs|Maribo|Nykøbing/));
-  assert.equal(STAGES.find((x) => x.ride).ride.label, "Tog Nyborg → Korsør");
+  assert.ok(!JSON.stringify(STAGES).match(/[Tt]og|ride/)); // togturen er offstream og vises ikke på overlayet
+  assert.ok(LEGS.every((l) => !("ride" in l)));
+  assert.deepEqual([STAGES[6].from + STAGES[6].to, STAGES[7].from + STAGES[7].to, STAGES[8].from + STAGES[8].to], ["KorsørSlagelse", "SlagelseNæstved", "NæstvedGavnø Slot"]);
 });
 
 test("Marcel went Skanderborg -> Bredal, so the main route goes via Bredal (not Horsens) straight to Middelfart", () => {

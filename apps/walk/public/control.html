@@ -222,7 +222,7 @@ function renderStage(stage) {
     $("toSel").innerHTML = townOpts(WAYPOINTS.slice(WAYPOINTS.indexOf(stage.fromKey) + 1), stage.toKey);
   }
   const names = stage.path.map((k) => TOWNS[k].name).join(" → ");
-  $("stageNote").textContent = arrived ? "Marcel er nået frem. Vælg en etape igen for at gå videre." : `${names} · ${fmt(stage.km)} km${stage.ride ? " · " + stage.ride.label : ""}. Byerne på vejen tages automatisk med, og km er summen af stykkerne.`;
+  $("stageNote").textContent = arrived ? "Marcel er nået frem. Vælg en etape igen for at gå videre." : `${names} · ${fmt(stage.km)} km. Byerne på vejen tages automatisk med, og km er summen af stykkerne.`;
 }
 
 function render() {
