@@ -11,7 +11,7 @@ export const SCALE_MIN = 0.3;
 export const SCALE_MAX = 1.5;
 
 export const FIELDS = {
-  1: [["badge", "Etape-mærke (fx Etape 5/10)"], ["via", "Via-by / tog"], ["todayKm", "Km gået i dag"], ["stay", "Overnatning"], ["todayBar", "Dagens fremdriftsbar"], ["total", "Km i alt"], ["left", "Km til Gavnø"], ["pace", "Ø-tempo"], ["time", "Gå-tid"], ["eta", "Forventet ankomst"], ["pause", "Pause-mærke (lille PAUSE på kanten)"], ["trail", "Etape-striben nederst"]],
+  1: [["badge", "Etape-mærke (fx Etape 5/9)"], ["via", "Via-by / tog"], ["todayKm", "Km gået i dag"], ["stay", "Overnatning"], ["todayBar", "Dagens fremdriftsbar"], ["total", "Km i alt"], ["left", "Km til Gavnø"], ["pace", "Ø-tempo"], ["time", "Gå-tid"], ["eta", "Forventet ankomst"], ["pause", "Pause-mærke (lille PAUSE på kanten)"], ["trail", "Etape-striben nederst"]],
   2: [["title", "Titel øverst"], ["badge", "Etape-mærke"], ["via", "Via-by / tog"], ["todayBar", "Dagens fremdriftsbar"], ["todayKm", "Km i dag"], ["total", "Km i alt"], ["left", "Km tilbage"], ["pace", "Ø-tempo"], ["time", "Gå-tid"], ["eta", "Forventet ankomst"], ["pause", "Pause-mærke (lille PAUSE på kanten)"], ["stay", "Overnatning"]],
   3: [["badge", "Etape-mærke"], ["labels", "Bynavne på kortet"], ["overview", "Vis hele ruten (fra = zoom ind på dagens etape)"], ["todayKm", "Km i dag"], ["total", "Km i alt"], ["left", "Km tilbage"], ["pace", "Ø-tempo"], ["eta", "Forventet ankomst"], ["pause", "Pause-mærke (lille PAUSE på kanten)"]],
   4: [["title", "Titel øverst"], ["date", "Etape-nummer"], ["kms", "Km pr. etape"], ["pace", "Ø-tempo"], ["eta", "Forventet ankomst"], ["pause", "Pause-mærke (lille PAUSE på kanten)"], ["total", "Samlet fremdrift"]],
