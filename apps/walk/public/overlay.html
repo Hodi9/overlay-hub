@@ -286,7 +286,7 @@ const stage$ = document.getElementById("stage");
 function fit() { stage$.style.transform = `scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`; }
 addEventListener("resize", fit); fit();
 
-const routeLabel = (s) => `${esc(s.from)}<span class="arrow">→</span>${esc(s.to)}`;
+const routeLabel = (s) => `${esc(s.from)}<span class="arrow">→</span><wbr>${esc(s.to)}`; // <wbr>: lange byer må brydes efter pilen i stedet for at blive klippet af
 const viaLabel = (s) => [s.ride?.label, s.via ? "via " + s.via : ""].filter(Boolean).map(esc).join(" · ");
 const pctW = (p) => `${Math.max(0, Math.min(1, p)) * 100}%`;
 
@@ -296,7 +296,7 @@ function headerNote(p) {
 }
 
 // Etiketter på kortet: [dx, dy] i skærm-px fra byen (skaleres med kortets zoom).
-const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], middelfart: [-16, 6], aarup: [-14, 26], odense: [0, -18], nyborg: [0, 30], bredal: [-16, 10], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
+const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], middelfart: [-16, 6], skovsgaarde: [-14, 24], odense: [0, -18], nyborg: [0, 30], bredal: [-16, 10], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
 
 const MAJOR = new Set(["rosenholm", "aarhus", "bredal", "odense", "naestved", "gavnoe"]);
 
