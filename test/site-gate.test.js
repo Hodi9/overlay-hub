@@ -35,10 +35,60 @@ test("med SITE_PASSWORD kræver forsiden koden, uanset hvordan den nås", async 
     for (const p of ["/", "/index.html", "/INDEX.HTML", "/index.html/", "//"]) {
       const r = await fetch(base + p);
       assert.equal(r.status, 401, p);
-      assert.match(r.headers.get("www-authenticate") || "", /^Basic /);
+      assert.equal(r.headers.get("www-authenticate"), null); // ingen browser-dialog med brugernavn
       assert.equal(r.headers.get("cache-control"), "no-store");
-      assert.equal(await r.text(), "Adgangskode påkrævet");
+      const html = await r.text();
+      assert.match(html, /type="password"/);
+      assert.ok(!/username|brugernavn/i.test(html), "login-siden skal kun have ét felt");
+      assert.ok(!html.includes("forside"));
     }
+  });
+});
+
+const form = (password) => ({ method: "POST", redirect: "manual", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ password }).toString() });
+const cookieOf = (r) => (r.headers.get("set-cookie") || "").split(";")[0];
+
+test("login-siden: rigtig kode giver en cookie, der holder forsiden åben", async () => {
+  await withApp("hemmelig-kode", async (base) => {
+    const r = await fetch(base + "/", form("hemmelig-kode"));
+    assert.equal(r.status, 303);
+    assert.equal(r.headers.get("location"), "/");
+    const setCookie = r.headers.get("set-cookie") || "";
+    assert.match(setCookie, /^site_auth=[0-9a-f]{64};/);
+    assert.match(setCookie, /HttpOnly/);
+    assert.match(setCookie, /SameSite=Lax/);
+    assert.match(setCookie, /Max-Age=2592000/);
+    assert.ok(!/Secure/.test(setCookie)); // http lokalt
+    assert.ok(!setCookie.includes("hemmelig-kode"));
+    for (const p of ["/", "/index.html"]) {
+      const ok = await fetch(base + p, { headers: { cookie: cookieOf(r) } });
+      assert.equal(ok.status, 200, p);
+      assert.equal(await ok.text(), "forside");
+      assert.equal(ok.headers.get("cache-control"), "private, no-cache");
+    }
+    const https = await fetch(base + "/", { ...form("hemmelig-kode"), headers: { ...form("").headers, "x-forwarded-proto": "https" } });
+    assert.match(https.headers.get("set-cookie") || "", /; Secure/);
+  });
+});
+
+test("login-siden: forkert kode, forfalsket cookie og cookie fra en anden kode afvises", async () => {
+  let other;
+  await withApp("anden-kode", async (base) => { other = cookieOf(await fetch(base + "/", form("anden-kode"))); });
+  assert.match(other, /^site_auth=/);
+  await withApp("hemmelig-kode", async (base) => {
+    for (const body of [form("forkert"), form(""), { method: "POST", body: "uden=kode", headers: { "content-type": "application/x-www-form-urlencoded" } },
+      { method: "POST", body: "x".repeat(5000), headers: { "content-type": "application/x-www-form-urlencoded" } },
+      { method: "POST", body: JSON.stringify({ password: "hemmelig-kode" }), headers: { "content-type": "application/json" } }]) {
+      const r = await fetch(base + "/", { redirect: "manual", ...body });
+      assert.equal(r.status, 401);
+      assert.equal(r.headers.get("set-cookie"), null);
+      assert.match(await r.text(), /type="password"/);
+    }
+    assert.match(await (await fetch(base + "/", form("forkert"))).text(), /Forkert kode/);
+    for (const cookie of ["site_auth=", "site_auth=abc", "site_auth=" + "0".repeat(64), "andet=1", other, "site_auth"]) {
+      assert.equal((await fetch(base + "/", { headers: { cookie } })).status, 401, cookie);
+    }
+    assert.equal((await fetch(base + "/", { headers: { cookie: "x=1; " + cookieOf(await fetch(base + "/", form("hemmelig-kode"))) } })).status, 200);
   });
 });
 
