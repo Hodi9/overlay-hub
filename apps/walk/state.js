@@ -124,8 +124,8 @@ export function restoreState(data = {}, now = new Date()) {
     else legacy = { stage: Math.max(1, day || 1) };
   }
   // Byer, der er udgået eller har skiftet navn, skal ikke sende gemt tilstand tilbage til etape 1: «hedensted» (før den hed Bredal) og
-  // «horsens» (Marcel gik over Bredal) bliver til Bredal, og «vejle» (er ikke længere en by på ruten) til Bredal som start og Middelfart som mål. «aarup» og «skovsgaarde» er blevet til Blommenslyst.
-  const renameTo = { hedensted: "bredal", horsens: "bredal", vejle: "middelfart", aarup: "blommenslyst", skovsgaarde: "blommenslyst" }, renameFrom = { hedensted: "bredal", horsens: "bredal", vejle: "bredal", aarup: "blommenslyst", skovsgaarde: "blommenslyst" };
+  // «horsens» (Marcel gik over Bredal) bliver til Bredal, og «vejle» (er ikke længere en by på ruten) til Bredal som start og Middelfart som mål. «aarup» og «skovsgaarde» er blevet til Blommenslyst, og ruten går nu Korsør → Skælskør → Gavnø Slot, så «slagelse» bliver til Skælskør, og «næstved» til Skælskør som start eller Gavnø som mål.
+  const renameTo = { hedensted: "bredal", horsens: "bredal", vejle: "middelfart", aarup: "blommenslyst", skovsgaarde: "blommenslyst", slagelse: "skaelskoer", naestved: "gavnoe" }, renameFrom = { hedensted: "bredal", horsens: "bredal", vejle: "bredal", aarup: "blommenslyst", skovsgaarde: "blommenslyst", slagelse: "skaelskoer", naestved: "skaelskoer" };
   if (typeof data.to === "string" && renameTo[data.to]) data = { ...data, to: renameTo[data.to] };
   if (typeof data.from === "string" && renameFrom[data.from]) data = { ...data, from: renameFrom[data.from] };
   const old = legacyAuto && data.kmDate !== copenhagenDate(now); // dengang nulstillede automatisk dag gårsdagens km

@@ -296,9 +296,9 @@ function headerNote(p) {
 }
 
 // Etiketter på kortet: [dx, dy] i skærm-px fra byen (skaleres med kortets zoom).
-const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], middelfart: [-16, 6], blommenslyst: [-14, 24], odense: [0, -18], nyborg: [0, 30], bredal: [-16, 10], korsoer: [-4, -16], slagelse: [10, -16], naestved: [14, -12], gavnoe: [-14, 24] };
+const LABELS = { rosenholm: [16, -8], aarhus: [16, -6], skanderborg: [16, 4], middelfart: [-16, 6], blommenslyst: [-14, 24], odense: [0, -18], nyborg: [0, 30], bredal: [-16, 10], korsoer: [-4, -16], skaelskoer: [-12, 24], gavnoe: [14, -12] };
 
-const MAJOR = new Set(["rosenholm", "aarhus", "bredal", "odense", "naestved", "gavnoe"]);
+const MAJOR = new Set(["rosenholm", "aarhus", "bredal", "odense", "gavnoe"]);
 
 // Tegner Danmark (rigtig kystlinje) med ruten. W×H er visningsstørrelsen i px.
 function dkMap(p, f, W, H, fontPx, allLabels = true) {
