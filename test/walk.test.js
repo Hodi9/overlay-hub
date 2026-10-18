@@ -4,7 +4,7 @@ import { STAGES, TOTAL_KM, WAYPOINTS, LEGS, stageBetween, nextPlanned, prevPlann
 
 test("route has 10 planned stages and sums their km", () => {
   assert.equal(STAGES.length, 7);
-  assert.equal(TOTAL_KM, 260);
+  assert.equal(TOTAL_KM, 263);
   assert.equal(STAGES.reduce((sum, st) => sum + st.km, 0), TOTAL_KM);
 });
 
@@ -17,7 +17,7 @@ test("stageBetween joins the towns on the way and adds up the km", () => {
   assert.equal(stageBetween("xx", "blommenslyst"), null);
   const all = stageBetween("rosenholm", "gavnoe");
   assert.equal(all.km, TOTAL_KM); // en etape fra start til mål er hele ruten
-  assert.equal(stageBetween("odense", "skaelskoer").km, 29 + 0 + 17); // togturen Nyborg -> Korsør tages offstream og tæller 0 km
+  assert.equal(stageBetween("odense", "skaelskoer").km, 29 + 0 + 20); // togturen Nyborg -> Korsør tages offstream og tæller 0 km
   assert.equal(stageBetween("odense", "skaelskoer").via, "Nyborg, Korsør");
   assert.deepEqual([STAGES[5].to, STAGES[6].from, STAGES[5].endKm === STAGES[6].startKm], ["Nyborg", "Nyborg", true]); // etape 7 starter i Nyborg, hvor etape 6 slutter
   assert.equal(nextPlanned(STAGES[2]).n, 4);
@@ -378,9 +378,9 @@ test("pathUpTo draws the walked part of a stage, growing with the km", () => {
   assert.deepEqual(pathUpTo(s, 7).at(-1), full.at(-1)); // fraction klemmes
   assert.deepEqual(pathUpTo(s, -1)[0], { lat: TOWNS.blommenslyst.lat, lon: TOWNS.blommenslyst.lon });
   // et tog (0 km) springes over i ét hop: lige efter Nyborg ligger prikken allerede ved Korsør
-  const f = stageBetween("odense", "skaelskoer"); // 29 + 0 (tog) + 17
-  assert.deepEqual(positionOnStage(f, 29 / 46), { lat: TOWNS.nyborg.lat, lon: TOWNS.nyborg.lon });
-  assert.ok(positionOnStage(f, 30 / 46).lon > TOWNS.korsoer.lon - 0.1 && positionOnStage(f, 30 / 46).lon < TOWNS.skaelskoer.lon);
+  const f = stageBetween("odense", "skaelskoer"); // 29 + 0 (tog) + 20
+  assert.deepEqual(positionOnStage(f, 29 / 49), { lat: TOWNS.nyborg.lat, lon: TOWNS.nyborg.lon });
+  assert.ok(positionOnStage(f, 30 / 49).lon > TOWNS.korsoer.lon - 0.1 && positionOnStage(f, 30 / 49).lon < TOWNS.skaelskoer.lon);
 });
 
 test("the trail skips the offstream train hop instead of drawing a line over it", () => {
@@ -391,7 +391,7 @@ test("the trail skips the offstream train hop instead of drawing a line over it"
   assert.deepEqual(full[1].map(key), ["korsoer", "skaelskoer", "gavnoe"].map((k) => key(TOWNS[k])));
   assert.deepEqual(pathUpTo(s, 1).map(key), full.flat().map(key)); // positionen bruger det samme spor
   assert.equal(key(positionOnStage(s, 0)), key(TOWNS.korsoer)); // prikken står i Korsør fra start: togturen er offstream
-  const half = trailSegments(s, 0.5); // 25,5 af 51 km: på vej mod Gavnø, efter Skælskør
+  const half = trailSegments(s, 0.5); // 27 af 54 km: på vej mod Gavnø, efter Skælskør
   assert.equal(half.length, 2);
   assert.deepEqual(half[1].slice(0, 2).map(key), [key(TOWNS.korsoer), key(TOWNS.skaelskoer)]);
   assert.equal(trailSegments(stageBetween("blommenslyst", "nyborg"), 1).length, 1); // uden hop er sporet ét stykke
@@ -448,13 +448,13 @@ test("the route is a chain of towns, and the planned stages cover it without gap
   assert.ok(!JSON.stringify(STAGES).match(/Silkeborg|Ikast|Herning|Brande|Give|Jelling|Svendborg|Spodsbjerg|Tårs|Maribo|Nykøbing/));
   assert.ok(!JSON.stringify(STAGES).match(/[Tt]og|ride/)); // togturen er offstream og vises ikke på overlayet
   assert.ok(LEGS.every((l) => !("ride" in l)));
-  assert.deepEqual([STAGES[6].from + STAGES[6].to, STAGES[6].via, STAGES[6].km], ["NyborgGavnø Slot", "Korsør, Skælskør", 51]); // sidste etape: hele vejen fra Nyborg station (togturen tæller 0 km)
-  assert.deepEqual([stageBetween("korsoer", "skaelskoer").n, stageBetween("skaelskoer", "gavnoe").n, stageBetween("korsoer", "skaelskoer").km, stageBetween("skaelskoer", "gavnoe").km], [0, 0, 17, 34]); // kan stadig vælges som egen etape
+  assert.deepEqual([STAGES[6].from + STAGES[6].to, STAGES[6].via, STAGES[6].km], ["NyborgGavnø Slot", "Korsør, Skælskør", 54]); // sidste etape: hele vejen fra Nyborg station (togturen 0 km, Korsør → Skælskør 17 + 3 km omvej, så 34)
+  assert.deepEqual([stageBetween("korsoer", "skaelskoer").n, stageBetween("skaelskoer", "gavnoe").n, stageBetween("korsoer", "skaelskoer").km, stageBetween("skaelskoer", "gavnoe").km], [0, 0, 20, 34]); // kan stadig vælges som egen etape
 });
 
 test("Marcel went Skanderborg -> Bredal, so the main route goes via Bredal (not Horsens) straight to Middelfart", () => {
   assert.equal(STAGES.length, 7);
-  assert.equal(TOTAL_KM, 260);
+  assert.equal(TOTAL_KM, 263);
   const a = STAGES[2], b = STAGES[3];
   assert.deepEqual([a.from, a.to, a.km, a.startKm, a.endKm], ["Skanderborg", "Bredal", 39, 52, 91]);
   assert.deepEqual([b.from, b.to, b.km, b.via, b.startKm, b.endKm], ["Bredal", "Middelfart", 38, "", 91, 129]); // Google Maps: 38,1 km til fods
@@ -536,7 +536,7 @@ test("saved state from the old route via Slagelse and Næstved (before Skælskø
     assert.deepEqual([r.from, r.to, r.km], ["skaelskoer", "gavnoe", 3], `${from} -> ${to}`);
   }
   assert.deepEqual([restoreState({ from: "korsoer", to: "naestved" }).from, restoreState({ from: "korsoer", to: "naestved" }).to], ["korsoer", "gavnoe"]);
-  assert.deepEqual([STAGES[6].km, STAGES[6].to], [51, "Gavnø Slot"]);
+  assert.deepEqual([STAGES[6].km, STAGES[6].to], [54, "Gavnø Slot"]);
 });
 
 test("URL values for stage, km and time only apply together with ?preview=1, so an old test URL in OBS cannot override the panel", () => {
