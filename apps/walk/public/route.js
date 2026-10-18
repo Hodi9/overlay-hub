@@ -22,12 +22,12 @@ export function copenhagenDate(now = new Date()) {
 
 // Byerne i rækkefølge. LEGS[i] er stykket fra WAYPOINTS[i] til WAYPOINTS[i+1] (km er estimater; et stykke uden km, som togturen, tegnes ikke).
 export const WAYPOINTS = ["rosenholm", "aarhus", "skanderborg", "bredal", "middelfart", "blommenslyst", "odense", "nyborg", "korsoer", "skaelskoer", "gavnoe"];
-// Km er gangafstande i hele km. Kilder: Google Maps (Skanderborg → Bredal, Bredal → Middelfart), Rome2Rio (Korsør → Skælskør ca. 17 km ad vej),
+// Km er gangafstande i hele km. Kilder: Google Maps (Skanderborg → Bredal, Bredal → Middelfart), Rome2Rio (Korsør → Skælskør ca. 17 km ad vej, plus 3 km omvej),
 // Skælskør → Gavnø Slot ca. 34 km (regnet fra afstand på kortet), Blommenslyst → Nyborg station er ca. 38 km (9 til Odense + 29 videre), resten fra den oprindelige etapetabel eller regnet fra afstand på kortet. Ret et tal her, hvis Google Maps siger noget andet.
 export const LEGS = [
   { km: 22 }, { km: 30 }, { km: 39 }, { km: 38 }, { km: 42 }, { km: 9 }, { km: 29 },
   { km: 0 }, // Nyborg → Korsør: togturen tages offstream, så den tæller 0 km og tegnes ikke på overlayet
-  { km: 17 }, { km: 34 }
+  { km: 20 }, { km: 34 } // Korsør → Skælskør: 17 km + 3 km omvej, som Marcel tog
 ];
 // Km fra start til hver by.
 export const CUM = WAYPOINTS.map((_, i) => LEGS.slice(0, i).reduce((sum, l) => sum + l.km, 0));
