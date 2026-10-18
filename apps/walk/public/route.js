@@ -55,7 +55,7 @@ export function stageBetween(fromKey, toKey) {
 // De planlagte etaper (kan ændres i kontrolpanelet ved at vælge andre byer).
 const PRESETS = [
   { i: 0, j: 1, stay: "Hotel/hostel" }, { i: 1, j: 2, stay: "Hotel/shelter" }, { i: 2, j: 3, stay: "Hotel/hostel" }, { i: 3, j: 4, stay: "Hotel/hostel" },
-  { i: 4, j: 5, stay: "Hotel/shelter" }, { i: 5, j: 7, stay: "Hotel" }, { i: 8, j: 9, stay: "Hotel" }, { i: 9, j: 10, stay: "Gavnø Slot (målet)" }
+  { i: 4, j: 5, stay: "Hotel/shelter" }, { i: 5, j: 7, stay: "Hotel" }, { i: 7, j: 10, stay: "Gavnø Slot (målet)" }
 ];
 export const STAGES = PRESETS.map((p) => stageBetween(WAYPOINTS[p.i], WAYPOINTS[p.j]));
 export const DEFAULT_STAGE = { from: STAGES[0].fromKey, to: STAGES[0].toKey };
@@ -79,23 +79,30 @@ export function progress(stage, kmToday = 0, arrived = false) {
 
 // Stien fra etapens start og så langt som `fraction` (0..1) af etapens km — byerne på vejen og til sidst det interpolerede punkt.
 // Bruges til at tegne det stykke af etapen, der er gået. En færge (0 km) springes over i ét hop.
-export function pathUpTo(stage, fraction) {
+// Sporet langs en etapes byer, fraction 0..1, som stykker uden hop imellem: et stykke uden km (togturen) tegnes ikke,
+// så næste stykke starter i næste by.
+export function trailSegments(stage, fraction) {
   const pts = stage.path.map((k) => TOWNS[k]);
   const lens = stage.legs.map((l) => l.km);
   const total = lens.reduce((a, b) => a + b, 0);
   let target = Math.max(0, Math.min(1, fraction)) * total;
-  const out = [{ lat: pts[0].lat, lon: pts[0].lon }];
+  const segs = [[{ lat: pts[0].lat, lon: pts[0].lon }]];
   for (let i = 0; i < lens.length; i++) {
+    const cur = segs[segs.length - 1];
     if ((lens[i] > 0 && target <= lens[i]) || i === lens.length - 1) {
       const t = lens[i] ? Math.min(1, target / lens[i]) : 0;
-      out.push({ lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * t, lon: pts[i].lon + (pts[i + 1].lon - pts[i].lon) * t });
-      return out;
+      cur.push({ lat: pts[i].lat + (pts[i + 1].lat - pts[i].lat) * t, lon: pts[i].lon + (pts[i + 1].lon - pts[i].lon) * t });
+      return segs;
     }
-    out.push({ lat: pts[i + 1].lat, lon: pts[i + 1].lon });
+    if (lens[i] > 0) cur.push({ lat: pts[i + 1].lat, lon: pts[i + 1].lon });
+    else segs.push([{ lat: pts[i + 1].lat, lon: pts[i + 1].lon }]);
     target -= lens[i];
   }
-  return out;
+  return segs;
 }
+
+// Samme spor som ét punktlistestykke (til positionen: det sidste punkt).
+export const pathUpTo = (stage, fraction) => trailSegments(stage, fraction).flat();
 
 // Position langs en etapes byer, fraction 0..1.
 export function positionOnStage(stage, fraction) {
