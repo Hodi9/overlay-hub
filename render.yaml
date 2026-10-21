@@ -8,8 +8,6 @@ services:
     startCommand: npm start
     healthCheckPath: /health
     envVars:
-      - key: SITE_PASSWORD
-        sync: false
       - key: BROVSBRO_PANEL_KEY
         sync: false
       - key: MINECRAFT_CONTROL_PANEL_PASSWORD
