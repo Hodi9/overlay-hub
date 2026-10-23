@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_QUESTS } from "../apps/cyberpunk/quests.js";
 import { cleanQuest } from "../apps/cyberpunk/app.js";
-import { computeProgress } from "../apps/cyberpunk/public/progress.js";
+import { computeProgress, describePhase } from "../apps/cyberpunk/public/progress.js";
 
 const jobs = (...parts) => parts.map((part, i) => ({ id: String(i), day: `job ${i}`, part }));
 
@@ -48,4 +48,26 @@ test("computeProgress handles not-started, finished and empty lists", () => {
   assert.equal(computeProgress(list, -1, true).completed, 0);
   assert.deepEqual(computeProgress(list, 2, false), { completed: 1, total: 1, percent: 100, finished: true });
   assert.deepEqual(computeProgress([], 0, true), { completed: 0, total: 0, percent: 0, finished: true });
+});
+
+test("describePhase: the current job is 'started' and finishing it starts the next", () => {
+  const list = jobs("base", "base", "phantom");
+  assert.deepEqual(describePhase(list, -1), { phase: "idle", current: null, next: list[0] });
+  assert.deepEqual(describePhase(list, 0), { phase: "started", current: list[0], next: list[1] });
+  assert.deepEqual(describePhase(list, 2), { phase: "started", current: list[2], next: null });
+  assert.deepEqual(describePhase(list, 3), { phase: "finished", current: null, next: null });
+  assert.deepEqual(describePhase([], -1), { phase: "idle", current: null, next: null });
+});
+
+test("finishing a job counts it as done and starts the next one", () => {
+  const list = jobs("base", "base", "base", "base");
+  const started = computeProgress(list, 1, true);
+  assert.equal(started.completed, 1);
+  // "Finish" = move to index + 1: the job just done is counted, the next is started.
+  const afterFinish = computeProgress(list, 2, true);
+  assert.equal(afterFinish.completed, 2);
+  assert.equal(describePhase(list, 2).current, list[2]);
+  // Finishing the last job completes the run.
+  const last = computeProgress(list, 4, true);
+  assert.deepEqual([last.completed, last.finished, describePhase(list, 4).phase], [4, true, "finished"]);
 });

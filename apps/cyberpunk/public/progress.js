@@ -19,3 +19,16 @@ export function computeProgress(chapters, currentIndex, includePhantom) {
   const percent = total ? Math.round((completed / total) * 1000) / 10 : 0;
   return { completed, total, percent, finished };
 }
+
+// Where the run is right now. There is no "between jobs" state: finishing a job
+// starts the next one straight away, so the current job is always "started"
+// (in progress, not counted as done) until it is finished.
+//   idle     -> nothing started yet; `next` is the first job
+//   started  -> `current` is in progress; `next` is what finishing it starts
+//   finished -> every job is done
+export function describePhase(chapters, currentIndex) {
+  const list = Array.isArray(chapters) ? chapters : [];
+  if (currentIndex < 0) return { phase: "idle", current: null, next: list[0] || null };
+  if (currentIndex >= list.length) return { phase: "finished", current: null, next: null };
+  return { phase: "started", current: list[currentIndex], next: list[currentIndex + 1] || null };
+}

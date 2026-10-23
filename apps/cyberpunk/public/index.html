@@ -30,6 +30,8 @@
   .current{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:1.125rem;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);}
   .current .bullet{flex:none;width:8px;height:8px;transform:rotate(45deg);background:var(--accent);}
   .current .text{text-shadow:0 2px 8px rgba(0,0,0,.9);}
+  /* The current job is in progress, not done — the count above only has finished jobs. */
+  .current .phase{flex:none;font-size:0.75rem;font-weight:600;letter-spacing:0.14em;line-height:1;padding:3px 7px;border:2px solid rgba(255,255,255,.75);border-radius:3px;color:rgba(255,255,255,.9);text-shadow:0 2px 8px rgba(0,0,0,.9);}
 
   .idle{font-size:1.25rem;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:0.1em;}
 </style>
@@ -85,7 +87,7 @@ function render(state){
     currentHtml = '<span class="bullet"></span><span class="text">Historien er fuldført</span>';
   } else if (state.current){
     sectionHtml = escapeHtml(sectionText(state.current));
-    currentHtml = '<span class="bullet"></span><span class="text">' + escapeHtml(state.current.day || '') + '</span>';
+    currentHtml = '<span class="bullet"></span><span class="phase">Started</span><span class="text">' + escapeHtml(state.current.day || '') + '</span>';
   }
 
   content.innerHTML =
