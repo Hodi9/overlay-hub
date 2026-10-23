@@ -96,9 +96,13 @@ export function createRdr2DeathsApp() {
     for (const response of state.listeners) response.write(message);
   }
 
+  // The in-memory count is already updated by the time this runs, so tell the
+  // live viewers (the overlay, control panels) first. A slow or failing database
+  // write must not hold the death counter back — it still surfaces as an error to
+  // whoever made the change.
   async function commit(channel, state) {
-    await persist(channel, state);
     broadcast(channel, state);
+    await persist(channel, state);
   }
 
   const chatHub = createTwitchDeathHub({ command: chatCommand });
