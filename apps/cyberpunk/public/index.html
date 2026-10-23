@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap">
 <style>
-  :root{ --accent:#fcee0a; }
+  :root{ --accent:#fcee0a; --bar:#fcee0a; }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
   body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-start;height:100vh;padding:40px;}
@@ -22,7 +22,7 @@
   .scope{margin-top:2px;font-size:0.875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.16em;color:var(--accent);text-shadow:0 2px 8px rgba(0,0,0,.9);}
 
   .bar-rail{margin-top:12px;height:16px;width:100%;border-radius:3px;border:2px solid #fff;padding:3px;}
-  .bar-fill{height:100%;border-radius:1px;border-right:2px solid #fff;background:rgba(255,255,255,.2);width:0%;transition:width .7s ease;}
+  .bar-fill{height:100%;border-radius:1px;border-right:2px solid #fff;background:var(--bar);width:0%;transition:width .7s ease;}
 
   .count{margin-top:12px;font-size:2.25rem;font-weight:700;text-transform:uppercase;letter-spacing:-0.025em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
   .section{margin-top:4px;font-size:1.25rem;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,.85);min-height:1.5em;}
