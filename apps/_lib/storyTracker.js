@@ -189,9 +189,13 @@ export function createStoryTrackerApp(options) {
     for (const response of set) response.write(message);
   }
 
+  // The in-memory state is already updated by the time this runs, so tell the
+  // live viewers (overlay, control panels) first. A slow or failing database
+  // write must not hold the overlay back — it still surfaces as an error to
+  // whoever made the change.
   async function commit(profileId, state) {
-    await persist(profileId, state);
     broadcast(profileId, state);
+    await persist(profileId, state);
   }
 
   router.use(express.json({ limit: "32kb" }));
