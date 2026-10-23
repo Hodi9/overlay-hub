@@ -11,6 +11,7 @@ import { createGearBfApp } from "./apps/gear-bf/app.js";
 import { createGauntletApp } from "./apps/gauntlet/app.js";
 import { createTlou2App } from "./apps/tlou2/app.js";
 import { createGta5App } from "./apps/gta5/app.js";
+import { createCyberpunkApp } from "./apps/cyberpunk/app.js";
 import { createMafia1App } from "./apps/mafia1/app.js";
 import { createMafia2App } from "./apps/mafia2/app.js";
 import { createMafia3App } from "./apps/mafia3/app.js";
@@ -64,7 +65,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
   });
 })();</script>`;
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -118,6 +119,7 @@ app.use("/gear-bf", createGearBfApp());
 app.use("/gauntlet", createGauntletApp());
 app.use("/tlou2", createTlou2App());
 app.use("/gta5", createGta5App());
+app.use("/cyberpunk", createCyberpunkApp());
 app.use("/mafia1", createMafia1App());
 app.use("/mafia2", createMafia2App());
 app.use("/mafia3", createMafia3App());
