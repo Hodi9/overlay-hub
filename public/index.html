@@ -257,6 +257,7 @@
 <script>
 const OVERLAYS = [
   { id: "brovsbro", cat: "show", tag: "Show", title: "Bro vs Bro", sub: "Aggo vs Marcelo — score-overlay",
+    image: { src: "/img/brovsbro.png" },
     links: [["Scoreboard", "/brovsbro/overlay"], ["Duel bar", "/brovsbro/overlay?view=duel"], ["Fightcard", "/brovsbro/overlay?view=fightcard"]],
     control: "/brovsbro/panel" },
   { id: "brosvsbros", cat: "show", tag: "Show", title: "Bros vs Bros", hidden: true, sub: "Hold mod hold — egne holdnavne og logoer",
@@ -294,6 +295,7 @@ const OVERLAYS = [
     links: [["Overlay", "/gta5/"]], control: "/gta5/control.html",
     info: "Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
   { id: "cyberpunk", cat: "spil", tag: "Spil", title: "Cyberpunk 2077 Tracker", sub: "Main jobs-progression — inkl. eller uden Phantom Liberty",
+    image: { src: "/img/cyberpunk.jpg", aspect: "1200 / 547", credit: "Ward Lindhout / CD PROJEKT RED", url: "https://www.cyberpunk.net/" },
     links: [["Inkl. Phantom Liberty", "/cyberpunk/"], ["Uden Phantom Liberty", "/cyberpunk/?pl=off"]],
     control: "/cyberpunk/control.html",
     info: "Styres manuelt fra kontrolpanelet — der er ingen auto-tracker endnu. Overlayet skriver selv om Phantom Liberty er med i procenten. Akt 2 og Phantom Liberty kan flyttes rundt i kontrolpanelet, så listen følger din rækkefølge." },
@@ -303,6 +305,7 @@ const OVERLAYS = [
     controls: [["Panel I", "/mafia1/control.html"], ["Panel II", "/mafia2/control.html"], ["Panel III", "/mafia3/control.html"]],
     info: "Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne." },
   { id: "perfektmatch", cat: "show", tag: "Show", title: "Perfekt Match", sub: "Dating-show-overlay med roterende social-media pop-ups",
+    image: { src: "/img/perfektmatch.png", aspect: "474 / 283" },
     links: [["Overlay", "/perfektmatch/"]], control: "/perfektmatch/control.html",
     info: "Understøtter et vilkårligt antal deltagere — tilføj/fjern dem fra kontrolpanelet. Instagram/TikTok-boksene roterer hvert 15. minut, eller udløs dem manuelt med “Vis nu”." }
 ];
