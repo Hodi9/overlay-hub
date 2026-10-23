@@ -86,6 +86,9 @@
 
   code{color:var(--text);background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;}
   footer{margin-top:22px;color:var(--text-dim);font-size:0.8rem;}
+  /* Status messages (wrong password, save failed) float over the page: the list is long, a line at the bottom goes unseen. */
+  #global-status{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);max-width:90vw;z-index:10;margin:0;padding:10px 16px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);box-shadow:0 8px 24px -8px rgba(0,0,0,.6);font-size:0.88rem;}
+  #global-status:empty{display:none;}
   a{color:var(--accent);}
 </style>
 </head>
@@ -206,7 +209,7 @@ function authHeaders(extra){
 function setGlobalStatus(msg, kind){
   globalStatus.textContent = msg;
   globalStatus.className = kind ? kind : '';
-  if (msg) setTimeout(function(){ if (globalStatus.textContent === msg) globalStatus.textContent = ''; }, 3000);
+  if (msg) setTimeout(function(){ if (globalStatus.textContent === msg) globalStatus.textContent = ''; }, 6000);
 }
 
 function apiCall(url, options){
@@ -289,8 +292,21 @@ function putChapters(chapters, followId){
   });
 }
 
+// Jumping is the click you do most, so show it straight away and let the
+// server's answer confirm it. If the server refuses (wrong password, save
+// failed) pull the real state back so the panel never shows a position that
+// was not kept.
 function jumpTo(index){
-  jsonCall('/cyberpunk/api/current' + qs, 'PATCH', { index: index }).then(render);
+  render(Object.assign({}, latest, {
+    currentIndex: index,
+    current: latest.chapters[index] || null,
+    finished: index >= latest.chapters.length
+  }));
+  jsonCall('/cyberpunk/api/current' + qs, 'PATCH', { index: index }).then(render).catch(loadState);
+}
+
+function loadState(){
+  return fetch('/cyberpunk/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
 }
 
 function saveJobField(index, field, value){
@@ -487,7 +503,7 @@ document.getElementById('reset-btn').addEventListener('click', function(){
 
 renderLinks();
 
-fetch('/cyberpunk/api/state' + qs).then(function(r){ return r.json(); }).then(render).catch(function(){});
+loadState();
 
 var events = new EventSource('/cyberpunk/api/events' + qs);
 events.onmessage = function(event){
