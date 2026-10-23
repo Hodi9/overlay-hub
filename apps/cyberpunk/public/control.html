@@ -153,8 +153,14 @@
       </div>
       <p class="capture-text" id="capture-text" style="margin:8px 0 0;">Ingen data endnu.</p>
       <div class="quick-add" id="quick-add" style="display:none;">
-        <button class="btn secondary" id="quick-add-btn">+ Tilføj som næste main job</button>
-        <p class="hint" style="margin:8px 0 0;">Indsætter jobbet lige efter det nuværende og sætter det som nuværende. Brug felterne nederst (akt og del) til at styre hvordan det tilføjes.</p>
+        <div id="quick-jump" style="display:none;">
+          <button class="btn" id="quick-jump-btn"></button>
+          <p class="hint" style="margin:8px 0 0;">Jobbet står allerede på listen, men ligger uden for de få jobs foran det nuværende, som trackeren selv flytter inden for. Alt før det tæller som gennemført.</p>
+        </div>
+        <div id="quick-add-block">
+          <button class="btn secondary" id="quick-add-btn">+ Tilføj som næste main job</button>
+          <p class="hint" style="margin:8px 0 0;">Indsætter jobbet lige efter det nuværende og sætter det som nuværende. Brug felterne nederst (akt og del) til at styre hvordan det tilføjes.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -178,7 +184,7 @@
 </div>
 
 <script type="module">
-import { computeProgress, describePhase } from '/cyberpunk/progress.js';
+import { computeProgress, describePhase, findJobInText } from '/cyberpunk/progress.js';
 
 var params = new URLSearchParams(location.search);
 var profile = params.get('profile') || '';
@@ -443,8 +449,8 @@ function render(state){
 
   var trackerHint = document.getElementById('tracker-hint');
   trackerHint.innerHTML = state.trackerConfigured
-    ? 'Tracker-nøglen er sat (<code>CYBERPUNK_TRACKER_KEY</code>) — en lokal tracker kan sende til <code>/cyberpunk/api/tracker</code>.'
-    : 'Ingen auto-tracker er sat op endnu — styr manuelt herfra. Sæt <code>CYBERPUNK_TRACKER_KEY</code> på serveren når en tracker er klar.';
+    ? 'Trackeren er klar (<code>CYBERPUNK_TRACKER_KEY</code> er sat). Kør <code>apps/cyberpunk/tracker/Start Cyberpunk Tracker.cmd</code> på streame-pc\'en, mens du spiller — den læser quest-titlen i HUD\'en og sætter jobbet som startet. Kalibrér området først (se <code>README.md</code> i den mappe).'
+    : 'Auto-trackeren er ikke sat op endnu — sæt <code>CYBERPUNK_TRACKER_KEY</code> på serveren og i <code>cyberpunk-tracker-config.json</code> lokalt (se <code>apps/cyberpunk/tracker/README.md</code>), eller styr manuelt herfra.';
 
   var captureTag = document.getElementById('capture-tag');
   var captureText = document.getElementById('capture-text');
@@ -454,6 +460,18 @@ function render(state){
     captureTag.className = 'capture-tag ' + (state.lastCapture.matched ? 'matched' : 'unmatched');
     captureText.textContent = '"' + state.lastCapture.text + '" (' + new Date(state.lastCapture.atISO).toLocaleTimeString('da-DK') + ')';
     quickAdd.style.display = state.lastCapture.matched ? 'none' : 'block';
+
+    // Unmatched text that names a job already on the list: offer to start that job,
+    // rather than "add as next", which would make a duplicate of it.
+    var existing = state.lastCapture.matched ? -1 : findJobInText(state.chapters, state.lastCapture.text);
+    var jumpBox = document.getElementById('quick-jump');
+    var jumpBtn = document.getElementById('quick-jump-btn');
+    document.getElementById('quick-add-block').style.display = existing >= 0 ? 'none' : 'block';
+    jumpBox.style.display = existing >= 0 ? 'block' : 'none';
+    if (existing >= 0){
+      jumpBtn.textContent = '▶ Start «' + state.chapters[existing].day + '» (nr. ' + (existing + 1) + ')';
+      jumpBtn.onclick = function(){ jumpTo(existing); };
+    }
   } else {
     captureTag.textContent = '—';
     captureTag.className = 'capture-tag';

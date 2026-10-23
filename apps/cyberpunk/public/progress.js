@@ -20,6 +20,37 @@ export function computeProgress(chapters, currentIndex, includePhantom) {
   return { completed, total, percent, finished };
 }
 
+// Same clean-up the server does before it compares names: lower case, no accents,
+// only letters and digits separated by single spaces.
+export function normalizeName(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+// Which job on the list is named in a text the tracker read off the screen (the
+// quest title, usually with the objective after it)? The panel uses this when the
+// server could not match the text itself because that job lies outside the few
+// jobs ahead of the current one — so it can offer to start the existing job instead
+// of adding a duplicate. Whole words only; the longest matching name wins. -1 = none.
+export function findJobInText(chapters, text) {
+  const captured = ` ${normalizeName(text)} `;
+  let best = -1;
+  let bestLength = 0;
+  (Array.isArray(chapters) ? chapters : []).forEach((chapter, index) => {
+    const name = normalizeName(chapter.day);
+    if (name.length < 4 || name.length <= bestLength) return;
+    if (captured.includes(` ${name} `)) {
+      best = index;
+      bestLength = name.length;
+    }
+  });
+  return best;
+}
+
 // Where the run is right now. There is no "between jobs" state: finishing a job
 // starts the next one straight away, so the current job is always "started"
 // (in progress, not counted as done) until it is finished.

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_QUESTS } from "../apps/cyberpunk/quests.js";
 import { cleanQuest } from "../apps/cyberpunk/app.js";
-import { computeProgress, describePhase } from "../apps/cyberpunk/public/progress.js";
+import { computeProgress, describePhase, findJobInText, normalizeName } from "../apps/cyberpunk/public/progress.js";
 
 const jobs = (...parts) => parts.map((part, i) => ({ id: String(i), day: `job ${i}`, part }));
 
@@ -70,4 +70,22 @@ test("finishing a job counts it as done and starts the next one", () => {
   // Finishing the last job completes the run.
   const last = computeProgress(list, 4, true);
   assert.deepEqual([last.completed, last.finished, describePhase(list, 4).phase], [4, true, "finished"]);
+});
+
+const named = (...names) => names.map((day, i) => ({ id: String(i), day, part: "base" }));
+
+test("findJobInText finds the job named in what the HUD shows, objective and all", () => {
+  const list = named("The Heist", "Dog Eat Dog", "Hole in the Sky");
+  assert.equal(findJobInText(list, "DOG EAT DOG Go to the Dogtown gate"), 1);
+  assert.equal(findJobInText(list, "hole  in the  sky"), 2);
+  assert.equal(findJobInText(list, "Gig: Beat on the Brat"), -1);
+  assert.equal(findJobInText(list, ""), -1);
+});
+
+test("findJobInText ignores accents and case, matches whole words, and prefers the longest name", () => {
+  assert.equal(findJobInText(named("M'ap Tann Pèlen"), "M'AP TANN PELEN follow Judy"), 0);
+  // "ride" inside "pride" is not the job "The Ride", and "Ghost Town" beats the shorter "Town".
+  assert.equal(findJobInText(named("The Ride"), "Pride of the city"), -1);
+  assert.equal(findJobInText(named("Town Hall", "Ghost Town"), "Ghost Town Meet Panam"), 1);
+  assert.equal(normalizeName("  Gimme   DANGER! "), "gimme danger");
 });
