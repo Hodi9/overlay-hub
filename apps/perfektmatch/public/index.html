@@ -3,57 +3,85 @@
 <head>
 <meta charset="utf-8">
 <title>Perfekt Match — Overlay</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
 <style>
+  /* Colours are taken straight from the Perfekt Match cover illustration:
+     flat shapes, no gradients, no glass, no blur. */
+  :root {
+    --rose: #cd325e;        /* the illustration's background */
+    --rose-light: #df4372;  /* the heart behind the couple */
+    --rose-deep: #a62749;   /* a darker rose, for the flat drop shadows */
+    --pink: #f36f96;        /* their shirts */
+    --coral: #f3645e;       /* her hair, one of the glasses */
+    --mint: #e2f1ee;        /* the tablecloth */
+    --ink: #12110f;         /* his hair */
+  }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
+  html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; font-family: 'Fredoka', sans-serif; }
 
-  .pill {
-    position: absolute; left: 50%; bottom: 32px; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 18px; padding: 14px 26px;
-    border-radius: 999px; background: rgba(21,21,26,0.88); white-space: nowrap; max-width: 1800px;
+  .bar {
+    position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%);
+    display: flex; align-items: stretch; white-space: nowrap;
+    /* An absolutely placed box at left:50% may only be 960px wide on this canvas, which wrapped the cast
+       onto two lines. Size to the content instead, and only wrap if the cast outgrows the canvas. */
+    width: max-content; max-width: 1800px;
   }
-  .wordmark { display: flex; align-items: center; gap: 9px; flex: none; }
-  .wordmark b { font-weight: 700; font-size: 16px; color: #fff; }
-  .divider { width: 1px; height: 16px; background: rgba(255,255,255,0.15); flex: none; }
-  .cast-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .cast-heart { flex: none; }
 
-  .dater { position: relative; display: flex; align-items: center; gap: 9px; }
-  .avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .dater-name { font-weight: 600; font-size: 15px; color: #fff; }
+  /* Left block: the show title on rose, with the big heart peeking out behind it. */
+  .title-block {
+    position: relative; overflow: hidden; flex: none;
+    display: flex; align-items: center; padding: 0 40px 0 46px;
+    background: var(--rose); border-radius: 34px 0 0 34px; box-shadow: 0 8px 0 var(--rose-deep);
+  }
+  .deco-heart { position: absolute; left: -4px; top: 50%; width: 108px; height: 108px; transform: translateY(-50%) rotate(-8deg); fill: var(--rose-light); }
+  .title-block b { position: relative; font-weight: 600; font-size: 36px; letter-spacing: 0.01em; color: var(--mint); }
 
+  /* Right block: the cast on the mint tablecloth. */
+  .cast-row {
+    display: flex; align-items: center; gap: 22px; flex-wrap: wrap; justify-content: center;
+    padding: 13px 34px 13px 30px; background: var(--mint); border-radius: 0 34px 34px 0; box-shadow: 0 8px 0 var(--rose-deep);
+  }
+  .cast-heart { flex: none; width: 20px; height: 20px; fill: var(--rose); }
+
+  .dater { position: relative; display: flex; align-items: center; gap: 14px; }
+  .avatar { width: 58px; height: 58px; border-radius: 50%; overflow: hidden; background: var(--pink); border: 4px solid var(--coral); display: flex; align-items: center; justify-content: center; flex: none; }
+  .dater-name { font-weight: 600; font-size: 29px; color: var(--ink); }
+
+  /* The "follow" card that pops up above a cast member. */
   .social-popup {
-    position: absolute; left: 50%; bottom: 100%; margin-bottom: 16px; transform: translateX(-50%) translateY(10px);
-    display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-radius: 16px;
-    background: rgba(21,21,26,0.55); backdrop-filter: blur(5px); white-space: nowrap;
-    opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none;
+    position: absolute; left: 50%; bottom: 100%; margin-bottom: 26px;
+    transform: translateX(-50%) translateY(16px) scale(0.94); transform-origin: 50% 100%;
+    display: flex; align-items: center; gap: 20px; padding: 16px 32px 16px 16px;
+    background: var(--mint); border: 4px solid var(--rose); border-radius: 34px; box-shadow: 0 8px 0 var(--rose-deep);
+    white-space: nowrap; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.45s cubic-bezier(0.2, 1.5, 0.4, 1);
   }
-  .social-popup.show { opacity: 0.9; transform: translateX(-50%) translateY(0); }
-  .popup-avatar { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .popup-label { font-size: 11px; color: rgba(255,255,255,0.5); }
-  .popup-handle { display: flex; align-items: center; gap: 7px; }
-  .popup-handle span { font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.9); }
+  .social-popup.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  .popup-avatar { width: 84px; height: 84px; border-radius: 50%; overflow: hidden; background: var(--pink); border: 4px solid var(--coral); display: flex; align-items: center; justify-content: center; flex: none; }
+  .popup-label { margin-bottom: 6px; font-weight: 600; font-size: 19px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--rose); }
+  .popup-handle { display: flex; align-items: center; gap: 12px; }
+  .popup-handle + .popup-handle { margin-top: 6px; }
+  .popup-handle .badge { width: 36px; height: 36px; border-radius: 11px; background: var(--rose); display: flex; align-items: center; justify-content: center; flex: none; }
+  .popup-handle span.handle { font-weight: 600; font-size: 29px; color: var(--ink); }
 </style>
 </head>
 <body>
 
-<div class="pill" id="pill">
-  <div class="wordmark">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="#e8547a"><path d="M12 21s-7.2-4.6-10-9.2C0.4 8.2 2 4.5 5.6 4c2-0.3 3.7 0.7 4.9 2.4C11.7 4.7 13.4 3.7 15.4 4c3.6 0.5 5.2 4.2 3.6 7.8C15.2 16.4 12 21 12 21Z"/></svg>
+<div class="bar" id="bar">
+  <div class="title-block">
+    <svg class="deco-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.6-10-9.2C0.4 8.2 2 4.5 5.6 4c2-0.3 3.7 0.7 4.9 2.4C11.7 4.7 13.4 3.7 15.4 4c3.6 0.5 5.2 4.2 3.6 7.8C15.2 16.4 12 21 12 21Z"/></svg>
     <b id="show-title">Perfekt Match</b>
   </div>
-  <div class="divider"></div>
   <div class="cast-row" id="cast-row"></div>
 </div>
 
 <script>
 (function () {
   var heartPath = 'M12 21s-7.2-4.6-10-9.2C0.4 8.2 2 4.5 5.6 4c2-0.3 3.7 0.7 4.9 2.4C11.7 4.7 13.4 3.7 15.4 4c3.6 0.5 5.2 4.2 3.6 7.8C15.2 16.4 12 21 12 21Z';
-  var personSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
-  var personSvgBig = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
-  var igSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="0.9" fill="rgba(255,255,255,0.75)" stroke="none"/></svg>';
-  var ttSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(255,255,255,0.75)"><path d="M16.5 3c.3 2.3 1.7 3.9 4 4.3v3.1c-1.5 0-2.9-.4-4-1.3v5.9c0 3.3-2.7 6-6 6s-6-2.7-6-6 2.7-6 6-6c.3 0 .6 0 .9.1v3.1c-.3-.1-.6-.2-.9-.2-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3z"/></svg>';
+  var personSvg = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#e2f1ee" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
+  var personSvgBig = '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#e2f1ee" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
+  var igSvg = '<span class="badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e2f1ee" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" fill="#e2f1ee" stroke="none"/></svg></span>';
+  var ttSvg = '<span class="badge"><svg width="22" height="22" viewBox="0 0 24 24" fill="#e2f1ee"><path d="M16.5 3c.3 2.3 1.7 3.9 4 4.3v3.1c-1.5 0-2.9-.4-4-1.3v5.9c0 3.3-2.7 6-6 6s-6-2.7-6-6 2.7-6 6-6c.3 0 .6 0 .9.1v3.1c-.3-.1-.6-.2-.9-.2-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V3h3z"/></svg></span>';
 
   var castRow = document.getElementById('cast-row');
   var showTitle = document.getElementById('show-title');
@@ -78,8 +106,8 @@
 
   function popupHtml(member) {
     var rows = [];
-    if (member.instagram) rows.push('<div class="popup-handle">' + igSvg + '<span>@' + member.instagram + '</span></div>');
-    if (member.tiktok) rows.push('<div class="popup-handle">' + ttSvg + '<span>@' + member.tiktok + '</span></div>');
+    if (member.instagram) rows.push('<div class="popup-handle">' + igSvg + '<span class="handle">@' + member.instagram + '</span></div>');
+    if (member.tiktok) rows.push('<div class="popup-handle">' + ttSvg + '<span class="handle">@' + member.tiktok + '</span></div>');
     if (!rows.length) return '';
     var firstName = (member.name || '').split(' ')[0] || member.name;
     return '<div class="social-popup" data-cast-id="' + member.id + '">' +
@@ -95,7 +123,7 @@
 
     var parts = [];
     visible.forEach(function (member, i) {
-      if (i > 0) parts.push('<svg class="cast-heart" width="12" height="12" viewBox="0 0 24 24" fill="#e8547a"><path d="' + heartPath + '"/></svg>');
+      if (i > 0) parts.push('<svg class="cast-heart" viewBox="0 0 24 24"><path d="' + heartPath + '"/></svg>');
       parts.push(
         '<div class="dater" data-cast-id="' + member.id + '">' +
           '<div class="avatar">' + avatarHtml(member, false) + '</div>' +
