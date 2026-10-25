@@ -5,8 +5,9 @@ import { DEFAULT_CHAPTERS } from "./chapters.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export function createTlou2App() {
+export function createTlou2App(extra = {}) {
   return createStoryTrackerApp({
+    ...extra,
     publicDir: path.join(__dirname, "public"),
     envPrefix: "TLOU2",
     dbTable: "tlou2_state",

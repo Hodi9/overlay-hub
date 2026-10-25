@@ -164,9 +164,11 @@
     var chatHint = document.getElementById('chat-hint');
     var dot = document.getElementById('chat-dot');
     var statusText = document.getElementById('chat-status-text');
-    chatHint.innerHTML = 'Kommandoen <code>' + state.chatCommand + '</code> tæller +1, skrevet af broadcasteren selv eller en moderator i <code>#' + state.channel + '</code>. Andre i chatten kan ikke bruge den.';
+    chatHint.innerHTML = state.channel
+      ? 'Kommandoen <code>' + state.chatCommand + '</code> tæller +1, skrevet af broadcasteren selv eller en moderator i <code>#' + state.channel + '</code>. Andre i chatten kan ikke bruge den.'
+      : 'Skriv dit Twitch-kanalnavn under Indstillinger på kanal-siden, så tæller <code>' + state.chatCommand + '</code> i din chat op. Indtil da styrer du tælleren her.';
     dot.className = 'dot' + (state.chatConnected ? ' on' : '');
-    statusText.textContent = state.chatConnected ? 'Forbundet til Twitch-chat' : 'Forbinder...';
+    statusText.textContent = state.chatConnected ? 'Forbundet til Twitch-chat' : (state.channel ? 'Forbinder...' : 'Ikke sat op');
 
     var triggerText = document.getElementById('trigger-text');
     if (state.lastTrigger) {
@@ -181,10 +183,10 @@
   }
 
   function init(channel){
-    var qs = '?channel=' + encodeURIComponent(channel);
+    var qs = channel ? '?channel=' + encodeURIComponent(channel) : '';
 
     document.getElementById('overlay-link').href = 'index.html' + qs;
-    document.getElementById('channel-line').textContent = 'Styrer kanal: #' + channel;
+    document.getElementById('channel-line').textContent = channel ? 'Styrer kanal: #' + channel : 'Styrer din kanal';
     document.getElementById('f-channel').value = channel;
     document.getElementById('switch-channel-btn').addEventListener('click', function(){
       var next = document.getElementById('f-channel').value.trim().toLowerCase().replace(/^#/, '');
@@ -217,7 +219,9 @@
     };
   }
 
-  if (explicitChannel) {
+  if (params.get('profile')) {
+    init('');
+  } else if (explicitChannel) {
     init(explicitChannel.toLowerCase().replace(/^#/, ''));
   } else {
     fetch('/rdr2-deaths/api/default-channel').then(function(r){ return r.json(); }).then(function(d){

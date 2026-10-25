@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
+import { CONTROL_ROLES, TRACKER_ROLES } from "../_lib/channels.js";
 import { DEFAULT_MISSIONS } from "./missions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -74,7 +75,7 @@ function missionMatchText(mission) {
  * 1/total, whichever mission it is — clicking a mission far down the list
  * never marks everything above it done too.
  */
-export function createRdr2App() {
+export function createRdr2App({ channels = null, pool = null } = {}) {
   const router = express.Router();
   const publicDir = path.join(__dirname, "public");
   const controlPassword = process.env[`${ENV_PREFIX}_CONTROL_PASSWORD`] || "";
@@ -86,7 +87,14 @@ export function createRdr2App() {
   const listeners = new Map(); // profileId -> Set<response>
   const loading = new Map(); // profileId -> Promise (in-flight DB load)
 
+  function channelOf(request) {
+    const profileId = profileFromRequest(request);
+    return channels && channels.has(profileId) ? profileId : null;
+  }
+
   function authorizedControl(request) {
+    const channelId = channelOf(request);
+    if (channelId) return channels.authorize(channelId, request, CONTROL_ROLES);
     if (!controlPassword) return true;
     const key = String(request.headers[controlHeader] || "");
     return safeEqual(key, controlPassword);
@@ -98,6 +106,8 @@ export function createRdr2App() {
   }
 
   function authorizedTracker(request) {
+    const channelId = channelOf(request);
+    if (channelId) return channels.authorize(channelId, request, TRACKER_ROLES);
     if (!trackerKey) return false;
     const header = String(request.headers.authorization || "");
     return safeEqual(header, `Bearer ${trackerKey}`);
@@ -112,9 +122,9 @@ export function createRdr2App() {
   }
 
   async function connectDatabase() {
-    if (!process.env.DATABASE_URL) return;
+    if (!pool && !process.env.DATABASE_URL) return;
     const { Pool } = pg;
-    db = new Pool({
+    db = pool || new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }
     });
@@ -161,6 +171,7 @@ export function createRdr2App() {
           console.error(`${ENV_PREFIX} profile "${profileId}" load failed; using defaults.`, error);
         }
       }
+      state.isChannel = Boolean(channels && channels.has(profileId));
       profiles.set(profileId, state);
       return state;
     })();
@@ -205,8 +216,8 @@ export function createRdr2App() {
       progress: { completed: completedCount, total },
       percent: total ? Math.round((completedCount / total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
-      passwordRequired: Boolean(controlPassword),
-      trackerConfigured: Boolean(trackerKey),
+      passwordRequired: state.isChannel || Boolean(controlPassword),
+      trackerConfigured: state.isChannel || Boolean(trackerKey),
       updatedAt: new Date().toISOString()
     };
   }

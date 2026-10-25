@@ -449,7 +449,7 @@ function render(state){
 
   var trackerHint = document.getElementById('tracker-hint');
   trackerHint.innerHTML = state.trackerConfigured
-    ? 'Trackeren er klar (<code>CYBERPUNK_TRACKER_KEY</code> er sat). Kør <code>apps/cyberpunk/tracker/Start Cyberpunk Tracker.cmd</code> på streame-pc\'en, mens du spiller — den læser quest-titlen i HUD\'en og sætter jobbet som startet. Kalibrér området først (se <code>README.md</code> i den mappe).'
+    ? 'Trackeren er klar. Kør <code>apps/cyberpunk/tracker/Start Cyberpunk Tracker.cmd</code> på streame-pc\'en, mens du spiller — den læser quest-titlen i HUD\'en og sætter jobbet som startet. Kalibrér området først (se <code>README.md</code> i den mappe).'
     : 'Auto-trackeren er ikke sat op endnu — sæt <code>CYBERPUNK_TRACKER_KEY</code> på serveren og i <code>cyberpunk-tracker-config.json</code> lokalt (se <code>apps/cyberpunk/tracker/README.md</code>), eller styr manuelt herfra.';
 
   var captureTag = document.getElementById('capture-tag');

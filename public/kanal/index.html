@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Din kanal — Overlay</title>
+<meta name="description" content="Lav din egen kanal med egne overlays og kontrolpaneler.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23151518'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%23ffd60a' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%23ffd60a'/%3E%3Cpath d='M24 51h16' stroke='%23ffd60a' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0b0d; --paper: #151518; --paper-2: #1c1c21; --ink: #ededed; --muted: #9b9ba4; --line: #2b2b31;
+    --accent: #ffd60a; --on-accent: #0b0b0d; --danger: #ff6b6b; --ok: #6ee7a8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 15px/1.5 "Schibsted Grotesk", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 20px 72px; }
+  .back { display: inline-block; margin-bottom: 18px; color: var(--muted); text-decoration: none; font-size: .9rem; }
+  .back:hover { color: var(--ink); }
+  h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 5vw, 2.4rem); letter-spacing: -.02em; }
+  h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .lead { margin: 0 0 26px; color: var(--muted); max-width: 62ch; }
+  section { margin-bottom: 18px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+  section > p.hint { margin: 2px 0 14px; color: var(--muted); font-size: .88rem; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input[type="text"], input[type="password"] { flex: 1; min-width: 180px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper-2); color: var(--ink); font: inherit; }
+  input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button, .btn { font: inherit; font-weight: 700; cursor: pointer; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper-2); color: var(--ink); text-decoration: none; display: inline-block; }
+  button:hover, .btn:hover { border-color: var(--muted); }
+  button.primary, .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  button.small { padding: 6px 11px; font-size: .82rem; }
+  button.danger { color: var(--danger); }
+  button:disabled { opacity: .5; cursor: default; }
+  .msg { min-height: 1.2em; margin: 10px 0 0; font-size: .86rem; color: var(--muted); }
+  .msg.err { color: var(--danger); } .msg.ok { color: var(--ok); }
+  .reveal { border-color: var(--accent); background: #1b1805; }
+  .reveal h2 { color: var(--accent); }
+  .secret { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .secret b { min-width: 110px; font-size: .85rem; color: var(--muted); font-weight: 600; }
+  code { font-family: "JetBrains Mono", monospace; font-size: .8rem; background: var(--paper-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; overflow-x: auto; white-space: nowrap; flex: 1; min-width: 0; }
+  pre { margin: 10px 0 0; padding: 12px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; font: .8rem/1.5 "JetBrains Mono", monospace; }
+  .apps { display: grid; gap: 10px; }
+  .app { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--paper-2); }
+  .app h3 { margin: 0 0 8px; font-size: .98rem; }
+  .app .links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .link { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .link a { padding: 6px 11px; color: var(--ink); text-decoration: none; font-size: .86rem; font-weight: 600; }
+  .link a:hover { background: var(--line); }
+  .link button { border: 0; border-left: 1px solid var(--line); border-radius: 0; padding: 6px 10px; font-size: .82rem; background: transparent; color: var(--muted); }
+  .link button:hover { color: var(--ink); background: var(--line); }
+  .link.panel { border-color: #5b4d0a; }
+  .note { margin: 8px 0 0; color: var(--muted); font-size: .82rem; }
+  .list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .list li { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2); }
+  .tag { font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← Alle overlays</a>
+  <h1>Din egen kanal</h1>
+  <p class="lead">Lav en kanal, så du får dine egne overlays og kontrolpaneler. Alle kan se overlayet, men kun dig og de moderatorer, du selv giver en nøgle, kan ændre noget.</p>
+
+  <div id="view"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var APPS = [
+    { name: "Minecraft Boss Tracker", panel: "/minecraft/control", overlays: [["Overlay", "/minecraft/overlay"], ["Wither Skulls", "/minecraft/wither-overlay"], ["Run Stats", "/minecraft/stats-overlay"]] },
+    { name: "RDR2 Marathon Tracker", panel: "/rdr2/control.html", overlays: [["Overlay", "/rdr2/"]], tracker: "rdr2" },
+    { name: "RDR2 Dødstæller", panel: "/rdr2-deaths/control.html", overlays: [["Overlay", "/rdr2-deaths/"]], note: "Skriv dit Twitch-kanalnavn under Indstillinger nedenfor, så tæller !died i din chat op (kun dig og dine mods)." },
+    { name: "GTA V Story Tracker", panel: "/gta5/control.html", overlays: [["Overlay", "/gta5/"]], tracker: "gta5" },
+    { name: "The Last of Us Part II", panel: "/tlou2/control.html", overlays: [["Overlay", "/tlou2/"]], tracker: "tlou2" },
+    { name: "Cyberpunk 2077", panel: "/cyberpunk/control.html", overlays: [["Inkl. Phantom Liberty", "/cyberpunk/"], ["Uden Phantom Liberty", "/cyberpunk/?pl=off"]], tracker: "cyberpunk" },
+    { name: "Mafia I", panel: "/mafia1/control.html", overlays: [["Overlay", "/mafia1/"]], tracker: "mafia1" },
+    { name: "Mafia II", panel: "/mafia2/control.html", overlays: [["Overlay", "/mafia2/"]], tracker: "mafia2" },
+    { name: "Mafia III", panel: "/mafia3/control.html", overlays: [["Overlay", "/mafia3/"]], tracker: "mafia3" },
+    { name: "Pokémon kortåbning", panel: "/pokemon/control.html", overlays: [["Mine hits", "/pokemon/?view=pulls&set=all"], ["30th Chase List", "/pokemon/?view=chase&set=30th-celebration"]] },
+    { name: "God Gamer Gauntlet", panel: "/gauntlet/control.html", overlays: [["Overlay", "/gauntlet/"], ["Dødstæller", "/gauntlet/deaths.html"]] },
+    { name: "Hold mod hold (Bros vs Bros)", panel: "/brosvsbros/panel", overlays: [["Scoreboard", "/brosvsbros/overlay"], ["Duel bar", "/brosvsbros/overlay?view=duel"], ["Fightcard", "/brosvsbros/overlay?view=fightcard"]], note: "Skriv holdnavne og upload logoer i kontrolpanelet." }
+  ];
+
+  var view = document.getElementById("view");
+  var state = { id: null, key: "", role: null, mods: [], channel: null, reveal: null, modLink: null };
+
+  // ---- small helpers -------------------------------------------------------------------------
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (name) {
+      if (name === "text") node.textContent = attrs[name];
+      else if (name.slice(0, 2) === "on") node.addEventListener(name.slice(2), attrs[name]);
+      else if (attrs[name] !== false && attrs[name] != null) node.setAttribute(name, attrs[name] === true ? "" : attrs[name]);
+    });
+    [].concat(children || []).forEach(function (child) { if (child != null) node.appendChild(typeof child === "string" ? document.createTextNode(child) : child); });
+    return node;
+  }
+  function store(name, value) {
+    try { if (value === undefined) return localStorage.getItem(name); if (value === null) localStorage.removeItem(name); else localStorage.setItem(name, value); } catch (e) { /* storage blocked */ }
+    return null;
+  }
+  function savedIds() { try { return JSON.parse(store("hub-channels") || "[]").filter(function (id) { return /^[a-z2-7]{12}$/.test(id); }); } catch (e) { return []; } }
+  function rememberId(id) { var ids = savedIds().filter(function (x) { return x !== id; }); ids.unshift(id); store("hub-channels", JSON.stringify(ids.slice(0, 20))); }
+  function forgetId(id) { store("hub-channels", JSON.stringify(savedIds().filter(function (x) { return x !== id; }))); store("hub-channel-key:" + id, null); store("hub-channel-tracker:" + id, null); }
+
+  function api(method, path, body, key) {
+    var headers = { "Content-Type": "application/json" };
+    if (key) headers["x-channel-key"] = key;
+    return fetch("/api/channels" + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (data) {
+        if (!response.ok) { var error = new Error(data.error || "Noget gik galt — prøv igen."); error.status = response.status; throw error; }
+        return data;
+      });
+    });
+  }
+
+  function channelLink(path, key) {
+    var url = new URL(path, location.origin);
+    url.searchParams.set("profile", state.id);
+    return url.toString() + (key ? "#key=" + key : "");
+  }
+
+  function copy(text, button) {
+    function done() { if (!button) return; var old = button.textContent; button.textContent = "Kopieret ✓"; setTimeout(function () { button.textContent = old; }, 1400); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    function fallback() { var t = el("textarea"); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch (e) { /* ignore */ } t.remove(); done(); }
+  }
+  function copyButton(label, text, extra) { var b = el("button", { type: "button", class: "small" + (extra ? " " + extra : ""), text: label }); b.addEventListener("click", function () { copy(text, b); }); return b; }
+  function message(node, text, kind) { node.textContent = text || ""; node.className = "msg" + (kind ? " " + kind : ""); }
+  function section(title, hint, children) { return el("section", {}, [el("h2", { text: title }), hint ? el("p", { class: "hint", text: hint }) : null].concat(children)); }
+
+  // ---- start page: create / reopen ------------------------------------------------------------
+  function renderStart() {
+    view.textContent = "";
+    var twitch = el("input", { type: "text", placeholder: "Dit Twitch-kanalnavn (valgfrit)", maxlength: "25", autocomplete: "off" });
+    var status = el("p", { class: "msg" });
+    var create = el("button", { type: "button", class: "primary", text: "Lav min kanal" });
+    create.addEventListener("click", function () {
+      create.disabled = true; message(status, "Laver kanalen …");
+      api("POST", "", { twitch: twitch.value }).then(function (created) {
+        state.id = created.id; state.key = created.ownerKey; state.role = "owner";
+        store("hub-channel-key:" + created.id, created.ownerKey);
+        store("hub-channel-tracker:" + created.id, created.trackerKey);
+        rememberId(created.id);
+        state.reveal = { ownerKey: created.ownerKey, trackerKey: created.trackerKey };
+        history.replaceState(null, "", "/kanal/?c=" + created.id);
+        load();
+      }).catch(function (error) { create.disabled = false; message(status, error.message, "err"); });
+    });
+    view.appendChild(section("Lav en ny kanal", "Du får et kanal-id, en ejer-nøgle og links til alle overlays. Nøglerne vises kun én gang, så gem dem.", [
+      el("div", { class: "row" }, [twitch, create]), status
+    ]));
+
+    var ids = savedIds();
+    if (ids.length) {
+      view.appendChild(section("Dine kanaler i denne browser", null, [
+        el("ul", { class: "list" }, ids.map(function (id) {
+          return el("li", {}, [
+            el("span", {}, [el("code", { text: id })]),
+            el("span", { class: "row" }, [
+              el("a", { class: "btn small", href: "/kanal/?c=" + id, text: "Åbn" }),
+              el("button", { type: "button", class: "small danger", text: "Glem", onclick: function () { if (confirm("Glem kanalen i denne browser? Nøglen slettes herfra, men kanalen findes stadig.")) { forgetId(id); renderStart(); } } })
+            ])
+          ]);
+        }))
+      ]));
+    }
+
+    var paste = el("input", { type: "text", placeholder: "Indsæt panel-linket eller mod-linket, du har fået", autocomplete: "off" });
+    var openStatus = el("p", { class: "msg" });
+    var open = el("button", { type: "button", text: "Åbn kanal" });
+    open.addEventListener("click", function () {
+      try {
+        var url = new URL(paste.value.trim());
+        var id = url.searchParams.get("profile") || url.searchParams.get("c");
+        var hash = /(?:^|[#&])key=([^&]+)/.exec(url.hash);
+        if (!id || !/^[a-z2-7]{12}$/.test(id)) throw new Error("bad");
+        if (hash) store("hub-channel-key:" + id, hash[1]);
+        rememberId(id);
+        location.href = "/kanal/?c=" + id;
+      } catch (e) { message(openStatus, "Det ligner ikke et kanal-link. Indsæt hele linket.", "err"); }
+    });
+    view.appendChild(section("Har du allerede en kanal?", "Brug det link, du fik, da kanalen blev lavet — eller det mod-link, ejeren har sendt dig.", [
+      el("div", { class: "row" }, [paste, open]), openStatus
+    ]));
+  }
+
+  // ---- a single channel -----------------------------------------------------------------------
+  function load() {
+    api("GET", "/" + state.id + "/me", null, state.key).then(function (me) {
+      state.role = me.role; state.mods = me.mods || []; state.channel = me.channel;
+      rememberId(state.id);
+      renderChannel();
+    }).catch(function (error) {
+      if (error.status === 404) { view.textContent = ""; view.appendChild(section("Ukendt kanal", "Den kanal findes ikke. Tjek linket.", [el("a", { class: "btn", href: "/kanal/", text: "Til start" })])); return; }
+      renderNeedKey(error.message);
+    });
+  }
+
+  function renderNeedKey(text) {
+    view.textContent = "";
+    var key = el("input", { type: "password", placeholder: "Nøgle (starter med o_ eller m_)", autocomplete: "off" });
+    var status = el("p", { class: "msg err", text: text || "" });
+    var go = el("button", { type: "button", class: "primary", text: "Åbn" });
+    function submit() { state.key = key.value.trim(); store("hub-channel-key:" + state.id, state.key); load(); }
+    go.addEventListener("click", submit);
+    key.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+    view.appendChild(section("Kanal " + state.id, "Den her browser har ikke nøglen til kanalen. Indsæt din ejer-nøgle eller mod-nøgle — eller åbn det link, du har fået.", [
+      el("div", { class: "row" }, [key, go]), status
+    ]));
+  }
+
+  function renderChannel() {
+    view.textContent = "";
+    var isOwner = state.role === "owner";
+
+    if (state.reveal) {
+      var reveal = state.reveal;
+      var done = el("button", { type: "button", class: "primary", text: "Jeg har gemt dem" });
+      done.addEventListener("click", function () { state.reveal = null; renderChannel(); });
+      var backup = el("button", { type: "button", text: "Hent som fil" });
+      backup.addEventListener("click", function () {
+        var text = "Kanal " + state.id + "\nEjer-nøgle: " + reveal.ownerKey + "\nTracker-nøgle: " + reveal.trackerKey + "\nPanel-link: " + channelLink("/kanal/", reveal.ownerKey).replace(/\?profile=/, "?c=") + "\n";
+        var a = el("a", { href: URL.createObjectURL(new Blob([text], { type: "text/plain" })), download: "kanal-" + state.id + ".txt" });
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+      var sec = section("Gem dine nøgler nu", "De vises kun én gang. Mister du ejer-nøglen, kan den ikke hentes igen — kun serverens ejer kan lave en ny.", [
+        el("div", { class: "secret" }, [el("b", { text: "Ejer-nøgle" }), el("code", { text: reveal.ownerKey }), copyButton("Kopiér", reveal.ownerKey)]),
+        el("div", { class: "secret" }, [el("b", { text: "Tracker-nøgle" }), el("code", { text: reveal.trackerKey }), copyButton("Kopiér", reveal.trackerKey)]),
+        el("div", { class: "row", style: "margin-top:14px" }, [backup, done])
+      ]);
+      sec.className = "reveal";
+      view.appendChild(sec);
+    }
+
+    view.appendChild(section("Kanal " + state.id, isOwner
+      ? "Du er ejer. Overlay-linkene kan sættes ind i OBS. Panel-linkene indeholder din nøgle — del dem ikke."
+      : "Du er moderator. Du kan åbne panelerne og ændre fremgangen.", [
+      el("div", { class: "row" }, [el("span", { class: "tag", text: isOwner ? "Ejer" : "Moderator" }), el("code", { text: state.id })])
+    ]));
+
+    var apps = el("div", { class: "apps" }, APPS.map(function (app) {
+      var links = app.overlays.map(function (pair) {
+        var href = channelLink(pair[1]);
+        return el("span", { class: "link" }, [el("a", { href: href, target: "_blank", rel: "noopener", text: pair[0] }), copyButton("Kopiér", href)]);
+      });
+      var panelHref = channelLink(app.panel, state.key);
+      links.push(el("span", { class: "link panel" }, [el("a", { href: panelHref, target: "_blank", rel: "noopener", text: "Kontrolpanel" }), copyButton("Kopiér", panelHref)]));
+      return el("div", { class: "app" }, [el("h3", { text: app.name }), el("div", { class: "links" }, links), app.note ? el("p", { class: "note", text: app.note }) : null]);
+    }));
+    view.appendChild(section("Overlays og kontrolpaneler", "Gule felter er kontrolpaneler.", [apps]));
+
+    if (isOwner) {
+      renderMods();
+      renderTracker();
+      renderSettings();
+      renderKeys();
+    }
+  }
+
+  function renderMods() {
+    var label = el("input", { type: "text", placeholder: "Hvem er det til? (fx navn)", maxlength: "40", autocomplete: "off" });
+    var status = el("p", { class: "msg" });
+    var add = el("button", { type: "button", class: "primary", text: "Lav mod-link" });
+    var result = el("div");
+    add.addEventListener("click", function () {
+      add.disabled = true;
+      api("POST", "/" + state.id + "/mods", { label: label.value }, state.key).then(function (created) {
+        var link = location.origin + "/kanal/?c=" + state.id + "#key=" + created.key;
+        state.mods.push(created.mod);
+        result.textContent = "";
+        result.appendChild(el("div", { class: "secret" }, [el("b", { text: created.mod.label }), el("code", { text: link }), copyButton("Kopiér", link)]));
+        result.appendChild(el("p", { class: "note", text: "Linket vises kun nu. Send det til din moderator — de åbner det og får adgang til alle paneler." }));
+        label.value = ""; add.disabled = false; message(status, "");
+        renderModList(list);
+      }).catch(function (error) { add.disabled = false; message(status, error.message, "err"); });
+    });
+    var list = el("ul", { class: "list", style: "margin-top:14px" });
+    renderModList(list);
+    view.appendChild(section("Moderatorer", "Hver moderator får sin egen nøgle, som du kan tage tilbage igen. De kan ændre fremgangen, men ikke styre nøgler.", [
+      el("div", { class: "row" }, [label, add]), status, result, list
+    ]));
+  }
+
+  function renderModList(list) {
+    list.textContent = "";
+    state.mods.forEach(function (mod) {
+      list.appendChild(el("li", {}, [
+        el("span", { text: mod.label }),
+        el("button", { type: "button", class: "small danger", text: "Tag nøglen tilbage", onclick: function () {
+          if (!confirm("Tag nøglen tilbage fra " + mod.label + "? Den virker ikke længere.")) return;
+          api("DELETE", "/" + state.id + "/mods/" + mod.id, null, state.key).then(function () {
+            state.mods = state.mods.filter(function (x) { return x.id !== mod.id; }); renderModList(list);
+          }).catch(function (error) { alert(error.message); });
+        } })
+      ]));
+    });
+    if (!state.mods.length) list.appendChild(el("li", {}, [el("span", { class: "note", text: "Ingen moderatorer endnu." })]));
+  }
+
+  function renderTracker() {
+    var trackerKey = store("hub-channel-tracker:" + state.id);
+    var snippet = el("pre");
+    function fill() {
+      var key = store("hub-channel-tracker:" + state.id);
+      snippet.textContent = '{\n  "panelUrl": "' + location.origin + '",\n  "apiKey": "' + (key || "<din tracker-nøgle>") + '",\n  "profile": "' + state.id + '"\n}';
+    }
+    fill();
+    var status = el("p", { class: "msg" });
+    var rotate = el("button", { type: "button", text: "Lav ny tracker-nøgle" });
+    rotate.addEventListener("click", function () {
+      api("POST", "/" + state.id + "/rotate", { which: "tracker" }, state.key).then(function (result) {
+        store("hub-channel-tracker:" + state.id, result.key); fill(); message(status, "Ny tracker-nøgle lavet. Husk at rette den i din tracker-config.", "ok");
+      }).catch(function (error) { message(status, error.message, "err"); });
+    });
+    var copySnippet = el("button", { type: "button", class: "small", text: "Kopiér" });
+    copySnippet.addEventListener("click", function () { copy(snippet.textContent, copySnippet); });
+    view.appendChild(section("Automatisk tracker", "Trackerne på din pc (OCR og save-fil) skal bruge tracker-nøglen, ikke ejer-nøglen. Sæt disse tre felter i spillets tracker-config.json; resten af filen er uændret.", [
+      snippet, el("div", { class: "row", style: "margin-top:10px" }, [copySnippet, rotate]), status,
+      trackerKey ? null : el("p", { class: "note", text: "Tracker-nøglen vises kun, da kanalen blev lavet. Mangler den her, så lav en ny." })
+    ]));
+  }
+
+  function renderSettings() {
+    var twitch = el("input", { type: "text", maxlength: "25", placeholder: "fx ditkanalnavn", autocomplete: "off", value: state.channel && state.channel.twitch || "" });
+    var status = el("p", { class: "msg" });
+    var save = el("button", { type: "button", class: "primary", text: "Gem" });
+    save.addEventListener("click", function () {
+      api("PATCH", "/" + state.id, { twitch: twitch.value }, state.key).then(function (result) {
+        state.channel = result.channel; message(status, "Gemt.", "ok");
+      }).catch(function (error) { message(status, error.message, "err"); });
+    });
+    view.appendChild(section("Indstillinger", "Twitch-kanalet bruges af dødstælleren: skriver du !died i den chat som streamer eller moderator, tæller den op.", [
+      el("div", { class: "row" }, [twitch, save]), status
+    ]));
+  }
+
+  function renderKeys() {
+    var status = el("p", { class: "msg" });
+    var rotate = el("button", { type: "button", class: "danger", text: "Lav ny ejer-nøgle" });
+    rotate.addEventListener("click", function () {
+      if (!confirm("Lav en ny ejer-nøgle? Den gamle virker ikke længere, og panel-links med den gamle nøgle skal skiftes. Moderatorer og trackeren påvirkes ikke.")) return;
+      api("POST", "/" + state.id + "/rotate", { which: "owner" }, state.key).then(function (result) {
+        state.key = result.key; store("hub-channel-key:" + state.id, result.key);
+        state.reveal = { ownerKey: result.key, trackerKey: store("hub-channel-tracker:" + state.id) || "(uændret)" };
+        renderChannel();
+      }).catch(function (error) { message(status, error.message, "err"); });
+    });
+    view.appendChild(section("Nøgler", "Tror du, en nøgle er kommet ud, så lav en ny. Så holder den gamle op med at virke med det samme.", [rotate, status]));
+  }
+
+  // ---- go --------------------------------------------------------------------------------------
+  var params = new URLSearchParams(location.search);
+  var id = params.get("c");
+  if (id && /^[a-z2-7]{12}$/.test(id)) {
+    state.id = id;
+    var fromHash = /(?:^|[#&])key=([^&]+)/.exec(location.hash || "");
+    if (fromHash) { store("hub-channel-key:" + id, fromHash[1]); history.replaceState(null, "", "/kanal/?c=" + id); }
+    state.key = store("hub-channel-key:" + id) || "";
+    load();
+  } else {
+    renderStart();
+  }
+})();
+</script>
+</body>
+</html>

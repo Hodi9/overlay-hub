@@ -208,6 +208,12 @@ function mergeImportedCards(current, imported) {
 
 export function createPokemonApp(options = {}) {
   const router = express.Router();
+  // In a channel the hits and settings are the channel's own; the chase list is
+  // copied from the main instance (sharedChase) instead of being scraped again.
+  const context = options.context || {};
+  const isChannel = Boolean(context.authorizeControl);
+  const stateId = context.stateId || "primary";
+  const sharedChase = options.sharedChase || null;
   const controlPassword = options.controlPassword ?? process.env.POKEMON_CONTROL_PASSWORD ?? "";
   const tcgGraphKey = options.tcgGraphKey ?? process.env.TCGGRAPH_KEY ?? "";
   const fetchImpl = options.fetchImpl || globalThis.fetch;
@@ -220,12 +226,13 @@ export function createPokemonApp(options = {}) {
   let db = null;
 
   function authorized(request) {
+    if (isChannel) return context.authorizeControl(request);
     if (!controlPassword) return false;
     return safeEqual(request.headers["x-pokemon-key"] || "", controlPassword);
   }
 
   function requireAuth(request, response, next) {
-    if (!controlPassword) return response.status(503).json({ error: "Kontrolpanelets adgangskode er ikke konfigureret endnu." });
+    if (!isChannel && !controlPassword) return response.status(503).json({ error: "Kontrolpanelets adgangskode er ikke konfigureret endnu." });
     if (authorized(request)) return next();
     return response.status(401).json({ error: "Forkert eller manglende adgangskode." });
   }
@@ -238,9 +245,9 @@ export function createPokemonApp(options = {}) {
   }
 
   async function connectDatabase() {
-    if (!process.env.DATABASE_URL || options.disableDatabase) return;
+    if ((!context.pool && !process.env.DATABASE_URL) || options.disableDatabase) return;
     const { Pool } = pg;
-    db = new Pool({
+    db = context.pool || new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }
     });
@@ -251,7 +258,7 @@ export function createPokemonApp(options = {}) {
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
-    const result = await db.query("SELECT data FROM pokemon_overlay_state WHERE id = $1", ["primary"]);
+    const result = await db.query("SELECT data FROM pokemon_overlay_state WHERE id = $1", [stateId]);
     if (Array.isArray(result.rows[0]?.data?.cards)) {
       cards = result.rows[0].data.cards.map((card) => cleanCard(card, card));
       lastSync = result.rows[0].data.lastSync || null;
@@ -270,7 +277,7 @@ export function createPokemonApp(options = {}) {
       `INSERT INTO pokemon_overlay_state (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      ["primary", JSON.stringify({ cards, settings, lastSync, lastSyncSource })]
+      [stateId, JSON.stringify({ cards, settings, lastSync, lastSyncSource })]
     );
   }
 
@@ -301,7 +308,19 @@ export function createPokemonApp(options = {}) {
     return imported.length + RGB_MEW_CARDS.length;
   }
 
+  async function importShared() {
+    const imported = (sharedChase ? sharedChase() : []).map((card) => ({ ...card }));
+    if (!imported.length) throw new Error("Chase-listen er ikke hentet endnu — prøv igen om lidt.");
+    cards = mergeImportedCards(cards, imported);
+    lastSync = new Date().toISOString();
+    lastSyncSource = "Fælles chase list";
+    lastSyncError = "";
+    await persist();
+    return imported.length + RGB_MEW_CARDS.length;
+  }
+
   async function importCardmarket() {
+    if (isChannel) return importShared();
     if (!tcgGraphKey) return importCollectr();
     if (typeof fetchImpl !== "function") throw new Error("Fetch er ikke tilgængelig.");
     const [response, classicResponse] = await Promise.all([
@@ -446,20 +465,26 @@ export function createPokemonApp(options = {}) {
 
   router.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
-  connectDatabase()
+  const initialized = connectDatabase()
     .then(() => importCardmarket())
     .catch((error) => {
       lastSyncError = error.message;
       console.error("Pokemon initialisation failed; using bundled cards.", error);
     });
 
-  const refreshTimer = setInterval(() => {
-    importCardmarket().catch((error) => {
-      lastSyncError = error.message;
-      console.error("Pokemon price refresh failed.", error);
-    });
-  }, refreshIntervalMs);
-  refreshTimer.unref?.();
+  if (isChannel) {
+    router.ready = initialized;
+  } else {
+    const refreshTimer = setInterval(() => {
+      importCardmarket().catch((error) => {
+        lastSyncError = error.message;
+        console.error("Pokemon price refresh failed.", error);
+      });
+    }, refreshIntervalMs);
+    refreshTimer.unref?.();
+    // What channels copy their chase list from.
+    router.chaseCards = () => cards.filter((card) => card.setId === "30th-celebration" && card.sourceId);
+  }
 
   return router;
 }

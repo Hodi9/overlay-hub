@@ -259,7 +259,7 @@
 
 <div class="lock" id="lock">
   <h1>Bros vs Bros</h1>
-  <p class="sub">Indtast panel-kode (samme som Bro vs Bro)</p>
+  <p class="sub">Indtast panel-kode (samme som Bro vs Bro) — i en kanal er det din nøgle</p>
   <input class="field" id="key-input" type="password" placeholder="Panel-kode" />
   <button class="btn primary" id="unlock-btn">Lås op</button>
 </div>
@@ -268,8 +268,9 @@
 
 <script src="/brosvsbros/socket.io/socket.io.js"></script>
 <script>
-  const socket = io({ path: "/brosvsbros/socket.io" });
-  let token = localStorage.getItem("bros-panel-key") || "";
+  // In a channel the key is the panel code, and the channel has its own socket namespace.
+  const socket = io(window.HubChannel ? "/c/" + window.HubChannel.id : "/", { path: "/brosvsbros/socket.io" });
+  let token = (window.HubChannel && window.HubChannel.getKey()) || localStorage.getItem("bros-panel-key") || "";
   let requiresKey = false;
   let state = null;
   const pending = { left: undefined, right: undefined };
@@ -304,10 +305,11 @@
   socket.on("panel:denied", () => {
     showToast("Forkert panel-kode");
     app.hidden = true; lock.hidden = false;
-    localStorage.removeItem("bvb-panel-key");
+    if (!window.HubChannel) localStorage.removeItem("bvb-panel-key");
   });
   socket.on("panel:ok", () => {
-    localStorage.setItem("bvb-panel-key", token);
+    if (window.HubChannel) window.HubChannel.setKey(token);
+    else localStorage.setItem("bvb-panel-key", token);
     if (app.hidden) showToast("Adgang godkendt ✓", true);
     tryUnlock();
   });

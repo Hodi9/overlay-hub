@@ -335,7 +335,7 @@
   var chatError = document.getElementById('chat-error');
   var chatConnectBtn = document.getElementById('chat-connect-btn');
   var channelInput = document.getElementById('f-channel');
-  var CHANNEL_KEY = 'rdr2-marathon-channel';
+  var CHANNEL_KEY = 'rdr2-marathon-channel' + (new URLSearchParams(location.search).get('profile') ? ':' + new URLSearchParams(location.search).get('profile') : '');
 
   function setChatStatus(status, msg){
     chatDot.className = 'dot' + (status ? ' ' + status : '');
@@ -456,7 +456,7 @@
 
     var trackerHint = document.getElementById('tracker-hint');
     trackerHint.innerHTML = state.trackerConfigured
-      ? 'Trackeren er konfigureret (<code>RDR2_TRACKER_KEY</code> er sat). Kør <code>tracker/rdr2-save-tracker.ps1</code> på streame-pc\'en mens du spiller.'
+      ? 'Trackeren er konfigureret. Kør <code>tracker/rdr2-save-tracker.ps1</code> på streame-pc\'en mens du spiller.'
       : 'Trackeren er ikke konfigureret endnu — sæt <code>RDR2_TRACKER_KEY</code> på serveren og i <code>rdr2-tracker-config.json</code> lokalt for at aktivere automatisk opdatering.';
 
     var captureTag = document.getElementById('capture-tag');

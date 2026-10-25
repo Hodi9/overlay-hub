@@ -3,6 +3,7 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import pg from "pg";
 import brovsbroModule from "./apps/brovsbro/app.cjs";
 import brosvsbrosModule from "./apps/brosvsbros/app.cjs";
 import { createMinecraftApp } from "./apps/minecraft/app.js";
@@ -22,6 +23,7 @@ import { createRdr2App } from "./apps/rdr2/app.js";
 import { createWalkApp } from "./apps/walk/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
 import { collapseLeadingSlashes } from "./collapseLeadingSlashes.js";
+import { createChannelRegistry, createChannelsRouter, createTenantDispatcher } from "./apps/_lib/channels.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { createBrovsbroApp } = brovsbroModule;
@@ -29,12 +31,32 @@ const { createBrosvsbrosApp } = brosvsbrosModule;
 
 const app = express();
 app.disable("x-powered-by");
+// Render puts one proxy in front of the app; without this every visitor would share
+// the proxy's IP in the rate limits for creating channels and failed key attempts.
+app.set("trust proxy", 1);
 const server = http.createServer(app);
 
 // Skal ligge allerførst, så alt efter ser den rene sti.
 app.use(collapseLeadingSlashes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+// One connection pool for the whole hub, and the channels everything below checks keys against.
+const pool = process.env.DATABASE_URL
+  ? new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }
+    })
+  : null;
+// An idle connection that errors would otherwise be an unhandled 'error' event and stop the server.
+pool?.on("error", (error) => console.error("database pool error", error));
+const channels = createChannelRegistry({ pool });
+
+// A request must not be answered before the channels are loaded, or a channel's
+// link would briefly be treated as an unknown one.
+app.use((_req, _res, next) => { channels.ready.then(() => next(), next); });
+
+app.use("/api/channels", createChannelsRouter({ registry: channels }));
 
 // "Kopiér link"-knap på alle overlay-sider. Knappen vises kun i en almindelig
 // browser — aldrig i OBS (window.obsstudio / OBS user agent) eller i en iframe
@@ -64,13 +86,21 @@ const COPY_LINK_SNIPPET = `<script>(function(){
   });
 })();</script>`;
 
+// Adds ?profile=<channel> to a channel page's own requests and sends its key along (public/_hub/channel.js).
+const CHANNEL_SHIM_TAG = '<script src="/_hub/channel.js"></script>';
+
 const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
   const p = req.path;
   const isOverlayApp = OVERLAY_PREFIXES.some((pre) => p === pre || p.startsWith(pre + "/"));
-  if (!isOverlayApp || /control|panel|api|\.(js|css|json|png|jpe?g|gif|svg|webp|ico|woff2?|mp3|mp4)$/i.test(p)) return next();
+  const isAsset = /\.(js|css|json|png|jpe?g|gif|svg|webp|ico|woff2?|mp3|mp4)$/i.test(p);
+  const isApi = /api/i.test(p);
+  // The copy-link button stays off control panels; the channel shim goes on every page of a channel.
+  const wantCopyLink = isOverlayApp && !isAsset && !isApi && !/control|panel/i.test(p);
+  const wantShim = isOverlayApp && !isAsset && !isApi && typeof req.query.profile === "string" && req.query.profile !== "";
+  if (!wantCopyLink && !wantShim) return next();
 
   const write = res.write.bind(res);
   const end = res.end.bind(res);
@@ -93,7 +123,8 @@ app.use((req, res, next) => {
     chunks = chunks || [];
     if (chunk && typeof chunk !== "function") chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, typeof args[0] === "string" ? args[0] : "utf8"));
     let html = Buffer.concat(chunks).toString("utf8");
-    html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, COPY_LINK_SNIPPET + "</body>") : html + COPY_LINK_SNIPPET;
+    if (wantShim) html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (open) => open + CHANNEL_SHIM_TAG) : CHANNEL_SHIM_TAG + html;
+    if (wantCopyLink) html = /<\/body>/i.test(html) ? html.replace(/<\/body>(?![\s\S]*<\/body>)/i, COPY_LINK_SNIPPET + "</body>") : html + COPY_LINK_SNIPPET;
     const body = Buffer.from(html, "utf8");
     if (!res.headersSent) {
       res.removeHeader("ETag");
@@ -108,24 +139,40 @@ const { router: brovsbroRouter, attachSocket } = createBrovsbroApp();
 app.use("/brovsbro", brovsbroRouter);
 attachSocket(server);
 
-const { router: brosvsbrosRouter, attachSocket: attachBrosvsbrosSocket } = createBrosvsbrosApp();
+const { router: brosvsbrosRouter, attachSocket: attachBrosvsbrosSocket } = createBrosvsbrosApp({ channels, pool });
 app.use("/brosvsbros", brosvsbrosRouter);
 attachBrosvsbrosSocket(server);
 
-app.use("/minecraft", createMinecraftApp());
+// Apps that keep one state in a closure get a copy per channel (?profile=<id>); the apps
+// that already had profiles check the channel's keys themselves.
+app.use("/minecraft", createTenantDispatcher({
+  registry: channels, pool,
+  legacy: createMinecraftApp({ pool }),
+  factory: (context) => createMinecraftApp(context)
+}));
 app.use("/gear", createGearApp());
 app.use("/gear-bf", createGearBfApp());
-app.use("/gauntlet", createGauntletApp());
-app.use("/tlou2", createTlou2App());
-app.use("/gta5", createGta5App());
-app.use("/cyberpunk", createCyberpunkApp());
-app.use("/mafia1", createMafia1App());
-app.use("/mafia2", createMafia2App());
-app.use("/mafia3", createMafia3App());
+app.use("/gauntlet", createTenantDispatcher({
+  registry: channels, pool,
+  legacy: createGauntletApp({ pool }),
+  factory: (context) => createGauntletApp(context)
+}));
+app.use("/tlou2", createTlou2App({ channels, pool }));
+app.use("/gta5", createGta5App({ channels, pool }));
+app.use("/cyberpunk", createCyberpunkApp({ channels, pool }));
+app.use("/mafia1", createMafia1App({ channels, pool }));
+app.use("/mafia2", createMafia2App({ channels, pool }));
+app.use("/mafia3", createMafia3App({ channels, pool }));
 app.use("/perfektmatch", createPerfektMatchApp());
-app.use("/pokemon", createPokemonApp());
-app.use("/rdr2-deaths", createRdr2DeathsApp());
-app.use("/rdr2", createRdr2App());
+// Channels copy their chase list from the main instance instead of scraping the price sources again.
+const pokemonMain = createPokemonApp({ context: { pool } });
+app.use("/pokemon", createTenantDispatcher({
+  registry: channels, pool,
+  legacy: pokemonMain,
+  factory: (context) => createPokemonApp({ context, sharedChase: () => pokemonMain.chaseCards() })
+}));
+app.use("/rdr2-deaths", createRdr2DeathsApp({ channels, pool }));
+app.use("/rdr2", createRdr2App({ channels, pool }));
 
 // Hidden walk-through-Denmark overlay (apps/walk). Same idea: not on the index page,
 // only mounted at the secret address in WALK_PATH, 404 everywhere else.

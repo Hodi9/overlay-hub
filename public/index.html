@@ -97,6 +97,19 @@
   .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, rgba(255,214,10,.35) 62%); padding: 0 .08em; }
   .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
 
+  /* Call to action: make your own channel */
+  .channel-cta {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
+    margin: 0 0 8px; padding: 18px 20px; border: 1px solid #5a4a0a; border-radius: 18px; background: var(--mint-soft);
+  }
+  .channel-cta b { display: block; font-size: 17px; }
+  .channel-cta span { color: var(--muted); font-size: 14px; }
+  .channel-cta a {
+    flex: none; text-decoration: none; font-weight: 700; font-size: 15px;
+    background: var(--mint); color: var(--on-accent); padding: 11px 18px; border-radius: 12px;
+  }
+  .channel-cta a:hover { background: #fff; }
+
   /* Toolbar */
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 28px 0 22px; }
   .search {
@@ -223,6 +236,14 @@
       <h1>Overlays til <em>livestreams</em>, klar til OBS.</h1>
       <p>Browser sources og kontrolpaneler til alle de overlays, der kører på denne service.</p>
     </section>
+
+    <aside class="channel-cta">
+      <div>
+        <b>Vil du have dine egne overlays?</b>
+        <span>Lav en kanal på et minut. Alle kan se overlayet, men kun dig og dine moderatorer kan ændre det.</span>
+      </div>
+      <a href="/kanal/">Lav din egen kanal</a>
+    </aside>
 
     <div class="toolbar">
       <label class="search">

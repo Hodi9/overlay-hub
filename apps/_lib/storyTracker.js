@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import express from "express";
 import pg from "pg";
+import { CONTROL_ROLES, TRACKER_ROLES } from "./channels.js";
 
 function safeEqual(a, b) {
   const bufA = Buffer.from(String(a));
@@ -60,9 +61,12 @@ function sanitizeProfileId(raw) {
  * @param {Array<object>} options.defaultChapters - seed chapter list
  * @param {(input: object) => object} options.cleanChapter - normalizes/validates one chapter object
  * @param {(chapter: object) => string} options.matchText - text to fuzzy-match a capture against
+ * @param {object} [options.channels] - channel registry (apps/_lib/channels.js). A ?profile= that is a registered
+ *   channel is protected by that channel's own keys instead of the shared env password/tracker key.
+ * @param {object} [options.pool] - shared pg pool; a private one is created from DATABASE_URL when omitted
  */
 export function createStoryTrackerApp(options) {
-  const { publicDir, envPrefix, dbTable, defaultChapters, cleanChapter, matchText } = options;
+  const { publicDir, envPrefix, dbTable, defaultChapters, cleanChapter, matchText, channels = null, pool = null } = options;
 
   const router = express.Router();
   const controlPassword = process.env[`${envPrefix}_CONTROL_PASSWORD`] || "";
@@ -74,7 +78,14 @@ export function createStoryTrackerApp(options) {
   const listeners = new Map(); // profileId -> Set<response>
   const loading = new Map(); // profileId -> Promise (in-flight DB load)
 
+  function channelOf(request) {
+    const profileId = profileFromRequest(request);
+    return channels && channels.has(profileId) ? profileId : null;
+  }
+
   function authorizedControl(request) {
+    const channelId = channelOf(request);
+    if (channelId) return channels.authorize(channelId, request, CONTROL_ROLES);
     if (!controlPassword) return true;
     const key = String(request.headers[controlHeader] || "");
     return safeEqual(key, controlPassword);
@@ -86,6 +97,8 @@ export function createStoryTrackerApp(options) {
   }
 
   function authorizedTracker(request) {
+    const channelId = channelOf(request);
+    if (channelId) return channels.authorize(channelId, request, TRACKER_ROLES);
     if (!trackerKey) return false;
     const header = String(request.headers.authorization || "");
     const expected = `Bearer ${trackerKey}`;
@@ -101,9 +114,9 @@ export function createStoryTrackerApp(options) {
   }
 
   async function connectDatabase() {
-    if (!process.env.DATABASE_URL) return;
+    if (!pool && !process.env.DATABASE_URL) return;
     const { Pool } = pg;
-    db = new Pool({
+    db = pool || new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }
     });
@@ -142,6 +155,7 @@ export function createStoryTrackerApp(options) {
           console.error(`${envPrefix} profile "${profileId}" load failed; using defaults.`, error);
         }
       }
+      state.isChannel = Boolean(channels && channels.has(profileId));
       profiles.set(profileId, state);
       return state;
     })();
@@ -176,8 +190,8 @@ export function createStoryTrackerApp(options) {
       progress: { completed, total },
       percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
-      passwordRequired: Boolean(controlPassword),
-      trackerConfigured: Boolean(trackerKey),
+      passwordRequired: state.isChannel || Boolean(controlPassword),
+      trackerConfigured: state.isChannel || Boolean(trackerKey),
       updatedAt: new Date().toISOString()
     };
   }

@@ -221,7 +221,7 @@
     }
   }
 
-  const socket = io({ path: "/brosvsbros/socket.io" });
+  const socket = io(window.HubChannel ? "/c/" + window.HubChannel.id : "/", { path: "/brosvsbros/socket.io" });
   socket.on("state", (state) => {
     applyPlayers({ ...DEFAULT_PLAYERS, ...(state.players || {}) });
 

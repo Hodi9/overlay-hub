@@ -238,6 +238,7 @@
       error.textContent = "";
       try {
         await request("/api/login", { method:"POST", body:JSON.stringify({ password:document.getElementById("password").value }) });
+        if (window.HubChannel) window.HubChannel.setKey(document.getElementById("password").value);
         await boot();
       } catch (failure) { error.textContent = failure.message; }
     });

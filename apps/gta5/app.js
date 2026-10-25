@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
+import { CONTROL_ROLES, TRACKER_ROLES } from "../_lib/channels.js";
 import { DEFAULT_MISSIONS } from "./missions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -140,7 +141,7 @@ function missionMatchText(mission) {
  * the game when the tracker is started (e.g. joining mid-playthrough), and
  * Strangers & Freaks-style detours or out-of-order missions never block it.
  */
-export function createGta5App() {
+export function createGta5App({ channels = null, pool = null } = {}) {
   const router = express.Router();
   const publicDir = path.join(__dirname, "public");
   const controlPassword = process.env[`${ENV_PREFIX}_CONTROL_PASSWORD`] || "";
@@ -152,7 +153,14 @@ export function createGta5App() {
   const listeners = new Map(); // profileId -> Set<response>
   const loading = new Map(); // profileId -> Promise (in-flight DB load)
 
+  function channelOf(request) {
+    const profileId = profileFromRequest(request);
+    return channels && channels.has(profileId) ? profileId : null;
+  }
+
   function authorizedControl(request) {
+    const channelId = channelOf(request);
+    if (channelId) return channels.authorize(channelId, request, CONTROL_ROLES);
     if (!controlPassword) return true;
     const key = String(request.headers[controlHeader] || "");
     return safeEqual(key, controlPassword);
@@ -164,6 +172,8 @@ export function createGta5App() {
   }
 
   function authorizedTracker(request) {
+    const channelId = channelOf(request);
+    if (channelId) return channels.authorize(channelId, request, TRACKER_ROLES);
     if (!trackerKey) return false;
     const header = String(request.headers.authorization || "");
     return safeEqual(header, `Bearer ${trackerKey}`);
@@ -178,9 +188,9 @@ export function createGta5App() {
   }
 
   async function connectDatabase() {
-    if (!process.env.DATABASE_URL) return;
+    if (!pool && !process.env.DATABASE_URL) return;
     const { Pool } = pg;
-    db = new Pool({
+    db = pool || new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }
     });
@@ -255,6 +265,7 @@ export function createGta5App() {
           }
         }
       }
+      state.isChannel = Boolean(channels && channels.has(profileId));
       profiles.set(profileId, state);
       return state;
     })();
@@ -318,8 +329,8 @@ export function createGta5App() {
       progress,
       percent: progress.total ? Math.round((progress.completed / progress.total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
-      passwordRequired: Boolean(controlPassword),
-      trackerConfigured: Boolean(trackerKey),
+      passwordRequired: state.isChannel || Boolean(controlPassword),
+      trackerConfigured: state.isChannel || Boolean(trackerKey),
       updatedAt: new Date().toISOString()
     };
   }

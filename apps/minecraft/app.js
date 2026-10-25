@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
+import { CONTROL_ROLES } from "../_lib/channels.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const widget = JSON.parse(fs.readFileSync(path.join(__dirname, "widget.json"), "utf8"));
@@ -42,9 +43,13 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
-export function createMinecraftApp() {
+export function createMinecraftApp(context = {}) {
   const router = express.Router();
   const controlPassword = process.env.MINECRAFT_CONTROL_PANEL_PASSWORD || "";
+  const stateId = context.stateId || "primary";
+  const isChannel = Boolean(context.authorizeControl);
+  // The tracker key is allowed here too: it is what a local script or bot posts events with.
+  const CHANNEL_ROLES = [...CONTROL_ROLES, "tracker"];
   const authSecret = process.env.MINECRAFT_AUTH_SECRET || "local-development-secret";
 
   const variableDefaults = Object.fromEntries(
@@ -57,7 +62,8 @@ export function createMinecraftApp() {
       witherSkulls: 0,
       overlayScale: clamp(toNumber(variableDefaults.overlayScale, 0.8), 0.45, 1.6),
       showCross: toBool(variableDefaults.showCross, true),
-      channelName: String(variableDefaults.channelName || ""),
+      // The default is the author's own channel; a channel starts with its own Twitch name (or none).
+      channelName: isChannel ? String(context.record?.()?.twitch || "") : String(variableDefaults.channelName || ""),
       deathCommand: String(variableDefaults.deathCommand || "!death"),
       chatEnabled: toBool(variableDefaults.chatEnabled, true),
       modOnly: toBool(variableDefaults.modOnly, true),
@@ -127,9 +133,9 @@ export function createMinecraftApp() {
   }
 
   async function connectDatabase() {
-    if (!process.env.DATABASE_URL) return;
+    if (!context.pool && !process.env.DATABASE_URL) return;
     const { Pool } = pg;
-    db = new Pool({
+    db = context.pool || new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL)
         ? false
@@ -146,7 +152,7 @@ export function createMinecraftApp() {
 
     const result = await db.query(
       "SELECT data FROM minecraft_tracker_state WHERE id = $1",
-      ["primary"]
+      [stateId]
     );
 
     if (result.rows[0]?.data) {
@@ -163,7 +169,7 @@ export function createMinecraftApp() {
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id)
        DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      ["primary", JSON.stringify(state)]
+      [stateId, JSON.stringify(state)]
     );
   }
 
@@ -203,6 +209,7 @@ export function createMinecraftApp() {
   }
 
   function authorized(request) {
+    if (isChannel) return context.authorize(request, CHANNEL_ROLES);
     if (!controlPassword) return true;
     const cookies = parseCookies(request);
     const bearer = String(request.headers.authorization || "").replace(/^Bearer\s+/i, "");
@@ -441,10 +448,16 @@ export function createMinecraftApp() {
   });
 
   router.get("/api/session", (request, response) => {
-    response.json({ authenticated: authorized(request), passwordRequired: Boolean(controlPassword) });
+    response.json({ authenticated: authorized(request), passwordRequired: isChannel || Boolean(controlPassword) });
   });
 
   router.post("/api/login", (request, response) => {
+    if (isChannel) {
+      // A channel has no cookie login: the panel keeps the key itself and sends it with every request.
+      const key = String(request.body?.password || "").trim();
+      if (!context.authorize(request, CHANNEL_ROLES, key)) return response.status(401).json({ error: "Forkert nøgle." });
+      return response.json({ ok: true });
+    }
     if (controlPassword && !safeEqual(request.body?.password || "", controlPassword)) {
       return response.status(401).json({ error: "Forkert adgangskode." });
     }
@@ -516,7 +529,7 @@ export function createMinecraftApp() {
     response.status(500).json({ error: "Tracker-servicen kunne ikke gemme ændringen." });
   });
 
-  connectDatabase().catch((error) => {
+  router.ready = connectDatabase().catch((error) => {
     console.error("Database connection failed; using temporary in-memory state.", error);
   });
 

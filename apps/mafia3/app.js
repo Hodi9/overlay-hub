@@ -5,8 +5,9 @@ import { DEFAULT_CHAPTERS } from "./chapters.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export function createMafia3App() {
+export function createMafia3App(extra = {}) {
   return createStoryTrackerApp({
+    ...extra,
     publicDir: path.join(__dirname, "public"),
     envPrefix: "MAFIA3",
     dbTable: "mafia3_state",

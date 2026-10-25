@@ -23,6 +23,8 @@ setup instructions specific to it.
 
 - `gamePath` selects which game's API the text gets posted to (must match the app's mount path, e.g. `mafia1`, `mafia2`, `mafia3`, `tlou2`).
 - `profile` — see the control panel's "avanceret" section if you're running this for more than one person on the same deployment.
+  For your own channel (made on `/kanal/`) this is the channel id, and `apiKey` is the channel's **tracker key**
+  (not the owner key); the channel page shows both, ready to paste. Without a channel, `apiKey` is the game's `TRACKER_KEY` value.
 - `region` — leave `null` for a default centered capture box, or calibrate with `-Calibrate` (see below).
 
 ## Commands

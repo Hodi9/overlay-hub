@@ -23,8 +23,9 @@ function questMatchText(quest) {
   return quest.day;
 }
 
-export function createCyberpunkApp() {
+export function createCyberpunkApp(extra = {}) {
   return createStoryTrackerApp({
+    ...extra,
     publicDir: path.join(__dirname, "public"),
     envPrefix: "CYBERPUNK",
     dbTable: "cyberpunk_state",

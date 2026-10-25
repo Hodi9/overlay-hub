@@ -55,15 +55,18 @@ function cleanGame(input, existing) {
   };
 }
 
-export function createGauntletApp() {
+export function createGauntletApp(context = {}) {
   const router = express.Router();
   const controlPassword = process.env.GAUNTLET_CONTROL_PASSWORD || "";
+  const stateId = context.stateId || "primary";
+  const isChannel = Boolean(context.authorizeControl);
 
   let games = defaultGames();
   let db = null;
   const listeners = new Set();
 
   function authorized(request) {
+    if (isChannel) return context.authorizeControl(request);
     if (!controlPassword) return true;
     const key = String(request.headers["x-gauntlet-key"] || "");
     return safeEqual(key, controlPassword);
@@ -75,9 +78,9 @@ export function createGauntletApp() {
   }
 
   async function connectDatabase() {
-    if (!process.env.DATABASE_URL) return;
+    if (!context.pool && !process.env.DATABASE_URL) return;
     const { Pool } = pg;
-    db = new Pool({
+    db = context.pool || new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }
     });
@@ -90,7 +93,7 @@ export function createGauntletApp() {
       )
     `);
 
-    const result = await db.query("SELECT data FROM gauntlet_state WHERE id = $1", ["primary"]);
+    const result = await db.query("SELECT data FROM gauntlet_state WHERE id = $1", [stateId]);
     if (Array.isArray(result.rows[0]?.data)) {
       games = result.rows[0].data.map((g) => cleanGame(g, null));
     } else {
@@ -104,12 +107,12 @@ export function createGauntletApp() {
       `INSERT INTO gauntlet_state (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      ["primary", JSON.stringify(games)]
+      [stateId, JSON.stringify(games)]
     );
   }
 
   function payload() {
-    return { games, updatedAt: new Date().toISOString(), passwordRequired: Boolean(controlPassword) };
+    return { games, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
   }
 
   function broadcast() {
@@ -201,11 +204,11 @@ export function createGauntletApp() {
 
   router.use(express.static(path.join(__dirname, "public"), { extensions: ["html"] }));
 
-  if (!controlPassword) {
+  if (!isChannel && !controlPassword) {
     console.log("ADVARSEL: GAUNTLET_CONTROL_PASSWORD er ikke sat — gauntlet-panelet er ubeskyttet for alle med linket.");
   }
 
-  connectDatabase().catch((error) => {
+  router.ready = connectDatabase().catch((error) => {
     console.error("Gauntlet database connection failed; using in-memory state.", error);
   });
 

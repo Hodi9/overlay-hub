@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
 import { createTwitchDeathHub } from "./twitchChat.js";
+import { CONTROL_ROLES } from "../_lib/channels.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DB_TABLE = "rdr2_deaths_state";
@@ -20,19 +21,23 @@ function sanitizeChannel(raw) {
   return CHANNEL_RE.test(cleaned) ? cleaned : null;
 }
 
-export function createRdr2DeathsApp() {
+// Hub channels (apps/_lib/channels.js) keep their count under "hub:<id>" so it can never
+// clash with a legacy Twitch-name counter. The channel's Twitch name, if it set one,
+// only decides which chat the !died command is read from.
+export function createRdr2DeathsApp({ channels: hubChannels = null, pool = null } = {}) {
   const router = express.Router();
   const controlPassword = process.env.RDR2DEATHS_CONTROL_PASSWORD || "";
   const defaultChannel = sanitizeChannel(process.env.RDR2DEATHS_TWITCH_CHANNEL || "");
   const chatCommand = (process.env.RDR2DEATHS_CHAT_COMMAND || "!died").toLowerCase();
 
   let db = null;
-  const channels = new Map(); // channel -> { count, lastDeathAt, lastTrigger, listeners: Set }
+  const channels = new Map(); // state key -> { count, lastDeathAt, lastTrigger, listeners: Set }
+  const legacyJoined = new Set(); // Twitch names joined for a legacy ?channel= counter
 
   async function connectDatabase() {
-    if (!process.env.DATABASE_URL) return;
+    if (!pool && !process.env.DATABASE_URL) return;
     const { Pool } = pg;
-    db = new Pool({
+    db = pool || new Pool({
       connectionString: process.env.DATABASE_URL,
       ssl: /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL) ? false : { rejectUnauthorized: false }
     });
@@ -77,15 +82,20 @@ export function createRdr2DeathsApp() {
     );
   }
 
-  function payload(channel, state) {
+  function twitchOf(key) {
+    return key.startsWith("hub:") ? hubChannels?.get(key.slice(4))?.twitch || null : key;
+  }
+
+  function payload(key, state) {
+    const twitch = twitchOf(key);
     return {
-      channel,
+      channel: twitch,
       count: state.count,
       lastDeathAt: state.lastDeathAt,
       lastTrigger: state.lastTrigger,
-      passwordRequired: Boolean(controlPassword),
+      passwordRequired: key.startsWith("hub:") || Boolean(controlPassword),
       chatConfigured: true,
-      chatConnected: chatHub.isJoined(channel),
+      chatConnected: Boolean(twitch) && chatHub.isJoined(twitch),
       chatCommand,
       updatedAt: new Date().toISOString()
     };
@@ -106,16 +116,35 @@ export function createRdr2DeathsApp() {
   }
 
   const chatHub = createTwitchDeathHub({ command: chatCommand });
-  chatHub.onDeath(async (channel, username) => {
-    await ready;
-    const state = await loadChannel(channel);
+  async function countChatDeath(key, username) {
+    const state = await loadChannel(key);
     state.count += 1;
     state.lastDeathAt = new Date().toISOString();
     state.lastTrigger = { via: "chat", username, atISO: state.lastDeathAt };
-    await commit(channel, state);
+    await commit(key, state);
+  }
+
+  chatHub.onDeath(async (channel, username) => {
+    await ready;
+    if (legacyJoined.has(channel)) await countChatDeath(channel, username);
+    for (const hubId of hubChannels?.findByTwitch(channel) || []) await countChatDeath(`hub:${hubId}`, username);
   });
 
+  async function joinChat(key) {
+    const twitch = twitchOf(key);
+    if (!twitch) return;
+    if (!key.startsWith("hub:")) legacyJoined.add(twitch);
+    await chatHub.ensureJoined(twitch);
+  }
+
+  function hubChannelOf(request) {
+    const id = request.query.profile;
+    return typeof id === "string" && hubChannels && hubChannels.has(id) ? id : null;
+  }
+
   function authorizedControl(request) {
+    const hubId = hubChannelOf(request);
+    if (hubId) return hubChannels.authorize(hubId, request, CONTROL_ROLES);
     if (!controlPassword) return true;
     const key = String(request.headers["x-rdr2deaths-key"] || "");
     return safeEqual(key, controlPassword);
@@ -127,10 +156,13 @@ export function createRdr2DeathsApp() {
   }
 
   function channelFromRequest(request) {
+    const hubId = hubChannelOf(request);
+    if (hubId) return `hub:${hubId}`;
     return sanitizeChannel(request.query.channel) || defaultChannel;
   }
 
   function requireChannel(request, response, next) {
+    if (request.query.profile && !hubChannelOf(request)) return response.status(404).json({ error: "Ukendt kanal." });
     const channel = channelFromRequest(request);
     if (!channel) {
       return response.status(400).json({ error: "Angiv et gyldigt Twitch-kanalnavn via ?channel=." });
@@ -144,7 +176,7 @@ export function createRdr2DeathsApp() {
   router.get("/api/state", requireChannel, async (request, response) => {
     await ready;
     const state = await loadChannel(request.channel);
-    await chatHub.ensureJoined(request.channel);
+    await joinChat(request.channel);
     response.set("Cache-Control", "no-store");
     response.json(payload(request.channel, state));
   });
@@ -152,7 +184,7 @@ export function createRdr2DeathsApp() {
   router.get("/api/events", requireChannel, async (request, response) => {
     await ready;
     const state = await loadChannel(request.channel);
-    await chatHub.ensureJoined(request.channel);
+    await joinChat(request.channel);
 
     response.set({
       "Content-Type": "text/event-stream",
