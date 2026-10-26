@@ -34,7 +34,11 @@
     background: var(--rose); border-radius: 34px 0 0 34px; box-shadow: 0 8px 0 var(--rose-deep);
   }
   .deco-heart { position: absolute; left: -4px; top: 50%; width: 108px; height: 108px; transform: translateY(-50%) rotate(-8deg); fill: var(--rose-light); }
-  .title-block b { position: relative; font-weight: 600; font-size: 36px; letter-spacing: 0.01em; color: var(--mint); }
+  .title-text { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .title-block b { font-weight: 600; font-size: 36px; line-height: 1.1; letter-spacing: 0.01em; color: var(--mint); }
+  /* Which episode we're on: a flat mint pill under the title. Hidden until the panel has a number. */
+  .episode { padding: 1px 15px 2px; border-radius: 999px; background: var(--mint); color: var(--rose); font-weight: 600; font-size: 20px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .episode:empty { display: none; }
 
   /* Right block: the cast on the mint tablecloth. */
   .cast-row {
@@ -70,7 +74,10 @@
 <div class="bar" id="bar">
   <div class="title-block">
     <svg class="deco-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.2-4.6-10-9.2C0.4 8.2 2 4.5 5.6 4c2-0.3 3.7 0.7 4.9 2.4C11.7 4.7 13.4 3.7 15.4 4c3.6 0.5 5.2 4.2 3.6 7.8C15.2 16.4 12 21 12 21Z"/></svg>
-    <b id="show-title">Perfekt Match</b>
+    <div class="title-text">
+      <b id="show-title">Perfekt Match</b>
+      <span class="episode" id="show-episode"></span>
+    </div>
   </div>
   <div class="cast-row" id="cast-row"></div>
 </div>
@@ -85,6 +92,7 @@
 
   var castRow = document.getElementById('cast-row');
   var showTitle = document.getElementById('show-title');
+  var showEpisode = document.getElementById('show-episode');
   var currentCast = [];
   var rotationTimer = null;
   var rotationStartTimeout = null;
@@ -118,6 +126,8 @@
 
   function render(state) {
     showTitle.textContent = (state.show && state.show.title) || 'Perfekt Match';
+    var episode = Math.round(Number(state.show && state.show.episode));
+    showEpisode.textContent = episode >= 1 ? 'Afsnit ' + episode : '';
     var visible = (state.cast || []).filter(function (c) { return c.visible; });
     currentCast = visible;
 
