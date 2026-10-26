@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import pg from "pg";
 import { CONTROL_ROLES, TRACKER_ROLES } from "../_lib/channels.js";
+import { demoCompleted, demoFraction } from "../_lib/demo.js";
 import { DEFAULT_MISSIONS } from "./missions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -353,12 +354,19 @@ export function createGta5App({ channels = null, pool = null } = {}) {
 
   router.use(express.json({ limit: "32kb" }));
 
+  // ?demo=<tal>: intet klaret endnu → vis et tilfældigt antal klarede missioner (kun i svaret, intet gemmes).
+  function demoView(state, request) {
+    const fraction = demoFraction(request);
+    if (fraction === null || state.completed.size > 0) return state;
+    return { ...state, ...demoCompleted(state.chapters, fraction, (c) => !c.optional) };
+  }
+
   router.get("/api/state", async (request, response, next) => {
     try {
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
       response.set("Cache-Control", "no-store");
-      response.json(payload(state));
+      response.json(payload(demoView(state, request)));
     } catch (error) {
       next(error);
     }
@@ -368,6 +376,7 @@ export function createGta5App({ channels = null, pool = null } = {}) {
     try {
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
+      const view = demoView(state, request);
 
       response.set({
         "Content-Type": "text/event-stream",
@@ -376,14 +385,18 @@ export function createGta5App({ channels = null, pool = null } = {}) {
       });
       response.flushHeaders();
 
-      if (!listeners.has(profileId)) listeners.set(profileId, new Set());
-      const set = listeners.get(profileId);
-      set.add(response);
-      response.write(`data: ${JSON.stringify(payload(state))}\n\n`);
+      // En demo får ikke live-opdateringer: den ville ellers skifte tilbage til "ikke startet".
+      let set = null;
+      if (view === state) {
+        if (!listeners.has(profileId)) listeners.set(profileId, new Set());
+        set = listeners.get(profileId);
+        set.add(response);
+      }
+      response.write(`data: ${JSON.stringify(payload(view))}\n\n`);
       const keepAlive = setInterval(() => response.write(": keep-alive\n\n"), 20000);
       request.on("close", () => {
         clearInterval(keepAlive);
-        set.delete(response);
+        if (set) set.delete(response);
       });
     } catch (error) {
       next(error);

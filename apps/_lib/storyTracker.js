@@ -3,6 +3,7 @@ import path from "node:path";
 import express from "express";
 import pg from "pg";
 import { CONTROL_ROLES, TRACKER_ROLES } from "./channels.js";
+import { demoFraction, demoStep } from "./demo.js";
 
 function safeEqual(a, b) {
   const bufA = Buffer.from(String(a));
@@ -214,12 +215,19 @@ export function createStoryTrackerApp(options) {
 
   router.use(express.json({ limit: "32kb" }));
 
+  // ?demo=<tal>: intet startet endnu → vis et tilfældigt gennemført trin (kun i svaret, intet gemmes).
+  function demoView(state, request) {
+    const fraction = demoFraction(request);
+    if (fraction === null || state.currentIndex >= 0) return state;
+    return { ...state, currentIndex: demoStep(state.chapters.length, fraction) };
+  }
+
   router.get("/api/state", async (request, response, next) => {
     try {
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
       response.set("Cache-Control", "no-store");
-      response.json(payload(state));
+      response.json(payload(demoView(state, request)));
     } catch (error) {
       next(error);
     }
@@ -229,6 +237,7 @@ export function createStoryTrackerApp(options) {
     try {
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
+      const view = demoView(state, request);
 
       response.set({
         "Content-Type": "text/event-stream",
@@ -237,14 +246,18 @@ export function createStoryTrackerApp(options) {
       });
       response.flushHeaders();
 
-      if (!listeners.has(profileId)) listeners.set(profileId, new Set());
-      const set = listeners.get(profileId);
-      set.add(response);
-      response.write(`data: ${JSON.stringify(payload(state))}\n\n`);
+      // En demo får ikke live-opdateringer: den ville ellers skifte tilbage til "ikke startet".
+      let set = null;
+      if (view === state) {
+        if (!listeners.has(profileId)) listeners.set(profileId, new Set());
+        set = listeners.get(profileId);
+        set.add(response);
+      }
+      response.write(`data: ${JSON.stringify(payload(view))}\n\n`);
       const keepAlive = setInterval(() => response.write(": keep-alive\n\n"), 20000);
       request.on("close", () => {
         clearInterval(keepAlive);
-        set.delete(response);
+        if (set) set.delete(response);
       });
     } catch (error) {
       next(error);

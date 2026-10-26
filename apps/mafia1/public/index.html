@@ -43,7 +43,11 @@
   var params = new URLSearchParams(location.search);
   if (params.get('bg') === 'black') document.body.classList.add('bg-preview');
   var profile = params.get('profile') || '';
-  var qs = profile ? ('?profile=' + encodeURIComponent(profile)) : '';
+  // ?demo på adressen: hvis intet er startet, viser serveren et tilfældigt gennemført trin (rører ikke den gemte fremgang).
+  var qsParts = [];
+  if (profile) qsParts.push('profile=' + encodeURIComponent(profile));
+  if (params.has('demo')) qsParts.push('demo=' + Math.random());
+  var qs = qsParts.length ? ('?' + qsParts.join('&')) : '';
 
   var box = document.getElementById('tracker');
   var content = document.getElementById('content');

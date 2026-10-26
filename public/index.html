@@ -342,7 +342,7 @@ const OVERLAYS = [
     control: "/minecraft/control" },
   { id: "rdr2", cat: "spil", tag: "Spil", title: "RDR2 Marathon Tracker", sub: "Story-progression — auto-opdateres via save-fil",
     image: { src: "/img/rdr2.jpg" },
-    links: [["Overlay", "/rdr2/"], ["Dødstæller", "/rdr2-deaths/?bg=black"]],
+    links: [["Overlay", "/rdr2/?demo=1"], ["Dødstæller", "/rdr2-deaths/?bg=black"]],
     control: "/rdr2/control.html",
     extra: [["Dødstæller kontrolpanel", "/rdr2-deaths/control.html"], ["Opret din egen dødstæller", "/rdr2-deaths/setup.html"]],
     info: "Kør <code>apps/rdr2/tracker/rdr2-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet. Dødstælleren tæller op via Twitch-chatten — skriv <code>!died</code> som streameren eller en moderator. Andre kanaler kan bruge samme værktøj uafhængigt via <code>/rdr2-deaths/setup.html</code>." },
@@ -360,20 +360,20 @@ const OVERLAYS = [
     info: "Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS." },
   { id: "tlou2", cat: "spil", tag: "Spil", title: "The Last of Us Part II", sub: "Story-progression — auto-opdateres via OCR",
     image: { src: "/img/tlou2.jpg", credit: "soniagipi.artstation.com", url: "https://soniagipi.artstation.com" },
-    links: [["Overlay", "/tlou2/"]], control: "/tlou2/control.html",
+    links: [["Overlay", "/tlou2/?demo=1"]], control: "/tlou2/control.html",
     info: "Kør <code>apps/tlou2/tracker/tlou2-ocr-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
   { id: "gta5", cat: "spil", tag: "Spil", title: "GTA V Story Tracker", sub: "Story-progression — auto-opdateres via save-fil",
     image: { src: "/img/gta5.jpg" },
-    links: [["Overlay", "/gta5/"]], control: "/gta5/control.html",
+    links: [["Overlay", "/gta5/?demo=1"]], control: "/gta5/control.html",
     info: "Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
   { id: "mafia", cat: "spil", tag: "Spil", title: "Mafia Trilogy Trackers", sub: "Story-progression — auto-opdateres via OCR",
     image: { src: "/img/mafia.webp" },
-    links: [["Mafia I", "/mafia1/"], ["Mafia II", "/mafia2/"], ["Mafia III", "/mafia3/"]],
+    links: [["Mafia I", "/mafia1/?demo=1"], ["Mafia II", "/mafia2/?demo=1"], ["Mafia III", "/mafia3/?demo=1"]],
     controls: [["Panel I", "/mafia1/control.html"], ["Panel II", "/mafia2/control.html"], ["Panel III", "/mafia3/control.html"]],
     info: "Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne." },
   { id: "cyberpunk", cat: "spil", tag: "Spil", title: "Cyberpunk 2077 Tracker", sub: "Main jobs-progression — inkl. eller uden Phantom Liberty",
     image: { src: "/img/cyberpunk.jpg", aspect: "1200 / 547", credit: "Ward Lindhout / CD PROJEKT RED", url: "https://www.cyberpunk.net/" },
-    links: [["Inkl. Phantom Liberty", "/cyberpunk/"], ["Uden Phantom Liberty", "/cyberpunk/?pl=off"]],
+    links: [["Inkl. Phantom Liberty", "/cyberpunk/?demo=1"], ["Uden Phantom Liberty", "/cyberpunk/?pl=off&demo=1"]],
     control: "/cyberpunk/control.html",
     info: "Kør <code>apps/cyberpunk/tracker/Start Cyberpunk Tracker.cmd</code> på streame-pc'en for automatisk opdatering (den læser quest-titlen i HUD'en — kalibrér området først, se <code>README.md</code> dér), eller styr det manuelt fra kontrolpanelet. Overlayet skriver selv om Phantom Liberty er med i procenten. Akt 2 og Phantom Liberty kan flyttes rundt i kontrolpanelet, så listen følger din rækkefølge." },
   { id: "perfektmatch", cat: "show", tag: "Show", title: "Perfekt Match", sub: "Dating-show-overlay med roterende social-media pop-ups",
@@ -391,6 +391,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 function obsUrl(href) {
   const u = new URL(href, location.origin);
   u.searchParams.delete("bg");
+  u.searchParams.delete("demo"); // forsidens Overlay-links åbner en demo; OBS-linket skal vise den rigtige fremgang
   return u.toString();
 }
 

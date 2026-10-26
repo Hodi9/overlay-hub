@@ -69,7 +69,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
     var cs = function(el){ return getComputedStyle(el).backgroundColor; };
     var clear = function(c){ return c === "rgba(0, 0, 0, 0)" || c === "transparent"; };
     if (clear(cs(document.documentElement)) && clear(cs(document.body))) document.documentElement.style.background = "#111";
-    var u = new URL(location.href); u.searchParams.delete("bg");
+    var u = new URL(location.href); u.searchParams.delete("bg"); u.searchParams.delete("demo");
     if (u.searchParams.has("preview")) ["preview","etape","day","from","to","km","min","paused","arrived"].forEach(function(k){ u.searchParams.delete(k); }); // testværdier hører ikke hjemme i OBS-linket
     var link = u.toString();
     var b = document.createElement("button");
