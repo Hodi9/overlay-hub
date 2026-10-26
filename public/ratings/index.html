@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ratings — Dreamglow</title>
+<meta name="description" content="Mine ratings af spil, fra 1 til 10 med en kort note.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --logo-lime: #c9f36b;
+    --logo-green: #72c99b;
+    --on-accent: #0b0b0d;
+    --shadow: 0 1px 0 rgba(0,0,0,.25), 0 10px 26px -14px rgba(0,0,0,.6);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+    font-family: "Schibsted Grotesk", system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 56px; }
+
+  /* Top of the page: same light band as the front page, then white fades through grey into the dark. */
+  .light-top {
+    --ink: #0b0b0d; --muted: #5d5d66;
+    position: relative; color: var(--ink); background: #e9e8e3;
+  }
+  .light-top .wrap { padding-bottom: 0; }
+  .light-top::after {
+    content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 100%; height: 320px; pointer-events: none;
+    background: linear-gradient(to bottom, #e9e8e3 0%, #a6a5a1 26%, #5b5a58 50%, #25252a 76%, var(--bg) 100%);
+  }
+
+  /* Wordmark */
+  .wordmark-block { padding: 26px 0 0; }
+  .wordmark {
+    margin: 0; font-size: clamp(30px, 8.5vw, 78px); font-weight: 800;
+    letter-spacing: -.03em; line-height: 1; text-transform: uppercase;
+  }
+  .wordmark .tld {
+    background: linear-gradient(135deg, #5aa81f, #1f8f62);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* Top bar */
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
+  .brand img { width: 30px; height: 30px; display: block; }
+  .navlink {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    text-decoration: none; padding: 8px 12px; border-radius: var(--r);
+    border: 1px solid rgba(11,11,13,.4); color: var(--ink);
+  }
+  .navlink[aria-current="page"] { background: var(--ink); color: #e9e8e3; border-color: var(--ink); }
+
+  /* Hero */
+  .hero { padding: 36px 0 44px; }
+  .hero h1 {
+    margin: 0; max-width: 13ch;
+    font-family: var(--display); font-size: clamp(52px, 8.4vw, 104px); line-height: .94; letter-spacing: -.02em; font-weight: 400;
+  }
+  .hero h1 em { font-style: italic; color: #1f8f62; }
+  .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
+
+  /* Toolbar */
+  .toolbar { margin: 28px 0 22px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    border: 1px solid var(--line); background: rgba(11,11,13,.85); color: var(--ink);
+    padding: 12px 14px; border-radius: var(--r);
+  }
+  .chip:hover { border-color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .hero .count { margin: 14px 0 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
+
+  /* Deck cards: portrait, picture fills the card, score in the corner like a playing card. */
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+  .deck {
+    position: relative; isolation: isolate; aspect-ratio: 5 / 7; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    background: #131316; border: 1px solid var(--line); border-radius: 4px;
+    transition: border-color .15s;
+  }
+  .deck:hover { border-color: var(--logo-green); }
+  .deck .art { position: absolute; inset: 0; z-index: -2; background: radial-gradient(120% 80% at 50% 18%, #2a2a30, #0f0f12 70%); }
+  .deck .initial {
+    position: absolute; inset: 0 0 30% 0; display: grid; place-items: center;
+    font-size: clamp(96px, 14vw, 150px); font-weight: 800; letter-spacing: -.04em; color: rgba(255,255,255,.05);
+  }
+  .deck .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
+  .deck::after {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(to top, rgba(11,11,13,.97) 0%, rgba(11,11,13,.84) 36%, rgba(11,11,13,0) 68%);
+  }
+  .corner {
+    position: absolute; top: 14px; left: 14px; display: flex; align-items: baseline; gap: 3px;
+    padding: 4px 10px 6px; border-radius: var(--r); background: rgba(11,11,13,.7); border: 1px solid rgba(255,255,255,.12);
+  }
+  .corner b { font-family: var(--display); font-size: 38px; line-height: 1; font-weight: 400; letter-spacing: -.01em; }
+  .corner span { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; color: var(--muted); }
+  .deck.great .corner b { color: var(--logo-lime); }
+  .deck.unrated .corner b { color: var(--muted); }
+  .deck-body { padding: 18px; }
+  .deck h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 30px; letter-spacing: -.01em; line-height: 1.04; }
+  .deck .year { margin: 6px 0 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .12em; color: var(--muted); }
+  .deck .note {
+    margin: 10px 0 0; font-size: 13.5px; line-height: 1.45; color: #c9c9d0;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .deck.unrated .note { color: var(--muted); font-style: italic; }
+  .bar { position: relative; height: 5px; margin-top: 14px; border-radius: 1px; overflow: hidden; background: rgba(255,255,255,.14); }
+  .bar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--s) * 10%); background: var(--logo-lime); }
+  .bar::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), rgba(11,11,13,.9) calc(10% - 2px) 10%);
+  }
+  .empty { display: none; text-align: center; color: var(--muted); padding: 48px 0; }
+
+  .foot { margin: 40px 0 0; color: var(--muted); font-size: 14px; }
+  .foot a { color: var(--ink); text-underline-offset: 3px; }
+
+  @media (max-width: 760px) { .hero { padding-top: 16px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+  <div class="light-top"><div class="wrap">
+    <div class="wordmark-block">
+      <p class="wordmark">Dreamglow.<span class="tld">xyz</span></p>
+    </div>
+
+    <header class="top">
+      <a class="brand" href="/">
+        <img src="/img/logo.svg" alt="" width="30" height="30">
+        Overview
+      </a>
+      <a class="navlink" href="/ratings/" aria-current="page">Ratings</a>
+    </header>
+
+    <section class="hero">
+      <h1>Hvad jeg synes om <em>spillene</em>.</h1>
+      <p>En rating fra 1 til 10 og en kort note. Kun min egen mening.</p>
+      <p class="count" id="count"></p>
+    </section>
+  </div></div>
+
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="chips" id="chips" role="group" aria-label="Sortér">
+        <button class="chip" data-sort="top" aria-pressed="true">Højest først</button>
+        <button class="chip" data-sort="low" aria-pressed="false">Lavest først</button>
+        <button class="chip" data-sort="az" aria-pressed="false">A–Å</button>
+      </div>
+    </div>
+
+    <main class="grid" id="grid"></main>
+    <p class="empty" id="empty">Ingen spil på listen endnu.</p>
+
+    <p class="foot">Ratings ændrer sig, når jeg spiller mere. <a href="/">Tilbage til overview</a></p>
+  </div>
+
+<script src="/ratings/ratings.js"></script>
+<script>
+const games = (window.RATINGS || []).map((g) => ({ ...g, score: Number.isFinite(g.score) ? Math.min(10, Math.max(0, g.score)) : null }));
+const grid = document.getElementById("grid");
+const chips = document.getElementById("chips");
+let sort = "top";
+
+const byTitle = (a, b) => a.title.localeCompare(b.title, "da");
+// Spil uden rating står altid nederst, uanset sortering.
+const SORTS = {
+  top: (a, b) => (a.score === null) - (b.score === null) || (b.score - a.score) || byTitle(a, b),
+  low: (a, b) => (a.score === null) - (b.score === null) || (a.score - b.score) || byTitle(a, b),
+  az: byTitle,
+};
+
+const fmt = (n) => String(n).replace(".", ",");
+const initial = (title) => (title.replace(/^(the|a|an)\s+/i, "").trim()[0] || "?").toUpperCase();
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function card(g) {
+  const rated = g.score !== null;
+  const art = el("div", "art");
+  art.append(el("span", "initial", initial(g.title)));
+  if (g.image) {
+    const img = el("img");
+    img.src = g.image; img.alt = ""; img.loading = "lazy";
+    img.addEventListener("error", () => img.remove());
+    art.append(img);
+  }
+
+  const corner = el("div", "corner");
+  corner.append(el("b", "", rated ? fmt(g.score) : "–"), el("span", "", "/10"));
+
+  const body = el("div", "deck-body");
+  body.append(el("h2", "", g.title));
+  if (g.year) body.append(el("p", "year", String(g.year)));
+  const note = el("p", "note", g.note || (rated ? "" : "Ikke ratet endnu."));
+  if (g.note) note.title = g.note;
+  if (note.textContent) body.append(note);
+  if (rated) {
+    const bar = el("div", "bar");
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", `${fmt(g.score)} ud af 10`);
+    const fill = el("i");
+    fill.style.setProperty("--s", g.score);
+    bar.append(fill);
+    body.append(bar);
+  }
+
+  const article = el("article", "deck" + (rated ? (g.score >= 9 ? " great" : "") : " unrated"));
+  article.append(art, corner, body);
+  return article;
+}
+
+function render() {
+  grid.replaceChildren(...[...games].sort(SORTS[sort]).map(card));
+  const rated = games.filter((g) => g.score !== null).length;
+  document.getElementById("count").textContent = games.length ? `${games.length} spil · ${rated} ratet` : "";
+  document.getElementById("empty").style.display = games.length ? "none" : "block";
+}
+
+chips.addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-sort]");
+  if (!chip) return;
+  sort = chip.dataset.sort;
+  chips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

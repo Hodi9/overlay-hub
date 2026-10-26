@@ -10,10 +10,13 @@
 <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
     --bg: #0b0b0d;
     --paper: #151518;
     --ink: #ededed;
@@ -99,29 +102,36 @@
   }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
   .brand svg, .brand img { width: 30px; height: 30px; display: block; }
+  .top-right { display: flex; align-items: center; gap: 8px; }
+  .navlink {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    text-decoration: none; padding: 8px 12px; border-radius: var(--r);
+    border: 1px solid rgba(11,11,13,.4); color: var(--ink);
+  }
+  .navlink:hover { background: var(--ink); color: #e9e8e3; border-color: var(--ink); }
   .status {
     display: inline-flex; align-items: center; gap: 8px;
-    font-size: 13px; font-weight: 600; color: var(--muted);
-    background: var(--paper); border: 1px solid var(--line);
-    padding: 6px 12px; border-radius: 999px;
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+    background: var(--paper); border: 1px solid var(--paper);
+    padding: 8px 12px; border-radius: var(--r);
   }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #b8c0bb; }
-  .status.ok .dot { background: #22b36b; box-shadow: 0 0 0 4px rgba(34,179,107,.18); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #b8c0bb; }
+  .status.ok .dot { background: #22b36b; }
   .status.down .dot { background: #d9534f; }
 
   /* Hero */
   .hero { padding: 36px 0 28px; }
   .hero h1 {
-    margin: 0; max-width: 16ch;
-    font-size: clamp(36px, 6.5vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800;
-    text-shadow: 0 0 28px rgba(201,243,107,.2), 0 0 80px rgba(114,201,155,.14);
+    margin: 0; max-width: 13ch;
+    font-family: var(--display); font-size: clamp(52px, 8.4vw, 104px); line-height: .94; letter-spacing: -.02em; font-weight: 400;
   }
+  .hero h1 em { font-style: italic; color: #1f8f62; }
   .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
 
   /* Call to action: make your own channel */
   .channel-cta {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
-    margin: 0 0 8px; padding: 18px 20px; border: 1px solid var(--mint-line); border-radius: 18px; background: var(--mint-soft);
+    margin: 0 0 8px; padding: 18px 20px; border: 1px solid var(--mint-line); border-radius: 4px; background: var(--mint-soft);
   }
   .channel-cta { position: relative; }
   /* The head rests on the box: multiply drops its light background into the band above,
@@ -137,11 +147,11 @@
     mask-composite: intersect;
   }
   @media (max-width: 760px) { .channel-cta::before { display: none; } }
-  .channel-cta b { display: block; font-size: 17px; }
+  .channel-cta b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1.1; letter-spacing: -.005em; }
   .channel-cta span { color: var(--muted); font-size: 14px; }
   .channel-cta a {
-    flex: none; text-decoration: none; font-weight: 700; font-size: 15px;
-    background: var(--mint); color: var(--on-accent); padding: 11px 18px; border-radius: 12px;
+    flex: none; text-decoration: none; font-family: var(--mono); font-weight: 500; font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    background: var(--mint); color: var(--on-accent); padding: 13px 18px; border-radius: var(--r);
   }
   .channel-cta a:hover { background: #fff; }
 
@@ -149,46 +159,47 @@
   .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 28px 0 22px; }
   .search {
     flex: 1 1 260px; display: flex; align-items: center; gap: 10px;
-    background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 0 14px;
   }
   .search svg { width: 18px; height: 18px; color: var(--muted); flex-shrink: 0; }
   .search input { flex: 1; border: 0; background: none; font: inherit; padding: 13px 0; color: var(--ink); outline: none; min-width: 0; }
   .search:focus-within { border-color: var(--mint-dark); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip {
-    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
-    padding: 9px 14px; border-radius: 999px;
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    border: 1px solid var(--line); background: rgba(11,11,13,.85); color: var(--ink);
+    padding: 12px 14px; border-radius: var(--r);
   }
+  .chip:hover { border-color: var(--muted); }
   .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
   /* Grid */
   .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); align-items: stretch; }
   .card {
-    background: rgba(21,21,24,.84); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-    border: 1px solid var(--line); border-radius: 22px;
-    padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column;
-    transition: transform .15s, border-color .15s;
+    background: rgba(17,17,20,.88); border: 1px solid var(--line); border-radius: 4px;
+    padding: 20px; display: flex; flex-direction: column;
+    transition: border-color .15s;
   }
-  .card:hover { transform: translateY(-2px); border-color: #43434b; }
-  .cover { margin: 0 0 14px; }
-  .cover img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
+  .card:hover { border-color: var(--mint-dark); }
+  .cover { margin: 0 0 16px; }
+  .cover img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 2px; }
   .cover figcaption { margin-top: 6px; font-size: 11px; line-height: 1.3; color: var(--muted); }
   .cover figcaption a { color: inherit; text-underline-offset: 2px; }
   .cover figcaption a:hover { color: var(--mint-dark); }
   .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-  .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mint-dark); background: var(--mint-soft); padding: 4px 9px; border-radius: 999px; }
-  .card h2 { margin: 0; font-size: 20px; letter-spacing: -.015em; line-height: 1.2; }
-  .card .sub { margin: 4px 0 16px; color: var(--muted); font-size: 14px; min-height: 2.8em; }
+  .tag { font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--mint-dark); border: 1px solid var(--mint-line); padding: 4px 8px; border-radius: 2px; }
+  .card h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 30px; letter-spacing: -.01em; line-height: 1.04; }
+  .card .sub { margin: 6px 0 18px; color: var(--muted); font-size: 14px; min-height: 2.8em; }
   .links { display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
   .link {
     display: inline-flex; align-items: stretch;
-    border: 1px solid var(--line); border-radius: 11px; background: var(--bg); overflow: hidden;
+    border: 1px solid var(--line); border-radius: var(--r); background: transparent; overflow: hidden;
   }
   .link a, .link button {
     display: inline-flex; align-items: center; gap: 6px;
-    font: inherit; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: none;
-    background: none; border: 0; cursor: pointer; padding: 8px 12px; white-space: nowrap;
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--ink); text-decoration: none;
+    background: none; border: 0; cursor: pointer; padding: 9px 11px; white-space: nowrap;
   }
   .link a:hover { background: var(--mint-soft); color: var(--mint-dark); }
   .link button { border-left: 1px solid var(--line); padding: 8px 10px; color: var(--muted); }
@@ -199,13 +210,14 @@
   .controls { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
   .control {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    background: var(--ink); color: var(--paper); text-decoration: none; font-weight: 700; font-size: 14px;
-    padding: 12px; border-radius: 12px; white-space: nowrap;
+    background: var(--ink); color: var(--paper); text-decoration: none;
+    font-family: var(--mono); font-weight: 500; font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+    padding: 14px 12px; border-radius: var(--r); white-space: nowrap;
   }
   .control:hover { background: #ffffff; }
   .control svg { width: 15px; height: 15px; }
   details { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; font-size: 13px; color: var(--muted); }
-  summary { cursor: pointer; font-weight: 600; color: var(--ink); list-style: none; display: flex; align-items: center; gap: 6px; }
+  summary { cursor: pointer; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); list-style: none; display: flex; align-items: center; gap: 6px; }
   summary::-webkit-details-marker { display: none; }
   summary::before { content: "+"; font-family: "JetBrains Mono", monospace; color: var(--mint-dark); }
   details[open] summary::before { content: "−"; }
@@ -214,30 +226,30 @@
   .extra a { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--mint-dark); text-decoration: none; }
   .extra a:hover { text-decoration: underline; }
   .extra svg { width: 13px; height: 13px; }
-  code { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--bg); color: var(--ink); padding: 1px 5px; border-radius: 5px; word-break: break-all; }
+  code { font-family: var(--mono); font-size: 12px; background: var(--bg); color: var(--ink); padding: 1px 5px; border-radius: 2px; word-break: break-all; }
   .card[hidden] { display: none; }
   .empty { display: none; text-align: center; color: var(--muted); padding: 48px 0; }
 
   /* Info strip */
   .tips { margin: 40px 0 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
-  .tip { border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
-  .tip b { display: block; margin-bottom: 4px; }
+  .tip { border: 1px solid var(--line); border-radius: 4px; padding: 18px; }
+  .tip b { display: block; margin-bottom: 6px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
   .tip span { color: var(--muted); font-size: 14px; }
 
   /* Kontakt: svævende knap nederst til højre, linker til Discord */
   .contact-fab {
     position: fixed; right: 20px; bottom: 20px; z-index: 20;
     display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
-    font: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
-    background: var(--mint); color: var(--on-accent); border: 2px solid var(--ink);
-    padding: 12px 18px; border-radius: 999px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.6);
+    font-family: var(--mono); font-weight: 500; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    background: var(--mint); color: var(--on-accent); border: 0;
+    padding: 13px 16px; border-radius: var(--r);
   }
-  .contact-fab:hover { background: var(--mint-dark); }
-  .contact-fab svg { width: 18px; height: 18px; }
+  .contact-fab:hover { background: #fff; }
+  .contact-fab svg { display: none; }
 
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 30;
-    background: var(--ink); color: var(--paper); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    background: var(--ink); color: var(--paper); padding: 11px 16px; border-radius: var(--r); font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .06em;
     opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
@@ -245,8 +257,7 @@
   :focus-visible { outline: 2px solid var(--mint-dark); outline-offset: 2px; }
   @media (max-width: 520px) {
     .hero { padding-top: 16px; }
-    .contact-fab span { display: none; }
-    .contact-fab { padding: 14px; }
+    .contact-fab { padding: 12px 14px; right: 16px; bottom: 16px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 </style>
@@ -264,11 +275,14 @@
         <img src="/img/logo.svg" alt="" width="30" height="30">
         Overview
       </a>
-      <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
+      <span class="top-right">
+        <a class="navlink" href="/ratings/">Ratings</a>
+        <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
+      </span>
     </header>
 
     <section class="hero">
-      <h1>Overlays til livestreams, klar til OBS.</h1>
+      <h1>Overlays til <em>livestreams</em>, klar til OBS.</h1>
       <p>Browser sources og kontrolpaneler til alle de overlays, der kører på denne service.</p>
     </section>
   </div></div>
