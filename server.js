@@ -20,6 +20,7 @@ import { createPerfektMatchApp } from "./apps/perfektmatch/app.js";
 import { createPokemonApp } from "./apps/pokemon/app.js";
 import { createRdr2DeathsApp } from "./apps/rdr2-deaths/app.js";
 import { createRdr2App } from "./apps/rdr2/app.js";
+import { createLetterboxdApp } from "./apps/letterboxd/app.js";
 import { createWalkApp } from "./apps/walk/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
 import { collapseLeadingSlashes } from "./collapseLeadingSlashes.js";
@@ -57,6 +58,7 @@ const channels = createChannelRegistry({ pool });
 app.use((_req, _res, next) => { channels.ready.then(() => next(), next); });
 
 app.use("/api/channels", createChannelsRouter({ registry: channels }));
+app.use("/api/letterboxd", createLetterboxdApp());
 
 // "Kopiér link"-knap på alle overlay-sider. Knappen vises kun i en almindelig
 // browser — aldrig i OBS (window.obsstudio / OBS user agent) eller i en iframe

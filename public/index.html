@@ -97,12 +97,12 @@
 
   /* Top bar */
   .top {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
     padding: 22px 0;
   }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
   .brand svg, .brand img { width: 30px; height: 30px; display: block; }
-  .top-right { display: flex; align-items: center; gap: 8px; }
+  .top-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .navlink {
     font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
     text-decoration: none; padding: 8px 12px; border-radius: var(--r);
@@ -277,6 +277,7 @@
       </a>
       <span class="top-right">
         <a class="navlink" href="/ratings/">Ratings</a>
+        <a class="navlink" href="/films/">Film</a>
         <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
       </span>
     </header>

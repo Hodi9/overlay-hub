@@ -63,11 +63,13 @@
   .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 0; }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
   .brand img { width: 30px; height: 30px; display: block; }
+  .top-right { display: flex; align-items: center; gap: 8px; }
   .navlink {
     font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
     text-decoration: none; padding: 8px 12px; border-radius: var(--r);
     border: 1px solid rgba(11,11,13,.4); color: var(--ink);
   }
+  .navlink:hover { background: var(--ink); color: #e9e8e3; border-color: var(--ink); }
   .navlink[aria-current="page"] { background: var(--ink); color: #e9e8e3; border-color: var(--ink); }
 
   /* Hero */
@@ -153,7 +155,10 @@
         <img src="/img/logo.svg" alt="" width="30" height="30">
         Overview
       </a>
-      <a class="navlink" href="/ratings/" aria-current="page">Ratings</a>
+      <nav class="top-right" aria-label="Sider">
+        <a class="navlink" href="/ratings/" aria-current="page">Ratings</a>
+        <a class="navlink" href="/films/">Film</a>
+      </nav>
     </header>
 
     <section class="hero">

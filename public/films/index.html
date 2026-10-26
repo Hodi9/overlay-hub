@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Film — Dreamglow</title>
+<meta name="description" content="Film jeg har set, med mine ratings fra Letterboxd.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0b0d">
+<link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --logo-lime: #c9f36b;
+    --logo-green: #72c99b;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+    font-family: "Schibsted Grotesk", system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 56px; }
+
+  /* Top of the page: same light band as the front page, then white fades through grey into the dark. */
+  .light-top {
+    --ink: #0b0b0d; --muted: #5d5d66;
+    position: relative; color: var(--ink); background: #e9e8e3;
+  }
+  .light-top .wrap { padding-bottom: 0; }
+  .light-top::after {
+    content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 100%; height: 320px; pointer-events: none;
+    background: linear-gradient(to bottom, #e9e8e3 0%, #a6a5a1 26%, #5b5a58 50%, #25252a 76%, var(--bg) 100%);
+  }
+
+  /* Wordmark */
+  .wordmark-block { padding: 26px 0 0; }
+  .wordmark {
+    margin: 0; font-size: clamp(30px, 8.5vw, 78px); font-weight: 800;
+    letter-spacing: -.03em; line-height: 1; text-transform: uppercase;
+  }
+  .wordmark .tld {
+    background: linear-gradient(135deg, #5aa81f, #1f8f62);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* Top bar */
+  .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
+  .brand img { width: 30px; height: 30px; display: block; }
+  .top-right { display: flex; align-items: center; gap: 8px; }
+  .navlink {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+    text-decoration: none; padding: 8px 12px; border-radius: var(--r);
+    border: 1px solid rgba(11,11,13,.4); color: var(--ink);
+  }
+  .navlink:hover { background: var(--ink); color: #e9e8e3; border-color: var(--ink); }
+  .navlink[aria-current="page"] { background: var(--ink); color: #e9e8e3; border-color: var(--ink); }
+
+  /* Hero */
+  .hero { padding: 36px 0 44px; }
+  .hero h1 {
+    margin: 0; max-width: 13ch;
+    font-family: var(--display); font-size: clamp(52px, 8.4vw, 104px); line-height: .94; letter-spacing: -.02em; font-weight: 400;
+  }
+  .hero h1 em { font-style: italic; color: #1f8f62; }
+  .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
+  .hero .count { margin: 14px 0 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
+
+  /* Deck cards: same as the game ratings, but each card links to the film on Letterboxd. */
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); margin-top: 28px; }
+  .deck {
+    position: relative; isolation: isolate; aspect-ratio: 5 / 7; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    background: #131316; border: 1px solid var(--line); border-radius: 4px;
+    color: inherit; text-decoration: none;
+    transition: border-color .15s;
+  }
+  .deck:hover, .deck:focus-visible { border-color: var(--logo-green); }
+  .deck:focus-visible { outline: 2px solid var(--logo-green); outline-offset: 2px; }
+  .deck .art { position: absolute; inset: 0; z-index: -2; background: radial-gradient(120% 80% at 50% 18%, #2a2a30, #0f0f12 70%); }
+  .deck .initial {
+    position: absolute; inset: 0 0 30% 0; display: grid; place-items: center;
+    font-size: clamp(96px, 14vw, 150px); font-weight: 800; letter-spacing: -.04em; color: rgba(255,255,255,.05);
+  }
+  .deck .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); }
+  .deck::after {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(to top, rgba(11,11,13,.97) 0%, rgba(11,11,13,.9) 46%, rgba(11,11,13,0) 80%);
+  }
+  .corner {
+    position: absolute; top: 14px; left: 14px; display: flex; align-items: baseline; gap: 3px;
+    padding: 4px 10px 6px; border-radius: var(--r); background: rgba(11,11,13,.7); border: 1px solid rgba(255,255,255,.12);
+  }
+  .corner b { font-family: var(--display); font-size: 38px; line-height: 1; font-weight: 400; letter-spacing: -.01em; }
+  .corner span { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .06em; color: var(--muted); }
+  .deck.great .corner b { color: var(--logo-lime); }
+  .deck.unrated .corner b { color: var(--muted); }
+  .deck-body { padding: 18px; }
+  .deck h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 30px; letter-spacing: -.01em; line-height: 1.04; }
+  .deck .meta { margin: 6px 0 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .deck .meta .heart { color: var(--logo-lime); }
+  .deck .note {
+    margin: 10px 0 0; font-size: 13.5px; line-height: 1.45; color: #c9c9d0; white-space: pre-line;
+    display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .bar { position: relative; height: 5px; margin-top: 14px; border-radius: 1px; overflow: hidden; background: rgba(255,255,255,.14); }
+  .bar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--s) * 20%); background: var(--logo-lime); }
+  .bar::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(20% - 3px), rgba(11,11,13,.9) calc(20% - 3px) 20%);
+  }
+  .msg { display: none; text-align: center; color: var(--muted); padding: 48px 0; }
+
+  .foot { margin: 40px 0 0; color: var(--muted); font-size: 14px; }
+  .foot a { color: var(--ink); text-underline-offset: 3px; }
+
+  @media (max-width: 760px) { .hero { padding-top: 16px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+  <div class="light-top"><div class="wrap">
+    <div class="wordmark-block">
+      <p class="wordmark">Dreamglow.<span class="tld">xyz</span></p>
+    </div>
+
+    <header class="top">
+      <a class="brand" href="/">
+        <img src="/img/logo.svg" alt="" width="30" height="30">
+        Overview
+      </a>
+      <nav class="top-right" aria-label="Sider">
+        <a class="navlink" href="/ratings/">Ratings</a>
+        <a class="navlink" href="/films/" aria-current="page">Film</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1>Hvad jeg har <em>set</em>.</h1>
+      <p>Min Letterboxd-dagbog, nyeste først. Ratingen er min egen, i stjerner fra 0,5 til 5 som på Letterboxd.</p>
+      <p class="count" id="count">Henter…</p>
+    </section>
+  </div></div>
+
+  <div class="wrap">
+    <main class="grid" id="grid"></main>
+    <p class="msg" id="msg"></p>
+
+    <p class="foot">Hentes fra <a href="https://letterboxd.com/dreamglowxd/diary/" target="_blank" rel="noopener">Letterboxd</a> og opdateres cirka hver halve time. <a href="/">Tilbage til overview</a></p>
+  </div>
+
+<script>
+const grid = document.getElementById("grid");
+const countEl = document.getElementById("count");
+const msg = document.getElementById("msg");
+
+const fmt = (n) => String(n).replace(".", ",");
+const initial = (title) => (title.replace(/^(the|a|an)\s+/i, "").trim()[0] || "?").toUpperCase();
+const day = (iso) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("da-DK", { day: "numeric", month: "short", year: "numeric" });
+};
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function card(f) {
+  const rated = f.stars !== null && f.stars >= 0.5; // Letterboxd: 0,5–5 stjerner
+
+  const art = el("div", "art");
+  art.append(el("span", "initial", initial(f.title)));
+  if (f.poster) {
+    const img = el("img");
+    img.src = f.poster; img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+    img.addEventListener("error", () => img.remove());
+    art.append(img);
+  }
+
+  const corner = el("div", "corner");
+  corner.append(el("b", "", rated ? fmt(f.stars) : "–"), el("span", "", "/5"));
+
+  const body = el("div", "deck-body");
+  body.append(el("h2", "", f.title));
+  const meta = el("p", "meta");
+  meta.append([f.year, f.watchedDate && day(f.watchedDate), f.rewatch && "genset"].filter(Boolean).join(" · "));
+  if (f.liked) { const heart = el("span", "heart", " ♥"); heart.title = "Liked"; meta.append(heart); }
+  body.append(meta);
+  if (f.note) { const note = el("p", "note", f.note); note.title = f.note; body.append(note); }
+  if (rated) {
+    const bar = el("div", "bar");
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", `${fmt(f.stars)} stjerner ud af 5`);
+    const fill = el("i");
+    fill.style.setProperty("--s", f.stars);
+    bar.append(fill);
+    body.append(bar);
+  }
+
+  const link = el("a", "deck" + (rated ? (f.stars >= 4.5 ? " great" : "") : " unrated"));
+  if (f.url) { link.href = f.url; link.target = "_blank"; link.rel = "noopener"; }
+  link.append(art, corner, body);
+  return link;
+}
+
+function show(text) { msg.textContent = text; msg.style.display = "block"; }
+
+fetch("/api/letterboxd/diary")
+  .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+  .then(({ films }) => {
+    countEl.textContent = films.length === 1 ? "1 film" : `${films.length} film`;
+    if (!films.length) return show("Ingen film logget endnu.");
+    grid.replaceChildren(...films.map(card));
+  })
+  .catch(() => {
+    countEl.textContent = "";
+    show("Kunne ikke hente listen fra Letterboxd lige nu. Prøv igen om lidt.");
+  });
+</script>
+</body>
+</html>
