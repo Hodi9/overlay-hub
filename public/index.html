@@ -44,26 +44,39 @@
   a { color: inherit; }
   .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 56px; }
 
-  /* Background: the picture sits top-right behind the headline and fades into the page
-     colour, so the cards below stay on a calm dark surface. Dimmed further on phones,
-     where the headline runs across the picture. */
-  body::before {
-    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1100px; z-index: -1; pointer-events: none;
-    background:
-      linear-gradient(to right, rgba(11,11,13,.9) 0%, rgba(11,11,13,.45) 40%, rgba(11,11,13,0) 65%),
-      url("/img/bg.webp") right top / auto 1000px no-repeat;
-    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 300px, transparent 1000px), linear-gradient(to right, transparent calc(100% - 860px), #000 calc(100% - 640px), #000 calc(100% - 40px), transparent 100%);
-    -webkit-mask-composite: source-in;
-    mask-image: linear-gradient(to bottom, #000 0, #000 300px, transparent 1000px), linear-gradient(to right, transparent calc(100% - 860px), #000 calc(100% - 640px), #000 calc(100% - 40px), transparent 100%);
-    mask-composite: intersect;
+  /* Top of the page: a light band that ends at the top edge of the call-to-action box, where
+     the figure hangs over the edge (see .channel-cta::before). Below it, white fades through
+     grey into the dark page. */
+  .light-top {
+    --ink: #0b0b0d; --muted: #5d5d66;
+    position: relative; color: var(--ink); background: #e9e8e3;
   }
+  .light-top .wrap { padding-bottom: 0; }
+  .light-top::after {
+    content: ""; position: absolute; z-index: -1; left: 0; right: 0; top: 100%; height: 320px; pointer-events: none;
+    background: linear-gradient(to bottom, #e9e8e3 0%, #a6a5a1 26%, #5b5a58 50%, #25252a 76%, var(--bg) 100%);
+  }
+  .light-top .wordmark .tld { background-image: linear-gradient(135deg, #5aa81f, #1f8f62); }
+  .light-top .hero h1 { text-shadow: none; }
+  .light-top .status { --muted: #9b9ba4; }
+
+  /* Further down: more figures in the same style as the one at the top, alternating sides and
+     sitting behind the cards. Positions are a share of the page height, so they follow the
+     page when the grid gets shorter. Swap --art to change a picture. */
+  .bg-art { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .bg-art span {
+    position: absolute; width: min(720px, 90vw); aspect-ratio: 4 / 5;
+    background: var(--art) center / cover no-repeat; opacity: .5;
+    -webkit-mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+  }
+  .bg-art .art-1 { --art: url("/img/art-arthur.webp"); top: 22%; right: -160px; }
+  .bg-art .art-2 { --art: url("/img/art-silhouette.webp"); top: 44%; left: -160px; }
+  .bg-art .art-3 { --art: url("/img/art-girl-bw.webp"); top: 68%; right: -160px; }
   @media (max-width: 760px) {
-    body::before {
-      height: 640px;
-      background: linear-gradient(rgba(11,11,13,.55), rgba(11,11,13,.55)), url("/img/bg.webp") center top / 100% auto no-repeat;
-      -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 120px, transparent 600px);
-      mask-image: linear-gradient(to bottom, #000 0, #000 120px, transparent 600px);
-    }
+    .bg-art span { width: 120vw; opacity: .28; }
+    .bg-art .art-2 { left: -10vw; }
+    .bg-art .art-1, .bg-art .art-3 { right: -10vw; }
   }
 
   /* Wordmark */
@@ -101,8 +114,8 @@
   .hero h1 {
     margin: 0; max-width: 16ch;
     font-size: clamp(36px, 6.5vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800;
+    text-shadow: 0 0 28px rgba(201,243,107,.2), 0 0 80px rgba(114,201,155,.14);
   }
-  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, rgba(201,243,107,.3) 62%); padding: 0 .08em; }
   .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
 
   /* Call to action: make your own channel */
@@ -110,6 +123,20 @@
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
     margin: 0 0 8px; padding: 18px 20px; border: 1px solid var(--mint-line); border-radius: 18px; background: var(--mint-soft);
   }
+  .channel-cta { position: relative; }
+  /* The head rests on the box: multiply drops its light background into the band above,
+     and the mask fades the shoulders into the box edge. */
+  .channel-cta::before {
+    content: ""; position: absolute; z-index: 2; pointer-events: none;
+    right: 5%; bottom: calc(100% - 28px); width: 440px; aspect-ratio: 700 / 533;
+    background: url("/img/art-batman-head.webp") center / cover no-repeat;
+    mix-blend-mode: multiply;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 80%, transparent 100%), linear-gradient(to right, transparent, #000 16%, #000 84%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 80%, transparent 100%), linear-gradient(to right, transparent, #000 16%, #000 84%, transparent);
+    mask-composite: intersect;
+  }
+  @media (max-width: 760px) { .channel-cta::before { display: none; } }
   .channel-cta b { display: block; font-size: 17px; }
   .channel-cta span { color: var(--muted); font-size: 14px; }
   .channel-cta a {
@@ -138,7 +165,8 @@
   /* Grid */
   .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); align-items: stretch; }
   .card {
-    background: var(--paper); border: 1px solid var(--line); border-radius: 22px;
+    background: rgba(21,21,24,.84); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    border: 1px solid var(--line); border-radius: 22px;
     padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column;
     transition: transform .15s, border-color .15s;
   }
@@ -224,7 +252,8 @@
 </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="bg-art" aria-hidden="true"><span class="art-1"></span><span class="art-2"></span><span class="art-3"></span></div>
+  <div class="light-top"><div class="wrap">
     <div class="wordmark-block">
       <p class="wordmark">Dreamglow.<span class="tld">xyz</span></p>
       <p class="wordmark-tag">Egnet til livestreams: større events, spil og konkurrencer/challenges afholdt på Twitch.</p>
@@ -239,10 +268,12 @@
     </header>
 
     <section class="hero">
-      <h1>Overlays til <em>livestreams</em>, klar til OBS.</h1>
+      <h1>Overlays til livestreams, klar til OBS.</h1>
       <p>Browser sources og kontrolpaneler til alle de overlays, der kører på denne service.</p>
     </section>
+  </div></div>
 
+  <div class="wrap">
     <aside class="channel-cta">
       <div>
         <b>Vil du have dine egne overlays?</b>
@@ -321,16 +352,16 @@ const OVERLAYS = [
     image: { src: "/img/gta5.jpg" },
     links: [["Overlay", "/gta5/"]], control: "/gta5/control.html",
     info: "Kør <code>apps/gta5/tracker/gta5-save-tracker.ps1</code> på streame-pc'en for automatisk opdatering, eller styr det manuelt fra kontrolpanelet." },
-  { id: "cyberpunk", cat: "spil", tag: "Spil", title: "Cyberpunk 2077 Tracker", sub: "Main jobs-progression — inkl. eller uden Phantom Liberty",
-    image: { src: "/img/cyberpunk.jpg", aspect: "1200 / 547", credit: "Ward Lindhout / CD PROJEKT RED", url: "https://www.cyberpunk.net/" },
-    links: [["Inkl. Phantom Liberty", "/cyberpunk/"], ["Uden Phantom Liberty", "/cyberpunk/?pl=off"]],
-    control: "/cyberpunk/control.html",
-    info: "Kør <code>apps/cyberpunk/tracker/Start Cyberpunk Tracker.cmd</code> på streame-pc'en for automatisk opdatering (den læser quest-titlen i HUD'en — kalibrér området først, se <code>README.md</code> dér), eller styr det manuelt fra kontrolpanelet. Overlayet skriver selv om Phantom Liberty er med i procenten. Akt 2 og Phantom Liberty kan flyttes rundt i kontrolpanelet, så listen følger din rækkefølge." },
   { id: "mafia", cat: "spil", tag: "Spil", title: "Mafia Trilogy Trackers", sub: "Story-progression — auto-opdateres via OCR",
     image: { src: "/img/mafia.webp" },
     links: [["Mafia I", "/mafia1/"], ["Mafia II", "/mafia2/"], ["Mafia III", "/mafia3/"]],
     controls: [["Panel I", "/mafia1/control.html"], ["Panel II", "/mafia2/control.html"], ["Panel III", "/mafia3/control.html"]],
     info: "Kør trackeren for hvert spil fra <code>apps/mafia1|2|3/tracker/</code> på streame-pc'en, eller styr manuelt fra kontrolpanelerne." },
+  { id: "cyberpunk", cat: "spil", tag: "Spil", title: "Cyberpunk 2077 Tracker", sub: "Main jobs-progression — inkl. eller uden Phantom Liberty",
+    image: { src: "/img/cyberpunk.jpg", aspect: "1200 / 547", credit: "Ward Lindhout / CD PROJEKT RED", url: "https://www.cyberpunk.net/" },
+    links: [["Inkl. Phantom Liberty", "/cyberpunk/"], ["Uden Phantom Liberty", "/cyberpunk/?pl=off"]],
+    control: "/cyberpunk/control.html",
+    info: "Kør <code>apps/cyberpunk/tracker/Start Cyberpunk Tracker.cmd</code> på streame-pc'en for automatisk opdatering (den læser quest-titlen i HUD'en — kalibrér området først, se <code>README.md</code> dér), eller styr det manuelt fra kontrolpanelet. Overlayet skriver selv om Phantom Liberty er med i procenten. Akt 2 og Phantom Liberty kan flyttes rundt i kontrolpanelet, så listen følger din rækkefølge." },
   { id: "perfektmatch", cat: "show", tag: "Show", title: "Perfekt Match", sub: "Dating-show-overlay med roterende social-media pop-ups",
     image: { src: "/img/perfektmatch.png", aspect: "474 / 283" },
     links: [["Overlay", "/perfektmatch/"]], control: "/perfektmatch/control.html",
