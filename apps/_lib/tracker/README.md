@@ -13,7 +13,7 @@ setup instructions specific to it.
 
 ```json
 {
-  "panelUrl": "https://dreamglow.onrender.com",
+  "panelUrl": "https://dreamglow.xyz",
   "apiKey": "the game's TRACKER_KEY value",
   "gamePath": "mafia1",
   "profile": null,

@@ -286,7 +286,7 @@ export function createPokemonApp(options = {}) {
     const requestOptions = {
       headers: {
         Accept: "text/html,application/xhtml+xml",
-        "User-Agent": "Mozilla/5.0 (compatible; Dreamglow/1.0; +https://dreamglow.onrender.com/)"
+        "User-Agent": "Mozilla/5.0 (compatible; Dreamglow/1.0; +https://dreamglow.xyz/)"
       }
     };
     const [mainResponse, classicResponse] = await Promise.all([
@@ -333,7 +333,7 @@ export function createPokemonApp(options = {}) {
       fetchImpl(CLASSIC_COLLECTR_URL, {
         headers: {
           Accept: "text/html,application/xhtml+xml",
-          "User-Agent": "Mozilla/5.0 (compatible; Dreamglow/1.0; +https://dreamglow.onrender.com/)"
+          "User-Agent": "Mozilla/5.0 (compatible; Dreamglow/1.0; +https://dreamglow.xyz/)"
         }
       })
     ]);

@@ -17,7 +17,7 @@ output, PC gameplay, whatever OBS is capturing) since it reads the screen.
 ## Setup
 
 1. Copy `tlou2-tracker-config.example.json` to `tlou2-tracker-config.json` (this file is gitignored — never commit it).
-2. Set `panelUrl` to your Dreamglow URL, e.g. `https://dreamglow.onrender.com`.
+2. Set `panelUrl` to your Dreamglow URL, e.g. `https://dreamglow.xyz`.
 3. Set `apiKey` to the `TLOU2_TRACKER_KEY` value from Render's environment variables for this service.
 4. Leave `"region": null` to use a default centered capture box, or calibrate it (see below).
 5. Double-click `Start TLOU2 Tracker.cmd` while you play. Leave the window open in the background.
@@ -39,7 +39,7 @@ rectangle around where the title card text appears, and add it to
 
 ```json
 {
-  "panelUrl": "https://dreamglow.onrender.com",
+  "panelUrl": "https://dreamglow.xyz",
   "apiKey": "...",
   "region": { "x": 400, "y": 350, "width": 1120, "height": 320 }
 }
@@ -53,13 +53,13 @@ name so it gets its own separate progress, chapter list, and overlay/control
 URLs instead of overwriting yours:
 
 - Your own run stays exactly as-is (profile `main`, the default) — no change needed.
-- Their overlay: `https://dreamglow.onrender.com/tlou2/?profile=<name>`
-- Their control panel: `https://dreamglow.onrender.com/tlou2/control.html?profile=<name>` (there's also a "Skift profil" field at the top of the control panel to jump between profiles without editing the URL by hand)
+- Their overlay: `https://dreamglow.xyz/tlou2/?profile=<name>`
+- Their control panel: `https://dreamglow.xyz/tlou2/control.html?profile=<name>` (there's also a "Skift profil" field at the top of the control panel to jump between profiles without editing the URL by hand)
 - Their local `tlou2-tracker-config.json` needs `"profile": "<name>"` added, and can reuse the same `panelUrl`/`apiKey` as yours:
 
 ```json
 {
-  "panelUrl": "https://dreamglow.onrender.com",
+  "panelUrl": "https://dreamglow.xyz",
   "apiKey": "...",
   "profile": "friendname",
   "region": null
