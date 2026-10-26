@@ -18,6 +18,6 @@ window.RATINGS = [
   { id: "detroit", title: "Detroit: Become Human", year: 2018, score: null, note: "", image: "/img/ratings/detroit.webp" },
   { id: "hogwarts", title: "Hogwarts Legacy", year: 2023, score: null, note: "", image: "/img/ratings/hogwarts.webp" },
   { id: "jedi", title: "Star Wars Jedi: Fallen Order", year: 2019, score: null, note: "", image: "/img/ratings/jedi.webp" },
-  { id: "wolfenstein", title: "Wolfenstein: The New Order", year: 2014, score: null, note: "", image: "/img/ratings/wolfenstein.webp" },
+  { id: "wolfenstein", title: "Wolfenstein: The New Order", year: 2014, score: 7.9, note: "Elskede humoren og post-2. verdenskrigs-verdenen, og at man spiller med modstandsgruppen. Fed fortælling i et skydespil.", image: "/img/ratings/wolfenstein.webp" },
   { id: "witcher3", title: "The Witcher 3: Wild Hunt", year: 2015, score: null, note: "", image: "/img/ratings/witcher3.webp" },
 ];
