@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: overlay-hub
+    name: dreamglow
     runtime: node
     plan: free
     region: frankfurt

@@ -6,7 +6,7 @@ const ICON = '<path d="M13 4.5a1.8 1.8 0 1 1-3.6 0 1.8 1.8 0 0 1 3.6 0z"/><path 
 export function walkEntry(base) {
   return {
     id: "marcelwalk", cat: "show", tag: "Event", title: "Marcel Walk", sub: "Walk-overlays samlet — live km, kort og tidslinje, Danmark på verdenskort",
-    image: { src: "/img/cover-2.jpg", credit: "soniagipi.artstation.com", url: "https://soniagipi.artstation.com" },
+    image: { src: "/img/marcelwalk.png", aspect: "904 / 703" },
     links: [
       ["Overlay (følger panelet)", `${base}/overlay.html`],
       ["Bundbar", `${base}/overlay.html?v=1`],

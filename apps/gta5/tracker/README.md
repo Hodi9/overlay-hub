@@ -10,7 +10,7 @@ while the game is minimized or you're tabbed out.
 ## Setup
 
 1. Copy `gta5-tracker-config.example.json` to `gta5-tracker-config.json` (gitignored — never commit it).
-2. Set `panelUrl` to your overlay-hub URL, e.g. `https://overlay-hub.onrender.com`.
+2. Set `panelUrl` to your Dreamglow URL, e.g. `https://dreamglow.onrender.com`.
 3. Set `apiKey` to the `GTA5_TRACKER_KEY` value from Render's environment variables.
 4. Leave `"saveFolder": null` — it auto-detects both `Documents\Rockstar Games\GTA V\Profiles` and `...\GTAV Enhanced\Profiles` and uses whichever has the most recently written save. Only set this manually if autodetection fails (e.g. a non-default Documents location).
 5. Double-click `Start GTA5 Tracker.cmd` while you play. Leave the window open in the background.

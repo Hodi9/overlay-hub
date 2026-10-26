@@ -8,7 +8,7 @@ No OCR, no screen capture, and it works even while the game is minimized.
 ## Setup
 
 1. Copy `rdr2-tracker-config.example.json` to `rdr2-tracker-config.json` (gitignored — never commit it).
-2. Set `panelUrl` to your overlay-hub URL, e.g. `https://overlay-hub.onrender.com`.
+2. Set `panelUrl` to your Dreamglow URL, e.g. `https://dreamglow.onrender.com`.
 3. Set `apiKey` to the `RDR2_TRACKER_KEY` value from Render's environment variables.
 4. Leave `"saveFolder": null` — it auto-detects `Documents\Rockstar Games\Red Dead Redemption 2\Profiles`. Only set this manually if autodetection fails.
 5. Double-click `Start RDR2 Tracker.cmd` while you play. Leave the window open in the background.

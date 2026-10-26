@@ -22,7 +22,7 @@ spillet gemmer. HUD'en viser derimod lige nu, hvad du er i gang med.
 ## Opsætning
 
 1. Kopiér `cyberpunk-tracker-config.example.json` til `cyberpunk-tracker-config.json` (filen er gitignored — commit den aldrig).
-2. Sæt `panelUrl` til din overlay-hub-adresse, fx `https://overlay-hub.onrender.com`.
+2. Sæt `panelUrl` til din Dreamglow-adresse, fx `https://dreamglow.onrender.com`.
 3. Sæt `apiKey` til værdien af `CYBERPUNK_TRACKER_KEY` fra Render (Environment). Den er genereret automatisk.
 4. **Kalibrér området** (se nedenfor). Det er ikke valgfrit her: standardområdet er midt på skærmen, men quest-titlen sidder i HUD'en.
 5. Dobbeltklik `Start Cyberpunk Tracker.cmd`, mens du spiller, og lad vinduet stå i baggrunden.
@@ -35,7 +35,7 @@ spillet gemmer. HUD'en viser derimod lige nu, hvad du er i gang med.
 
 ```json
 {
-  "panelUrl": "https://overlay-hub.onrender.com",
+  "panelUrl": "https://dreamglow.onrender.com",
   "apiKey": "...",
   "gamePath": "cyberpunk",
   "profile": null,

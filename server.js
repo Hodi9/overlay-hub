@@ -195,5 +195,5 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const port = process.env.PORT || 3000;
 server.listen(port, "0.0.0.0", () => {
-  console.log(`overlay-hub listening on ${port}`);
+  console.log(`dreamglow listening on ${port}`);
 });
