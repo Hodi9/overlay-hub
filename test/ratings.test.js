@@ -25,11 +25,11 @@ test("id'er er unikke", () => {
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test("score er null eller mellem 1 og 10 i halve point", () => {
+test("score er null eller mellem 1 og 10 med højst én decimal", () => {
   for (const g of ratings) {
     if (g.score === null) continue;
     assert.ok(typeof g.score === "number" && g.score >= 1 && g.score <= 10, `score på ${g.id}: ${g.score}`);
-    assert.equal(g.score * 2, Math.round(g.score * 2), `score på ${g.id} skal være hele eller halve point`);
+    assert.equal(Number((g.score * 10).toFixed(6)) % 1, 0, `score på ${g.id} må højst have én decimal`);
   }
 });
 

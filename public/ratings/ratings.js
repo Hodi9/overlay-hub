@@ -3,7 +3,7 @@
 //   id     – kort navn uden mellemrum, bruges som nøgle (skal være unik)
 //   title  – spillets navn
 //   year   – udgivelsesår (valgfri)
-//   score  – 1 til 10, halve point er fine (fx 8.5). null = ikke ratet endnu
+//   score  – 1 til 10, gerne med én decimal (fx 8.5 eller 8.2). null = ikke ratet endnu
 //   note   – kort note, helst en til to sætninger
 //   image  – valgfrit billede til kortet, fx "/img/ratings/rdr2.webp". Stående billeder
 //            i sort/hvid passer bedst (kortet er 5:7). Uden billede vises et mørkt kort.
@@ -14,5 +14,5 @@ window.RATINGS = [
   { id: "gta5", title: "Grand Theft Auto V", year: 2013, score: null, note: "", image: "/img/ratings/gta5.webp" },
   { id: "cyberpunk", title: "Cyberpunk 2077", year: 2020, score: null, note: "", image: "/img/ratings/cyberpunk.webp" },
   { id: "mafia", title: "Mafia-trilogien", score: null, note: "", image: "/img/ratings/mafia-red.webp", color: true },
-  { id: "minecraft", title: "Minecraft", year: 2011, score: null, note: "", image: "/img/ratings/minecraft.webp" },
+  { id: "minecraft", title: "Minecraft", year: 2011, score: 8.2, note: "Ny-tilbagevender, og jeg mangler stadig at klare det på stream. Men jeg elsker at glemme tiden og bare grine.", image: "/img/ratings/minecraft.webp" },
 ];
