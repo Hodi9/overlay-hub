@@ -83,7 +83,7 @@ test("home card is injected only via injectHomeCard, never in the static index",
   assert.ok(!/marcel ?walk|walk-/i.test(html), "forsidens kilde må ikke nævne eventet");
   const out = injectHomeCard(html, "/walk-secret123456");
   assert.ok(out.includes('"title":"Marcel Walk"') && out.includes("/walk-secret123456/control.html"));
-  assert.ok(out.includes("ICONS.marcelwalk"));
+  assert.ok(out.includes('"id":"marcelwalk"'));
   assert.equal(injectHomeCard("<p>x</p>", "/walk-secret123456"), "<p>x</p>");
 });
 

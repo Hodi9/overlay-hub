@@ -149,8 +149,6 @@
   .cover figcaption a { color: inherit; text-underline-offset: 2px; }
   .cover figcaption a:hover { color: var(--mint-dark); }
   .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-  .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--mint-soft); color: var(--mint-dark); border: 1px solid var(--mint-line); }
-  .logo svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mint-dark); background: var(--mint-soft); padding: 4px 9px; border-radius: 999px; }
   .card h2 { margin: 0; font-size: 20px; letter-spacing: -.015em; line-height: 1.2; }
   .card .sub { margin: 4px 0 16px; color: var(--muted); font-size: 14px; min-height: 2.8em; }
@@ -339,21 +337,6 @@ const OVERLAYS = [
     info: "Understøtter et vilkårligt antal deltagere — tilføj/fjern dem fra kontrolpanelet. Instagram/TikTok-boksene roterer hvert 15. minut, eller udløs dem manuelt med “Vis nu”." }
 ];
 
-const svg = (d) => `<svg viewBox="0 0 24 24">${d}</svg>`;
-const ICONS = {
-  brosvsbros: svg('<circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="7" r="2.5"/><path d="M3 15c0-2.2 1.8-4 4-4s4 1.8 4 4M13 15c0-2.2 1.8-4 4-4s4 1.8 4 4"/><path d="M4 20h16"/>'),
-  brovsbro: svg('<path d="M4 4l7 7M4 8V4h4M20 4l-7 7M20 8V4h-4"/><path d="M8 16l-4 4M16 16l4 4M6 14l4 4M18 14l-4 4"/>'),
-  minecraft: svg('<path d="M4 7c4-4 12-4 16 0"/><path d="M12 5v15"/><path d="M10 20h4"/>'),
-  rdr2: svg('<path d="M3 15c2 0 3-1 4-4s2-5 5-5 4 2 5 5 2 4 4 4"/><path d="M2 15c3 2 6 3 10 3s7-1 10-3"/>'),
-  pokemon: svg('<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M12 8l1.2 2.5 2.8.4-2 2 .5 2.7L12 14.3l-2.5 1.3.5-2.7-2-2 2.8-.4z"/>'),
-  gear: svg('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'),
-  gauntlet: svg('<path d="M6 9h12a3 3 0 0 1 3 3l-1 5a2 2 0 0 1-3.6.9L15 16H9l-1.4 1.9A2 2 0 0 1 4 17l-1-5a3 3 0 0 1 3-3z"/><path d="M8 11v3M6.5 12.5h3M15.5 12h.01M17.5 14h.01"/>'),
-  tlou2: svg('<path d="M12 21V11"/><path d="M12 11c0-4 3-7 8-7 0 5-3 8-8 7z"/><path d="M12 14c0-3-2-5-6-5 0 4 2 6 6 5z"/>'),
-  gta5: svg('<path d="M3 14l2-5a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 9l2 5v3a1 1 0 0 1-1 1h-1M5 18H4a1 1 0 0 1-1-1v-3h18"/><circle cx="7.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/>'),
-  cyberpunk: svg('<rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M9.5 3v4M14.5 3v4M9.5 17v4M14.5 17v4M3 9.5h4M3 14.5h4M17 9.5h4M17 14.5h4"/><path d="M10 12h4"/>'),
-  mafia: svg('<path d="M3 16c3 1.5 6 2 9 2s6-.5 9-2"/><path d="M6 16.8 7.5 8a2 2 0 0 1 2-1.7h5a2 2 0 0 1 2 1.7L18 16.8"/><path d="M7 13c3 .8 7 .8 10 0"/>'),
-  perfektmatch: svg('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>')
-};
 const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
 const ICON_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';
 const ICON_SLIDERS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
@@ -384,7 +367,7 @@ function card(o) {
       `</figure>` : "";
   return `<article class="card" data-cat="${o.cat}" data-search="${esc(search)}">
     ${cover}
-    <div class="card-top"><div class="logo" aria-hidden="true">${ICONS[o.id] || ""}</div><span class="tag">${esc(o.tag)}</span></div>
+    <div class="card-top"><span class="tag">${esc(o.tag)}</span></div>
     <h2>${esc(o.title)}</h2><p class="sub">${esc(o.sub)}</p>
     <div class="links">${o.links.map(link).join("")}</div>
     ${info}<div class="card-spacer"></div>${controlHtml}
