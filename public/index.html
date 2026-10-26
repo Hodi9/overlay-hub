@@ -7,7 +7,7 @@
 <meta name="description" content="Browser sources og kontrolpaneler til OBS og Pogly.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0b0b0d">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23151518'/%3E%3Crect x='12' y='17' width='40' height='27' rx='6' fill='none' stroke='%23ffd60a' stroke-width='4'/%3E%3Cpath d='M28 24.5v12l10-6z' fill='%23ffd60a'/%3E%3Cpath d='M24 51h16' stroke='%23ffd60a' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="/img/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -77,7 +77,7 @@
     padding: 22px 0;
   }
   .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
-  .brand svg { width: 30px; height: 30px; display: block; }
+  .brand svg, .brand img { width: 30px; height: 30px; display: block; }
   .status {
     display: inline-flex; align-items: center; gap: 8px;
     font-size: 13px; font-weight: 600; color: var(--muted);
@@ -226,7 +226,7 @@
 
     <header class="top">
       <a class="brand" href="/">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#151518"/><rect x="12" y="17" width="40" height="27" rx="6" fill="none" stroke="#ffd60a" stroke-width="4"/><path d="M28 24.5v12l10-6z" fill="#ffd60a"/><path d="M24 51h16" stroke="#ffd60a" stroke-width="4" stroke-linecap="round"/></svg>
+        <img src="/img/logo.svg" alt="" width="30" height="30">
         Overview
       </a>
       <span class="status" id="status"><span class="dot"></span><span id="status-text">Tjekker server…</span></span>
