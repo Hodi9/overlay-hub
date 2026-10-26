@@ -23,6 +23,8 @@
     --mint-soft: #2b2509;
     --mint-dark: #ffd60a;
     --on-accent: #0b0b0d;
+    --logo-lime: #c9f36b;
+    --logo-green: #72c99b;
     --shadow: 0 1px 0 rgba(0,0,0,.25), 0 10px 26px -14px rgba(0,0,0,.6);
   }
   * { box-sizing: border-box; }
@@ -66,8 +68,13 @@
   /* Wordmark */
   .wordmark-block { padding: 26px 0 0; }
   .wordmark {
-    margin: 0; font-size: clamp(38px, 8.5vw, 78px); font-weight: 800;
+    margin: 0; font-size: clamp(30px, 8.5vw, 78px); font-weight: 800;
     letter-spacing: -.03em; line-height: 1; text-transform: uppercase;
+  }
+  .wordmark .tld {
+    color: var(--logo-lime);
+    background: linear-gradient(135deg, var(--logo-lime), var(--logo-green));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   }
   .wordmark-tag { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
 
@@ -220,7 +227,7 @@
 <body>
   <div class="wrap">
     <div class="wordmark-block">
-      <p class="wordmark">Dreamglow</p>
+      <p class="wordmark">Dreamglow.<span class="tld">xyz</span></p>
       <p class="wordmark-tag">Egnet til livestreams: større events, spil og konkurrencer/challenges afholdt på Twitch.</p>
     </div>
 
