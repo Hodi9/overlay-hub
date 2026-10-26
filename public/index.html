@@ -19,9 +19,10 @@
     --ink: #ededed;
     --muted: #9b9ba4;
     --line: #2b2b31;
-    --mint: #ffd60a;
-    --mint-soft: #2b2509;
-    --mint-dark: #ffd60a;
+    --mint: var(--logo-lime);
+    --mint-soft: #192923;
+    --mint-dark: var(--logo-green);
+    --mint-line: #2c4f3d;
     --on-accent: #0b0b0d;
     --logo-lime: #c9f36b;
     --logo-green: #72c99b;
@@ -101,13 +102,13 @@
     margin: 0; max-width: 16ch;
     font-size: clamp(36px, 6.5vw, 64px); line-height: 1.02; letter-spacing: -.035em; font-weight: 800;
   }
-  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, rgba(255,214,10,.35) 62%); padding: 0 .08em; }
+  .hero h1 em { font-style: normal; background: linear-gradient(transparent 62%, rgba(201,243,107,.3) 62%); padding: 0 .08em; }
   .hero p { margin: 18px 0 0; max-width: 56ch; color: var(--muted); font-size: 17px; }
 
   /* Call to action: make your own channel */
   .channel-cta {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
-    margin: 0 0 8px; padding: 18px 20px; border: 1px solid #5a4a0a; border-radius: 18px; background: var(--mint-soft);
+    margin: 0 0 8px; padding: 18px 20px; border: 1px solid var(--mint-line); border-radius: 18px; background: var(--mint-soft);
   }
   .channel-cta b { display: block; font-size: 17px; }
   .channel-cta span { color: var(--muted); font-size: 14px; }
@@ -148,7 +149,7 @@
   .cover figcaption a { color: inherit; text-underline-offset: 2px; }
   .cover figcaption a:hover { color: var(--mint-dark); }
   .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-  .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--mint-soft); color: var(--mint-dark); border: 1px solid #5a4a0a; }
+  .logo { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--mint-soft); color: var(--mint-dark); border: 1px solid var(--mint-line); }
   .logo svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .tag { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--mint-dark); background: var(--mint-soft); padding: 4px 9px; border-radius: 999px; }
   .card h2 { margin: 0; font-size: 20px; letter-spacing: -.015em; line-height: 1.2; }
