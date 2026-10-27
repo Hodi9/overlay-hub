@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subathon — Kontrolpanel</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d; --paper: #151518; --field: #0f0f12; --ink: #ededed; --muted: #9b9ba4; --line: #2b2b31;
+    --lime: #c9f36b; --on-lime: #0b0b0d; --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 15px/1.5 "Schibsted Grotesk", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: var(--lime); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 20px 72px; }
+  header { margin-bottom: 26px; }
+  h1 { margin: 0 0 6px; font-family: var(--display); font-weight: 400; font-size: clamp(40px, 7vw, 64px); line-height: 1; letter-spacing: -.01em; }
+  .lead { margin: 0; max-width: 62ch; color: var(--muted); }
+  .cols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); align-items: start; }
+  .col { display: grid; gap: 16px; }
+
+  section { background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 18px 20px 20px; }
+  .label { margin: 0 0 12px; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .row + .row { margin-top: 10px; }
+  .grow { flex: 1 1 140px; min-width: 0; }
+
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--field); color: var(--ink); font: inherit; }
+  input[type="number"], input.mono { font-family: var(--mono); font-size: 14px; }
+  input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  .field { display: grid; gap: 5px; }
+  .field > span { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .fields { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r); background: transparent; color: var(--ink); font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--lime); border-color: var(--lime); color: var(--on-lime); }
+  .btn.primary:hover { background: #fff; border-color: #fff; }
+  .btn.danger { color: var(--danger); }
+  .btn.small { padding: 7px 10px; font-size: 11px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  .msg { min-height: 1.3em; margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+  .msg.err { color: var(--danger); }
+  .msg.ok { color: var(--lime); }
+
+  .readout { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .time { font-family: var(--display); font-size: clamp(64px, 12vw, 96px); line-height: 1; font-variant-numeric: tabular-nums; }
+  .time.idle, .time.paused, .time.ended { color: var(--muted); }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .status::before { content: ""; width: 7px; height: 7px; background: var(--muted); }
+  .status.running { color: var(--ink); } .status.running::before { background: var(--lime); }
+  .added { color: var(--muted); font-size: 13px; margin: -6px 0 14px; }
+  .added b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+
+  .count-line { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+  .count { font-family: var(--display); font-size: 72px; line-height: 1; }
+  .count-line .next { color: var(--muted); font-size: 14px; }
+
+  .goal { display: grid; grid-template-columns: 1fr 96px 36px; gap: 8px; align-items: center; }
+  .goal + .goal { margin-top: 8px; }
+  .goal .x { padding: 9px 0; }
+  .links { display: grid; gap: 8px; }
+  .link { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 8px 12px; border: 1px solid var(--line); border-radius: var(--r); }
+  .link > span { font-size: 14px; }
+  .link .row { gap: 6px; }
+
+  .chat { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
+  .dot { width: 8px; height: 8px; background: var(--muted); flex: none; }
+  .dot.on { background: var(--lime); }
+
+  .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+  .log li { display: grid; grid-template-columns: 62px 1fr auto; gap: 12px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .log li:first-child { border-top: 0; padding-top: 0; }
+  .log time { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .log .plus { font-family: var(--mono); font-size: 13px; color: var(--lime); }
+  .log .tag { margin-left: 6px; padding: 1px 5px; border: 1px solid var(--line); border-radius: 2px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; color: var(--muted); }
+  .log .empty { display: block; border: 0; color: var(--muted); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Subathon</h1>
+    <p class="lead">Timeren lægger tid til, hver gang nogen subscriber eller gifter subs i din Twitch-chat. Sub-tælleren og målene vises i det samme overlay.</p>
+  </header>
+
+  <div class="cols">
+    <div class="col">
+      <section>
+        <p class="label">Adgangskode</p>
+        <div class="row">
+          <input class="grow" type="password" id="f-token" placeholder="Adgangskode" autocomplete="off" aria-label="Adgangskode">
+          <button class="btn" id="save-token" type="button">Gem</button>
+        </div>
+        <p class="hint">Kræves for at ændre noget. Gemmes på denne enhed.</p>
+        <p class="msg" id="msg-token"></p>
+      </section>
+
+      <section>
+        <p class="label">Timer</p>
+        <div class="readout">
+          <div class="time idle" id="time">0:00:00</div>
+          <div class="status" id="status">Ikke startet</div>
+        </div>
+        <p class="added">Lagt til i alt: <b id="added">+0:00</b></p>
+        <div class="row">
+          <button class="btn primary" id="start" type="button">Start</button>
+          <button class="btn" id="pause" type="button">Pause</button>
+          <button class="btn danger" id="reset" type="button">Nulstil timer</button>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn small" data-add="-300" type="button">−5 min</button>
+          <button class="btn small" data-add="-60" type="button">−1 min</button>
+          <button class="btn small" data-add="60" type="button">+1 min</button>
+          <button class="btn small" data-add="300" type="button">+5 min</button>
+        </div>
+        <div class="row">
+          <input class="grow mono" id="f-add" placeholder="Fx 2:30 eller 90" aria-label="Egen tid">
+          <button class="btn small" id="add-more" type="button">Læg til</button>
+          <button class="btn small" id="add-less" type="button">Træk fra</button>
+        </div>
+        <p class="hint">Skriv sekunder (90), minutter og sekunder (2:30) eller timer (1:00:00). Manuelle ændringer ignorerer maks.-tiden.</p>
+        <p class="msg" id="msg-timer"></p>
+      </section>
+
+      <section>
+        <p class="label">Tid pr. sub</p>
+        <div class="fields">
+          <label class="field"><span>Tier 1 (sek.)</span><input type="number" min="0" step="1" id="s-t1" data-settings></label>
+          <label class="field"><span>Tier 2 (sek.)</span><input type="number" min="0" step="1" id="s-t2" data-settings></label>
+          <label class="field"><span>Tier 3 (sek.)</span><input type="number" min="0" step="1" id="s-t3" data-settings></label>
+        </div>
+        <div class="fields" style="margin-top:10px">
+          <label class="field"><span>Starttid</span><input class="mono" id="s-start" data-settings placeholder="1:00:00"></label>
+          <label class="field"><span>Maks. tid (0 = ingen)</span><input class="mono" id="s-max" data-settings placeholder="0"></label>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn primary" id="save-settings" type="button">Gem</button>
+          <span class="hint" id="preview" style="margin:0"></span>
+        </div>
+        <p class="hint">Gælder subs, resubs og gaver — hver gave tæller som én sub. Starttiden bruges, når timeren nulstilles (og er timeren ikke startet endnu, følger den med med det samme). Maks. tid er det længste, timeren kan vise; ekstra tid ud over den går tabt.</p>
+        <p class="msg" id="msg-settings"></p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section>
+        <p class="label">Overlay til OBS</p>
+        <div class="links" id="links">
+          <div class="link"><span>Samlet</span><span class="row"><a class="btn small" href="/subathon/" target="_blank" rel="noopener">Åbn</a><button class="btn small" data-copy="/subathon/" type="button">Kopiér</button></span></div>
+          <div class="link"><span>Kun timer</span><span class="row"><a class="btn small" href="/subathon/?view=timer" target="_blank" rel="noopener">Åbn</a><button class="btn small" data-copy="/subathon/?view=timer" type="button">Kopiér</button></span></div>
+          <div class="link"><span>Kun mål</span><span class="row"><a class="btn small" href="/subathon/?view=goal" target="_blank" rel="noopener">Åbn</a><button class="btn small" data-copy="/subathon/?view=goal" type="button">Kopiér</button></span></div>
+        </div>
+        <p class="hint">Sæt bredden til 600 px i OBS. Baggrunden er gennemsigtig.</p>
+      </section>
+
+      <section>
+        <p class="label">Sub-tæller og mål</p>
+        <div class="count-line">
+          <div class="count" id="count">0</div>
+          <div class="next" id="next"></div>
+        </div>
+        <div class="row">
+          <button class="btn small" id="dec" type="button">−1</button>
+          <button class="btn small" id="inc" type="button">+1</button>
+          <input class="grow mono" type="number" min="0" step="1" id="f-count" placeholder="Sæt til …" aria-label="Sæt antal subs">
+          <button class="btn small" id="set-count" type="button">Sæt tal</button>
+        </div>
+        <p class="label" style="margin-top:22px">Mål</p>
+        <div id="goals"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn small" id="add-goal" type="button">Tilføj mål</button>
+          <button class="btn primary small" id="save-goals" type="button">Gem mål</button>
+        </div>
+        <p class="hint">Målene sorteres efter antal. Overlayet viser det næste mål, en bjælke og de seneste.</p>
+        <p class="msg" id="msg-goals"></p>
+      </section>
+
+      <section>
+        <p class="label">Twitch-chat</p>
+        <div class="chat"><span class="dot" id="dot"></span><span id="chat-text">Tjekker …</span></div>
+        <div id="twitch-edit" hidden>
+          <div class="row">
+            <input class="grow" id="f-twitch" placeholder="Twitch-kanalnavn" maxlength="25" autocomplete="off" aria-label="Twitch-kanalnavn">
+            <button class="btn" id="save-twitch" type="button">Gem</button>
+          </div>
+        </div>
+        <p class="hint" id="chat-hint"></p>
+        <p class="msg" id="msg-twitch"></p>
+      </section>
+
+      <section>
+        <p class="label">Test</p>
+        <div class="row">
+          <label class="field" style="width:96px"><span>Tier</span>
+            <select id="t-tier"><option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option></select>
+          </label>
+          <label class="field" style="width:96px"><span>Antal gaver</span><input type="number" min="1" max="100" value="5" id="t-count"></label>
+        </div>
+        <div class="row">
+          <button class="btn small" data-test="sub" type="button">Sub</button>
+          <button class="btn small" data-test="resub" type="button">Resub</button>
+          <button class="btn small" data-test="subgift" type="button">Gave</button>
+          <button class="btn small" data-test="submysterygift" type="button">Gavebombe</button>
+          <button class="btn small danger" id="undo-tests" type="button">Fjern tests</button>
+        </div>
+        <p class="hint">Et test-sub går samme vej som et rigtigt: det lægger tid til og tæller op. “Fjern tests” tager det tilbage.</p>
+        <p class="msg" id="msg-test"></p>
+      </section>
+
+      <section>
+        <p class="label">Seneste</p>
+        <ul class="log" id="log"><li class="empty">Ingen subs endnu.</li></ul>
+        <div class="row" style="margin-top:14px">
+          <button class="btn danger small" id="reset-all" type="button">Nulstil alt (timer, tæller og liste)</button>
+        </div>
+        <p class="msg" id="msg-log"></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var TOKEN_KEY = 'subathon-control-token';
+  var dirty = { settings: false, goals: false, twitch: false };
+  var state = null;
+  var base = null;
+  var draft = [];
+
+  function token() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  function setToken(value) { try { localStorage.setItem(TOKEN_KEY, value); } catch (e) { /* storage blocked */ } }
+  $('f-token').value = token();
+  $('save-token').addEventListener('click', function () { setToken($('f-token').value.trim()); say('msg-token', 'Kode gemt på denne enhed.', 'ok'); });
+  $('f-token').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('save-token').click(); });
+
+  var timers = {};
+  function say(id, text, kind) {
+    var el = $(id);
+    el.textContent = text || '';
+    el.className = 'msg' + (kind ? ' ' + kind : '');
+    clearTimeout(timers[id]);
+    if (text) timers[id] = setTimeout(function () { if (el.textContent === text) el.textContent = ''; }, 4000);
+  }
+
+  // ---- numbers ----------------------------------------------------------------------------
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function formatDuration(totalSeconds) {
+    var s = Math.abs(Math.round(totalSeconds));
+    var h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60;
+    return h > 0 ? h + ':' + pad(m) + ':' + pad(s % 60) : m + ':' + pad(s % 60);
+  }
+  // "90" -> 90, "2:30" -> 150, "1:00:00" -> 3600; NaN when it is not a time.
+  function parseDuration(text) {
+    var parts = String(text).trim().split(':');
+    if (parts.length > 3 || !parts.every(function (p) { return /^\d+$/.test(p); })) return NaN;
+    return parts.reduce(function (total, p) { return total * 60 + Number(p); }, 0);
+  }
+
+  // ---- talking to the server -------------------------------------------------------------
+  function headers(extra) {
+    var h = Object.assign({}, extra || {});
+    if (token()) h['x-subathon-key'] = token();
+    return h;
+  }
+  function post(path, body, msg) {
+    return fetch('/subathon/api' + path, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(body || {}) })
+      .then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (data) {
+          if (!response.ok) throw new Error(response.status === 401 ? 'Forkert eller manglende adgangskode.' : (data.error || 'Noget gik galt — prøv igen.'));
+          return data;
+        });
+      })
+      .then(function (next) { render(next); return next; })
+      .catch(function (error) { say(msg, error.message, 'err'); return null; });
+  }
+
+  // ---- drawing ---------------------------------------------------------------------------
+  var STATUS = { idle: 'Ikke startet', running: 'Kører', paused: 'På pause', ended: 'Slut' };
+  function tick() {
+    if (!base) return;
+    var left = base.status === 'running' ? Math.max(0, base.remainingMs - (performance.now() - base.at)) : base.remainingMs;
+    var status = base.status === 'running' && left <= 0 ? 'ended' : base.status;
+    $('time').textContent = formatDuration(Math.ceil(left / 1000));
+    $('time').className = 'time ' + status;
+    $('status').textContent = STATUS[status] || status;
+    $('status').className = 'status ' + status;
+  }
+
+  function describe(entry) {
+    if (entry.kind === 'subgift') return entry.user + ' gav en sub' + (entry.recipient ? ' til ' + entry.recipient : '');
+    if (entry.kind === 'submysterygift') return entry.user + ' gav ' + entry.count + (entry.count === 1 ? ' sub' : ' subs') + ' væk';
+    return entry.user + (entry.kind === 'resub' ? ' resubscribede' : ' subscribede');
+  }
+
+  function renderLog(events) {
+    var log = $('log');
+    log.textContent = '';
+    if (!events.length) {
+      var empty = document.createElement('li'); empty.className = 'empty'; empty.textContent = 'Ingen subs endnu.';
+      log.appendChild(empty);
+      return;
+    }
+    events.forEach(function (entry) {
+      var li = document.createElement('li');
+      var when = document.createElement('time'); when.textContent = new Date(entry.at).toLocaleTimeString('da-DK');
+      var what = document.createElement('span');
+      what.textContent = describe(entry) + (entry.tier > 1 ? ' · Tier ' + entry.tier : '');
+      if (entry.test) { var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'TEST'; what.appendChild(tag); }
+      var plus = document.createElement('span'); plus.className = 'plus'; plus.textContent = entry.addedMs ? '+' + formatDuration(entry.addedMs / 1000) : '';
+      li.appendChild(when); li.appendChild(what); li.appendChild(plus);
+      log.appendChild(li);
+    });
+  }
+
+  function renderGoalsEditor() {
+    var box = $('goals');
+    box.textContent = '';
+    if (!draft.length) {
+      var none = document.createElement('p'); none.className = 'hint'; none.style.margin = '0'; none.textContent = 'Ingen mål. Overlayet viser så kun tælleren.';
+      box.appendChild(none);
+    }
+    draft.forEach(function (goal, index) {
+      var row = document.createElement('div'); row.className = 'goal';
+      var title = document.createElement('input'); title.value = goal.title; title.maxLength = 60; title.placeholder = 'Titel, fx Karaoke'; title.setAttribute('aria-label', 'Titel');
+      var target = document.createElement('input'); target.type = 'number'; target.min = '1'; target.step = '1'; target.value = goal.target; target.className = 'mono'; target.setAttribute('aria-label', 'Antal subs');
+      var remove = document.createElement('button'); remove.type = 'button'; remove.className = 'btn small danger x'; remove.textContent = '×'; remove.title = 'Slet mål'; remove.setAttribute('aria-label', 'Slet mål');
+      title.addEventListener('input', function () { goal.title = title.value; dirty.goals = true; });
+      target.addEventListener('input', function () { goal.target = target.value; dirty.goals = true; });
+      remove.addEventListener('click', function () { draft.splice(index, 1); dirty.goals = true; renderGoalsEditor(); });
+      row.appendChild(title); row.appendChild(target); row.appendChild(remove);
+      box.appendChild(row);
+    });
+  }
+
+  function previewText() {
+    var t1 = Number($('s-t1').value);
+    $('preview').textContent = Number.isFinite(t1) ? '10 tier 1-subs = ' + formatDuration(t1 * 10) : '';
+  }
+
+  function render(next) {
+    state = next;
+    base = { status: next.timer.status, remainingMs: next.timer.remainingMs, at: performance.now() };
+    tick();
+    $('added').textContent = (next.timer.addedMs < 0 ? '−' : '+') + formatDuration(next.timer.addedMs / 1000);
+    $('count').textContent = next.count;
+
+    var upcoming = next.goals.filter(function (g) { return !g.reached; })[0];
+    $('next').textContent = !next.goals.length ? '' : upcoming ? 'Næste mål: ' + upcoming.title + ' (' + upcoming.target + ')' : 'Alle mål er nået';
+
+    if (!dirty.settings) {
+      $('s-t1').value = next.settings.secondsPerSub.t1;
+      $('s-t2').value = next.settings.secondsPerSub.t2;
+      $('s-t3').value = next.settings.secondsPerSub.t3;
+      $('s-start').value = formatDuration(next.settings.startSeconds);
+      $('s-max').value = next.settings.maxSeconds ? formatDuration(next.settings.maxSeconds) : '0';
+      previewText();
+    }
+    if (!dirty.goals) {
+      draft = next.goals.map(function (g) { return { id: g.id, title: g.title, target: g.target }; });
+      renderGoalsEditor();
+    }
+
+    $('dot').className = 'dot' + (next.chatConnected ? ' on' : '');
+    $('chat-text').textContent = !next.twitch ? 'Ingen Twitch-kanal valgt' : next.chatConnected ? 'Læser subs fra #' + next.twitch : 'Forbinder til #' + next.twitch + ' …';
+    $('twitch-edit').hidden = !next.twitchEditable;
+    if (next.twitchEditable && !dirty.twitch) $('f-twitch').value = next.twitch || '';
+    var channel = window.HubChannel && window.HubChannel.id;
+    $('chat-hint').innerHTML = next.twitchEditable
+      ? 'Skriv det Twitch-kanalnavn, subs skal læses fra. Der kræves intet login.'
+      : (next.twitch ? 'Kanalnavnet ændres på kanal-siden under Indstillinger.' : 'Skriv dit Twitch-kanalnavn under Indstillinger på <a href="/kanal/' + (channel ? '?c=' + encodeURIComponent(channel) : '') + '">kanal-siden</a>, så læses subs fra din chat.');
+    renderLog(next.events);
+  }
+
+  // ---- buttons ---------------------------------------------------------------------------
+  $('start').addEventListener('click', function () { post('/timer/start', {}, 'msg-timer'); });
+  $('pause').addEventListener('click', function () { post('/timer/pause', {}, 'msg-timer'); });
+  $('reset').addEventListener('click', function () {
+    if (confirm('Nulstil timeren til starttiden? Tælleren og listen røres ikke.')) post('/reset', { what: 'timer' }, 'msg-timer');
+  });
+  $('reset-all').addEventListener('click', function () {
+    if (confirm('Nulstil timer, sub-tæller og listen over subs? Målene beholdes.')) post('/reset', { what: 'all' }, 'msg-log');
+  });
+  document.querySelectorAll('[data-add]').forEach(function (button) {
+    button.addEventListener('click', function () { post('/timer/add', { seconds: Number(button.dataset.add) }, 'msg-timer'); });
+  });
+  function addCustom(sign) {
+    var seconds = parseDuration($('f-add').value);
+    if (!(seconds > 0)) { say('msg-timer', 'Skriv en tid, fx 2:30 eller 90.', 'err'); return; }
+    post('/timer/add', { seconds: sign * seconds }, 'msg-timer').then(function (ok) { if (ok) $('f-add').value = ''; });
+  }
+  $('add-more').addEventListener('click', function () { addCustom(1); });
+  $('add-less').addEventListener('click', function () { addCustom(-1); });
+  $('f-add').addEventListener('keydown', function (e) { if (e.key === 'Enter') addCustom(1); });
+
+  document.querySelectorAll('[data-settings]').forEach(function (input) {
+    input.addEventListener('input', function () { dirty.settings = true; previewText(); });
+  });
+  $('save-settings').addEventListener('click', function () {
+    var start = parseDuration($('s-start').value), max = parseDuration($('s-max').value);
+    if (isNaN(start) || isNaN(max)) { say('msg-settings', 'Starttid og maks. tid skal skrives som sekunder, 2:30 eller 1:00:00.', 'err'); return; }
+    post('/settings', {
+      secondsPerSub: { t1: $('s-t1').value, t2: $('s-t2').value, t3: $('s-t3').value },
+      startSeconds: start, maxSeconds: max
+    }, 'msg-settings').then(function (ok) { if (ok) { dirty.settings = false; render(ok); say('msg-settings', 'Gemt.', 'ok'); } });
+  });
+
+  $('dec').addEventListener('click', function () { post('/count', { delta: -1 }, 'msg-goals'); });
+  $('inc').addEventListener('click', function () { post('/count', { delta: 1 }, 'msg-goals'); });
+  $('set-count').addEventListener('click', function () {
+    if ($('f-count').value === '') { say('msg-goals', 'Skriv et antal.', 'err'); return; }
+    post('/count', { count: Number($('f-count').value) }, 'msg-goals').then(function (ok) { if (ok) $('f-count').value = ''; });
+  });
+  $('add-goal').addEventListener('click', function () {
+    var last = draft.length ? Number(draft[draft.length - 1].target) || 0 : 0;
+    draft.push({ title: '', target: last + 25 });
+    dirty.goals = true;
+    renderGoalsEditor();
+    var inputs = $('goals').querySelectorAll('input');
+    if (inputs.length >= 2) inputs[inputs.length - 2].focus();
+  });
+  $('save-goals').addEventListener('click', function () {
+    post('/goals', { goals: draft.map(function (g) { return { id: g.id, title: g.title, target: Number(g.target) }; }) }, 'msg-goals')
+      .then(function (ok) { if (ok) { dirty.goals = false; render(ok); say('msg-goals', 'Gemt.', 'ok'); } });
+  });
+
+  $('f-twitch').addEventListener('input', function () { dirty.twitch = true; });
+  $('save-twitch').addEventListener('click', function () {
+    post('/twitch', { twitch: $('f-twitch').value }, 'msg-twitch').then(function (ok) { if (ok) { dirty.twitch = false; render(ok); say('msg-twitch', 'Gemt.', 'ok'); } });
+  });
+
+  document.querySelectorAll('[data-test]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      post('/simulate', { kind: button.dataset.test, tier: Number($('t-tier').value), count: Number($('t-count').value) }, 'msg-test');
+    });
+  });
+  $('undo-tests').addEventListener('click', function () { post('/undo-tests', {}, 'msg-test'); });
+
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var link = button.closest('.link').querySelector('a').href; // the channel shim has already added ?profile=
+      function done() { var old = button.textContent; button.textContent = 'Kopieret ✓'; setTimeout(function () { button.textContent = old; }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(done, done); else done();
+    });
+  });
+
+  // ---- go --------------------------------------------------------------------------------
+  fetch('/subathon/api/state').then(function (r) { return r.json(); }).then(render).catch(function () { say('msg-token', 'Kunne ikke hente status.', 'err'); });
+  var events = new EventSource('/subathon/api/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) { /* ignore a broken message */ } };
+  setInterval(tick, 250);
+})();
+</script>
+</body>
+</html>

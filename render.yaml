@@ -56,6 +56,11 @@ services:
         sync: false
       - key: RDR2DEATHS_TWITCH_CHANNEL
         sync: false
+      - key: SUBATHON_CONTROL_PASSWORD
+        sync: false
+      # First value for the Twitch chat the subathon at /subathon reads subs from; it can be changed in the control panel.
+      - key: SUBATHON_TWITCH_CHANNEL
+        sync: false
       # Lets the host reset the keys of a channel whose owner lost them, or delete a channel (see apps/_lib/channels.js).
       - key: HUB_ADMIN_KEY
         sync: false

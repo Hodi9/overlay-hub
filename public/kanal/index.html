@@ -79,6 +79,7 @@
     { name: "Minecraft Boss Tracker", panel: "/minecraft/control", overlays: [["Overlay", "/minecraft/overlay"], ["Wither Skulls", "/minecraft/wither-overlay"], ["Run Stats", "/minecraft/stats-overlay"]] },
     { name: "RDR2 Marathon Tracker", panel: "/rdr2/control.html", overlays: [["Overlay", "/rdr2/"]], tracker: "rdr2" },
     { name: "RDR2 Dødstæller", panel: "/rdr2-deaths/control.html", overlays: [["Overlay", "/rdr2-deaths/"]], note: "Skriv dit Twitch-kanalnavn under Indstillinger nedenfor, så tæller !died i din chat op (kun dig og dine mods)." },
+    { name: "Subathon-timer", panel: "/subathon/control.html", overlays: [["Samlet", "/subathon/"], ["Kun timer", "/subathon/?view=timer"], ["Kun mål", "/subathon/?view=goal"]], note: "Skriv dit Twitch-kanalnavn under Indstillinger nedenfor, så lægger timeren tid til for hver sub, resub og gave i din chat." },
     { name: "GTA V Story Tracker", panel: "/gta5/control.html", overlays: [["Overlay", "/gta5/"]], tracker: "gta5" },
     { name: "The Last of Us Part II", panel: "/tlou2/control.html", overlays: [["Overlay", "/tlou2/"]], tracker: "tlou2" },
     { name: "Cyberpunk 2077", panel: "/cyberpunk/control.html", overlays: [["Inkl. Phantom Liberty", "/cyberpunk/"], ["Uden Phantom Liberty", "/cyberpunk/?pl=off"]], tracker: "cyberpunk" },
@@ -339,7 +340,7 @@
         state.channel = result.channel; message(status, "Gemt.", "ok");
       }).catch(function (error) { message(status, error.message, "err"); });
     });
-    view.appendChild(section("Indstillinger", "Twitch-kanalet bruges af dødstælleren: skriver du !died i den chat som streamer eller moderator, tæller den op.", [
+    view.appendChild(section("Indstillinger", "Twitch-kanalet bruges af dødstælleren (skriver du !died i den chat som streamer eller moderator, tæller den op) og af subathon-timeren (den lægger tid til for hver sub i chatten).", [
       el("div", { class: "row" }, [twitch, save]), status
     ]));
   }
