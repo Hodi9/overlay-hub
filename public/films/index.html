@@ -81,7 +81,18 @@
   .hero .count { margin: 14px 0 0; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
 
   /* Deck cards: same as the game ratings, but each card links to the film on Letterboxd. */
-  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); margin-top: 28px; }
+  .toolbar { margin: 28px 0 22px; }
+  .toolbar[hidden] { display: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    border: 1px solid var(--line); background: rgba(11,11,13,.85); color: var(--ink);
+    padding: 12px 14px; border-radius: var(--r);
+  }
+  .chip:hover { border-color: var(--muted); }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
   .deck {
     position: relative; isolation: isolate; aspect-ratio: 5 / 7; overflow: hidden;
     display: flex; flex-direction: column; justify-content: flex-end;
@@ -157,14 +168,28 @@
   </div></div>
 
   <div class="wrap">
+    <div class="toolbar" id="toolbar" hidden>
+      <div class="chips" id="chips" role="group" aria-label="Sortér">
+        <button class="chip" data-sort="recent" aria-pressed="true">Senest set</button>
+        <button class="chip" data-sort="rating" aria-pressed="false">Rating</button>
+        <button class="chip" data-sort="year" aria-pressed="false">Udgivelsesår</button>
+        <button class="chip" data-sort="az" aria-pressed="false">A–Å</button>
+        <button class="chip" data-sort="za" aria-pressed="false">Å–A</button>
+      </div>
+    </div>
+
     <main class="grid" id="grid"></main>
     <p class="msg" id="msg"></p>
 
     <p class="foot">Hentes fra <a href="https://letterboxd.com/dreamglowxd/diary/" target="_blank" rel="noopener">Letterboxd</a> og opdateres cirka hver halve time. <a href="/">Tilbage til overview</a></p>
   </div>
 
-<script>
+<script type="module">
+import { sortFilms } from "/films/sort.js";
+
 const grid = document.getElementById("grid");
+const chips = document.getElementById("chips");
+const toolbar = document.getElementById("toolbar");
 const countEl = document.getElementById("count");
 const msg = document.getElementById("msg");
 
@@ -222,12 +247,29 @@ function card(f) {
 
 function show(text) { msg.textContent = text; msg.style.display = "block"; }
 
+let allFilms = [];
+let sortKey = "recent";
+
+function render() {
+  grid.replaceChildren(...sortFilms(allFilms, sortKey).map(card));
+}
+
+chips.addEventListener("click", (event) => {
+  const chip = event.target.closest("[data-sort]");
+  if (!chip || !allFilms.length) return;
+  sortKey = chip.dataset.sort;
+  chips.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+  render();
+});
+
 fetch("/api/letterboxd/diary")
   .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
   .then(({ films }) => {
+    allFilms = films;
     countEl.textContent = films.length === 1 ? "1 film" : `${films.length} film`;
-    if (!films.length) return show("Ingen film logget endnu.");
-    grid.replaceChildren(...films.map(card));
+    if (!films.length) { toolbar.hidden = true; return show("Ingen film logget endnu."); }
+    toolbar.hidden = false;
+    render();
   })
   .catch(() => {
     countEl.textContent = "";
