@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { LOOKS, DEFAULT_LOOK, DEFAULT_OPACITY, OPACITY_MIN, OPACITY_MAX } from "./public/looks.js";
 
 // Everything the subathon does with numbers lives here, with the clock passed in, so the
 // timer, the gift matching and the goals can be tested without a server or a Twitch chat.
@@ -23,7 +24,9 @@ export const LIMITS = {
 export const DEFAULT_SETTINGS = {
   secondsPerSub: { t1: 20, t2: 40, t3: 100 },
   maxSeconds: 0, // 0 = the timer may grow without limit
-  startSeconds: 60 * 60
+  startSeconds: 60 * 60,
+  look: DEFAULT_LOOK, // the overlay's colour theme (public/looks.js)
+  opacity: DEFAULT_OPACITY // how solid the overlay's cards are
 };
 
 const newId = () => crypto.randomBytes(5).toString("hex");
@@ -37,6 +40,23 @@ function seconds(raw, label, fallback, max) {
   return Math.round(value);
 }
 
+function cleanLook(source, base) {
+  let look = base.look ?? DEFAULT_LOOK;
+  if (source.look !== undefined) {
+    if (!LOOKS.some((candidate) => candidate.key === source.look)) throw new ValidationError("Ukendt tema.");
+    look = source.look;
+  }
+  let opacity = base.opacity ?? DEFAULT_OPACITY;
+  if (source.opacity !== undefined) {
+    const value = Number(source.opacity);
+    if (source.opacity === null || source.opacity === "" || !Number.isFinite(value) || value < OPACITY_MIN || value > OPACITY_MAX) {
+      throw new ValidationError(`Kortenes dækning skal være et tal mellem ${OPACITY_MIN} og ${OPACITY_MAX}.`);
+    }
+    opacity = Math.round(value * 100) / 100;
+  }
+  return { look, opacity };
+}
+
 /** Checks a settings object from the panel; fields that are left out keep their value from `base`. */
 export function cleanSettings(input, base = DEFAULT_SETTINGS) {
   const source = input && typeof input === "object" ? input : {};
@@ -48,7 +68,8 @@ export function cleanSettings(input, base = DEFAULT_SETTINGS) {
       t3: seconds(per.t3, "Sekunder pr. Tier 3-sub", base.secondsPerSub.t3, LIMITS.secondsPerSub)
     },
     maxSeconds: seconds(source.maxSeconds, "Maks. tid", base.maxSeconds, LIMITS.timerSeconds),
-    startSeconds: seconds(source.startSeconds, "Starttid", base.startSeconds, LIMITS.timerSeconds)
+    startSeconds: seconds(source.startSeconds, "Starttid", base.startSeconds, LIMITS.timerSeconds),
+    ...cleanLook(source, base)
   };
   if (settings.maxSeconds > 0 && settings.startSeconds > settings.maxSeconds) {
     throw new ValidationError("Starttiden kan ikke være længere end maks. tiden.");

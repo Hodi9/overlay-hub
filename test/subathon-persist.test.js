@@ -63,6 +63,7 @@ test("counter, goals, settings and a running timer survive a restart", async () 
   const clock = { t: T0 };
   const before = await start({ clock });
   await before.call("/settings", { secondsPerSub: { t1: 45 } });
+  await before.call("/look", { look: "ef", opacity: 0.5 });
   await before.call("/goals", { goals: [{ title: "Persisted goal", target: 12 }] });
   await before.call("/timer/start", {});
   await before.call("/simulate", { kind: "sub", tier: 1 });
@@ -74,6 +75,7 @@ test("counter, goals, settings and a running timer survive a restart", async () 
   const { body } = await after.call("/state");
   assert.equal(body.count, 2);
   assert.deepEqual(body.settings.secondsPerSub, { t1: 45, t2: 40, t3: 100 });
+  assert.deepEqual([body.settings.look, body.settings.opacity], ["ef", 0.5]);
   assert.deepEqual(body.goals.map((g) => [g.title, g.target]), [["Persisted goal", 12]]);
   assert.equal(body.timer.status, "running");
   assert.equal(body.timer.remainingMs, 3_600_000 + 90_000 - 10_000);

@@ -268,6 +268,11 @@ export function createSubathonApp({ channels: hubChannels = null, pool = null, h
     if (state.timer.status === "idle" && state.timer.addedMs === 0) state.timer = resetTimer(state.settings.startSeconds * 1000);
   });
 
+  // The overlay's colour theme and how solid its cards are: picked live in the panel, nothing else changes.
+  change("/api/look", (state, body) => {
+    state.settings = cleanSettings({ look: body.look, opacity: body.opacity }, state.settings);
+  });
+
   change("/api/count", (state, body) => {
     const next = body.count !== undefined ? Number(body.count) : state.count + Number(body.delta);
     if (!Number.isInteger(next) || next < 0 || next > LIMITS.count) throw new ValidationError("Antallet skal være et helt tal på 0 eller derover.");

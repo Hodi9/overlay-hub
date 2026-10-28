@@ -10,6 +10,7 @@ import {
   DEFAULT_SETTINGS, LIMITS, ValidationError, addTime, cleanGoals, cleanSettings, createGiftTracker, createState, createTimer,
   goalProgress, pauseTimer, registerSubs, resetTimer, restoreState, serializeState, settleTimer, startTimer, timerView, undoTestEvents
 } from "../apps/subathon/logic.js";
+import { LOOKS, DEFAULT_LOOK, DEFAULT_OPACITY, OPACITY_MIN, lookByKey } from "../apps/subathon/public/looks.js";
 import { createSubathonApp } from "../apps/subathon/app.js";
 import { createChannelRegistry } from "../apps/_lib/channels.js";
 
@@ -273,6 +274,39 @@ test("settings are checked, and what is left out keeps its value", () => {
     assert.throws(() => cleanSettings(bad), ValidationError, JSON.stringify(bad));
   }
   assert.throws(() => cleanSettings({ startSeconds: 7200, maxSeconds: 3600 }), /Starttiden/);
+});
+
+test("every colour theme is complete and has its own key", () => {
+  assert.ok(LOOKS.length >= 8);
+  assert.equal(new Set(LOOKS.map((look) => look.key)).size, LOOKS.length);
+  assert.equal(new Set(LOOKS.map((look) => look.name)).size, LOOKS.length);
+  assert.equal(DEFAULT_LOOK, LOOKS[0].key);
+  const hex = /^#[0-9a-f]{6}$/i, rgb = /^\d{1,3}, \d{1,3}, \d{1,3}$/;
+  for (const look of LOOKS) {
+    assert.match(look.key, /^[a-z]{2}$/, look.key);
+    for (const colour of ["a1", "a2", "ink", "muted", "on"]) assert.match(look[colour], hex, `${look.key}.${colour}`);
+    for (const colour of ["tint", "base", "line"]) {
+      assert.match(look[colour], rgb, `${look.key}.${colour}`);
+      assert.ok(look[colour].split(", ").every((n) => Number(n) <= 255), `${look.key}.${colour}`);
+    }
+  }
+  assert.equal(lookByKey("nope"), LOOKS[0]);
+  assert.equal(lookByKey("nl").name, "Nordlys");
+});
+
+test("the theme and the card opacity are checked, and the rest of the settings is left alone", () => {
+  assert.deepEqual([DEFAULT_SETTINGS.look, DEFAULT_SETTINGS.opacity], [DEFAULT_LOOK, DEFAULT_OPACITY]);
+  const themed = cleanSettings({ look: "nl", opacity: 0.4 });
+  assert.deepEqual([themed.look, themed.opacity, themed.secondsPerSub, themed.startSeconds], ["nl", 0.4, DEFAULT_SETTINGS.secondsPerSub, DEFAULT_SETTINGS.startSeconds]);
+  assert.equal(cleanSettings({ opacity: "0.456" }).opacity, 0.46);
+  assert.equal(cleanSettings({ opacity: OPACITY_MIN }).opacity, OPACITY_MIN);
+  assert.deepEqual([cleanSettings({ secondsPerSub: { t1: 5 } }, themed).look, cleanSettings({ secondsPerSub: { t1: 5 } }, themed).opacity], ["nl", 0.4]);
+  for (const bad of [{ look: "nope" }, { look: null }, { look: "" }, { opacity: 0.1 }, { opacity: 1.1 }, { opacity: "x" }, { opacity: null }, { opacity: "" }]) {
+    assert.throws(() => cleanSettings(bad), ValidationError, JSON.stringify(bad));
+  }
+  // Settings saved before the themes existed still load, with the default look.
+  const old = restoreState({ settings: { secondsPerSub: { t1: 30, t2: 60, t3: 150 }, maxSeconds: 0, startSeconds: 3600 } });
+  assert.deepEqual([old.settings.secondsPerSub.t1, old.settings.look, old.settings.opacity], [30, DEFAULT_LOOK, DEFAULT_OPACITY]);
 });
 
 test("goals are sorted, trimmed and keep their ids", () => {
@@ -610,6 +644,27 @@ describe("the subathon app", () => {
     }
     assert.equal((await get("/state")).count, 4);
     await postOk("/goals", { goals: [{ title: "Sub goal", target: 50 }] });
+  });
+
+  test("the colour theme and opacity are picked in the panel, shown to the overlay, and change nothing else", async () => {
+    const before = await get("/state");
+    assert.deepEqual([before.settings.look, before.settings.opacity], [DEFAULT_LOOK, DEFAULT_OPACITY]);
+    assert.equal((await post("/look", { look: "nl" }, {})).status, 401);
+
+    let state = await postOk("/look", { look: "nl" });
+    assert.deepEqual([state.settings.look, state.settings.opacity], ["nl", DEFAULT_OPACITY]);
+    state = await postOk("/look", { opacity: 0.4 });
+    assert.deepEqual([state.settings.look, state.settings.opacity], ["nl", 0.4]); // one at a time
+    assert.deepEqual(state.settings.secondsPerSub, before.settings.secondsPerSub);
+    assert.deepEqual([state.timer, state.count, state.goals], [before.timer, before.count, before.goals]);
+    assert.equal((await get("/state")).settings.look, "nl");
+
+    for (const bad of [{ look: "nope" }, { look: 5 }, { opacity: 0 }, { opacity: 2 }, { opacity: "clear" }]) {
+      assert.equal((await post("/look", bad)).status, 400, JSON.stringify(bad));
+    }
+    assert.equal((await post("/look", {})).status, 200); // nothing to change is not an error
+    assert.deepEqual([(await get("/state")).settings.look, (await get("/state")).settings.opacity], ["nl", 0.4]);
+    await postOk("/look", { look: DEFAULT_LOOK, opacity: DEFAULT_OPACITY });
   });
 
   test("the Twitch name is checked, and a new overlay is told at once over the live stream", async () => {

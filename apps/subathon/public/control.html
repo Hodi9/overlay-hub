@@ -75,6 +75,19 @@
   .link > span { font-size: 14px; }
   .link .row { gap: 6px; }
 
+  .looks { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+  .look { display: grid; gap: 7px; padding: 6px 6px 8px; border: 1px solid var(--line); border-radius: var(--r); background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+  .look:hover { border-color: var(--muted); }
+  .look[aria-pressed="true"] { border-color: var(--lime); background: rgba(201, 243, 107, .08); }
+  .look .sw { display: flex; align-items: center; justify-content: center; height: 44px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 2px; font-family: var(--display); font-size: 28px; line-height: 1; }
+  .look .sw b { font-weight: 400; color: transparent; -webkit-background-clip: text; background-clip: text; }
+  .look .nm { padding: 0 2px; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .look[aria-pressed="true"] .nm { color: var(--ink); }
+  .slider { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+  .slider .label { margin: 0; flex: none; }
+  .slider input { flex: 1; min-width: 0; padding: 0; border: 0; background: none; accent-color: var(--lime); }
+  .slider b { flex: none; min-width: 46px; text-align: right; font-family: var(--mono); font-size: 13px; font-weight: 500; }
+
   .chat { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
   .dot { width: 8px; height: 8px; background: var(--muted); flex: none; }
   .dot.on { background: var(--lime); }
@@ -163,7 +176,19 @@
           <div class="link"><span>Kun timer</span><span class="row"><a class="btn small" href="/subathon/?view=timer" target="_blank" rel="noopener">Åbn</a><button class="btn small" data-copy="/subathon/?view=timer" type="button">Kopiér</button></span></div>
           <div class="link"><span>Kun mål</span><span class="row"><a class="btn small" href="/subathon/?view=goal" target="_blank" rel="noopener">Åbn</a><button class="btn small" data-copy="/subathon/?view=goal" type="button">Kopiér</button></span></div>
         </div>
-        <p class="hint">Sæt bredden til 600 px i OBS. Baggrunden er gennemsigtig.</p>
+        <p class="hint">Sæt bredden til 600 px i OBS. Baggrunden er gennemsigtig. Farver og gennemsigtighed vælger du herunder.</p>
+      </section>
+
+      <section>
+        <p class="label">Udseende</p>
+        <div class="looks" id="looks" role="group" aria-label="Farvetema"></div>
+        <div class="slider">
+          <span class="label">Gennemsigtighed</span>
+          <input type="range" id="opacity" min="0" max="80" step="1" aria-label="Gennemsigtighed">
+          <b id="opacity-val">0 %</b>
+        </div>
+        <p class="hint">Ændringer vises med det samme i overlayet. Skal en enkelt browser source have et andet tema eller en anden gennemsigtighed, så skriv fx <code>&look=nl</code> eller <code>&opacity=0.4</code> bag på dens link.</p>
+        <p class="msg" id="msg-look"></p>
       </section>
 
       <section>
@@ -352,6 +377,38 @@
     $('preview').textContent = Number.isFinite(t1) ? '10 tier 1-subs = ' + formatDuration(t1 * 10) : '';
   }
 
+  // ---- colour themes (the list is shared with the overlay and the server: looks.js) -------
+  var looks = null;
+  function buildLooks() {
+    var box = $('looks');
+    box.textContent = '';
+    looks.LOOKS.forEach(function (look) {
+      var button = document.createElement('button');
+      button.type = 'button'; button.className = 'look'; button.dataset.key = look.key; button.setAttribute('aria-pressed', 'false');
+      var swatch = document.createElement('span'); swatch.className = 'sw';
+      swatch.style.background = 'linear-gradient(155deg, rgb(' + look.tint + '), rgb(' + look.base + '))';
+      var digits = document.createElement('b'); digits.textContent = '1:23';
+      digits.style.backgroundImage = 'linear-gradient(100deg, ' + look.a1 + ' 30%, ' + look.a2 + ')';
+      swatch.appendChild(digits);
+      var name = document.createElement('span'); name.className = 'nm'; name.textContent = look.name;
+      button.appendChild(swatch); button.appendChild(name);
+      button.addEventListener('click', function () { post('/look', { look: look.key }, 'msg-look'); });
+      box.appendChild(button);
+    });
+    markLook();
+  }
+  function markLook() {
+    if (!state) return;
+    document.querySelectorAll('.look').forEach(function (button) { button.setAttribute('aria-pressed', button.dataset.key === state.settings.look ? 'true' : 'false'); });
+    if (document.activeElement !== $('opacity')) {
+      $('opacity').value = Math.round((1 - state.settings.opacity) * 100);
+      $('opacity-val').textContent = $('opacity').value + ' %';
+    }
+  }
+  $('opacity').addEventListener('input', function () { $('opacity-val').textContent = $('opacity').value + ' %'; });
+  $('opacity').addEventListener('change', function () { post('/look', { opacity: 1 - Number($('opacity').value) / 100 }, 'msg-look'); });
+  import('./looks.js').then(function (module) { looks = module; buildLooks(); }, function () { say('msg-look', 'Kunne ikke hente temaerne.', 'err'); });
+
   function render(next) {
     state = next;
     base = { status: next.timer.status, remainingMs: next.timer.remainingMs, at: performance.now() };
@@ -375,6 +432,7 @@
       renderGoalsEditor();
     }
 
+    markLook();
     $('dot').className = 'dot' + (next.chatConnected ? ' on' : '');
     $('chat-text').textContent = !next.twitch ? 'Ingen Twitch-kanal valgt' : next.chatConnected ? 'Læser subs fra #' + next.twitch : 'Forbinder til #' + next.twitch + ' …';
     $('twitch-edit').hidden = !next.twitchEditable;
