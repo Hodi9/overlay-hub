@@ -56,6 +56,14 @@
     background: linear-gradient(135deg, #5aa81f, #1f8f62);
     -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   }
+  /* The 7TV paint on "Dreamglow.": an animated picture clipped to the letters. */
+  .wordmark .paint {
+    display: inline-block;
+    background: #cfd0d6 url("/img/vanity/paint.webp") center / 100% 100% no-repeat;
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 1.5px #000);
+  }
 
   /* Top bar */
   .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 0; }
@@ -146,7 +154,7 @@
 <body>
   <div class="light-top"><div class="wrap">
     <div class="wordmark-block">
-      <p class="wordmark">Dreamglow.<span class="tld">xyz</span></p>
+      <p class="wordmark"><span class="paint">Dreamglow.</span><span class="tld">xyz</span></p>
     </div>
 
     <header class="top">
