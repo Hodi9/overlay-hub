@@ -139,13 +139,14 @@
   .vanity-badges { display: inline-flex; align-items: center; gap: 3px; }
   .vanity-badges img { display: block; width: 24px; height: 24px; }
   .vanity-badges .ffz { background: #755000; border-radius: 5px; }
-  .vanity-name {
-    display: inline-block; text-decoration: none; font: 700 28px/1.15 Arial, Helvetica, sans-serif;
+  .paint {
+    display: inline-block;
     background: #cfd0d6 url("/img/vanity/paint.webp") center / 100% 100% no-repeat;
     -webkit-background-clip: text; background-clip: text;
     color: transparent; -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 1.5px #000); transition: filter .15s;
+    filter: drop-shadow(0 0 1.5px #000);
   }
+  .vanity-name { text-decoration: none; font: 700 28px/1.15 Arial, Helvetica, sans-serif; transition: filter .15s; }
   .vanity-name:hover { filter: drop-shadow(0 0 1.5px #000) brightness(1.25); }
 
   /* Call to action: make your own channel */
@@ -290,7 +291,7 @@
   <div class="bg-art" aria-hidden="true"><span class="art-1"></span><span class="art-2"></span><span class="art-3"></span></div>
   <div class="light-top"><div class="wrap">
     <div class="wordmark-block">
-      <p class="wordmark">Dreamglow.<span class="tld">xyz</span></p>
+      <p class="wordmark"><span class="paint">Dreamglow.</span><span class="tld">xyz</span></p>
       <p class="wordmark-tag">Egnet til livestreams: større events, spil og konkurrencer/challenges afholdt på Twitch.</p>
     </div>
 
@@ -322,7 +323,7 @@
             <img src="/img/vanity/homies-user.webp" width="24" height="24" alt="" title="Homies dreamglowxd Badge">
             <img src="/img/vanity/homies.png" width="24" height="24" alt="" title="Homies Supporter">
           </span>
-          <a class="vanity-name" href="https://discord.com/users/151714858587521025" target="_blank" rel="noopener noreferrer" aria-label="dreamglowxd, åbn min Discord-profil" title="Åbn min Discord-profil">dreamglowxd</a>
+          <a class="vanity-name paint" href="https://discord.com/users/151714858587521025" target="_blank" rel="noopener noreferrer" aria-label="dreamglowxd, åbn min Discord-profil" title="Åbn min Discord-profil">dreamglowxd</a>
         </span>
       </div>
     </section>
