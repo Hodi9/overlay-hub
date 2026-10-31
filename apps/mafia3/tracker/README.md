@@ -14,14 +14,17 @@ a much more reliable save-file-based tracker instead of OCR), just ask.
 2. Set `apiKey` to the `MAFIA3_TRACKER_KEY` value from Render.
 3. Double-click `Start Mafia3 Tracker.cmd` while you play.
 
-## Mafia III doesn't have a fixed chapter order
+## Mission list and order
 
-Unlike Mafia I and II, Mafia III lets you choose which of New Bordeaux's
-districts to take over and in what order — there's no single correct
-chapter sequence to pre-fill. `apps/mafia3/chapters.js` only has two
-verified-real mission names as a starting point (checked against
-mafiagame.fandom.com, not guessed). While you play, every OCR capture
-shows up live in the control panel; click **+ Tilføj som næste kapitel**
-when it says "Ingen match" to add the exact text from your own game — for
-this game especially, that's the real source of truth, not any pre-written
-list.
+`apps/mafia3/chapters.js` has the 46 story missions: the nine prologue
+missions, then the district arcs in walkthrough order, ending with Kill Sal
+Marcano. Each mission carries its story chapter name from the Mafia Wiki as
+its "location", so a capture of either the mission or the chapter name
+matches. The DLC campaigns and the optional/betrayal chapters aren't in it.
+
+Mafia III lets you take New Bordeaux's districts in any order, so only the
+prologue and the finale are fixed. The tracker only looks a few missions
+ahead of the current one: if you go a different way, every OCR capture shows
+up live in the control panel — click a mission to jump there, or click
+**+ Tilføj som næste kapitel** when it says "Ingen match" to add the exact
+text from your own game.
