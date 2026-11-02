@@ -18,7 +18,9 @@
     --green: #72c99b;
     --soft: #192923;
     --power: #ff4c02; /* the orange of the Power logo */
-    --power-soft: rgba(255, 138, 61, .3); /* a lighter, milder orange, see-through, behind what is happening now */
+    /* The colour of what is happening now (the stripe, "LIGE NU" and the tint behind it): lime unless the panel picks another. */
+    --now: #c9f36b;
+    --now-soft: #192923;
   }
   * { box-sizing: border-box; }
   /* The page fills whatever size the browser source has and the card sits in one corner of it (?corner=, default top-left).
@@ -31,6 +33,14 @@
     padding: 1em 1em .375em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
+  /* The colours the panel can pick for what is happening now ("lime" is the default above). */
+  .card[data-accent="mint"] { --now: #72c99b; --now-soft: rgba(114, 201, 155, .2); }
+  .card[data-accent="blue"] { --now: #5cc8ff; --now-soft: rgba(92, 200, 255, .2); }
+  .card[data-accent="violet"] { --now: #a78bfa; --now-soft: rgba(167, 139, 250, .22); }
+  .card[data-accent="yellow"] { --now: #ffd23f; --now-soft: rgba(255, 210, 63, .17); }
+  .card[data-accent="pink"] { --now: #ff6b9a; --now-soft: rgba(255, 107, 154, .2); }
+  .card[data-accent="white"] { --now: #ededed; --now-soft: rgba(255, 255, 255, .1); }
+  .card[data-accent="orange"] { --now: #ff4c02; --now-soft: rgba(255, 138, 61, .3); }
   .card.bottom { top: auto; bottom: var(--gap); }
   .card.left { right: auto; left: var(--gap); }
   .card.on { opacity: 1; }
@@ -53,9 +63,9 @@
   .tag { font: 500 .6875em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: .45em .6em; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
   .tag:empty { display: none; }
 
-  .row.now { background: var(--power-soft); border-left-color: var(--power); }
-  .row.now .num { color: var(--power); }
-  .row.now .tag { background: var(--power); border-color: var(--power); color: var(--bg); }
+  .row.now { background: var(--now-soft); border-left-color: var(--now); }
+  .row.now .num { color: var(--now); }
+  .row.now .tag { background: var(--now); border-color: var(--now); color: var(--bg); }
   .row.done .name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
   .row.done .num { color: var(--green); }
 
@@ -66,12 +76,12 @@
   /* The card is always the same size: two slots of fixed height, names on one line (cut off with "…" if too long),
      the note sits on the label line, and an empty slot keeps its space with a muted text. */
   .slot { padding: .625em .625em .6875em .6875em; border-top: 1px solid var(--line); border-left: 3px solid transparent; transition: background .4s ease, border-color .4s ease; }
-  .slot.live { background: var(--power-soft); border-left-color: var(--power); }
+  .slot.live { background: var(--now-soft); border-left-color: var(--now); }
   .slot .label-row { display: flex; align-items: center; gap: .75em; min-height: 1.2em; margin-bottom: .25em; }
   .slot .label { flex: none; font: 500 .6875em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .slot .note { display: block; flex: 1 1 auto; min-width: 0; margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .slot .tag { flex: none; padding: .25em .5em; }
-  .slot.live .label { color: var(--power); }
+  .slot.live .label { color: var(--now); }
   .slot .big { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 400 1.875em/1.15 var(--display); letter-spacing: -.01em; }
   .slot.next .big { font-size: 1.375em; }
   .slot.idle .big { color: var(--muted); }
@@ -205,6 +215,7 @@
     });
 
     card.classList.toggle('compact', plan.view === 'compact');
+    card.dataset.accent = plan.accent || 'lime';
     renderFocus(all, done, plan.showMaybe === true);
     card.classList.toggle('on', shown.length > 0);
   }

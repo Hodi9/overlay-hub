@@ -8,8 +8,11 @@ const clip = (value, max) => String(value ?? "").trim().slice(0, max);
 // "compact" shows only what is happening now and the next stop; "list" shows the whole plan.
 export const VIEWS = ["compact", "list"];
 
+// The colour of what is happening now (the stripe, the small "LIGE NU" and the tint behind it). The colours themselves are in the overlay.
+export const ACCENTS = ["lime", "mint", "blue", "violet", "yellow", "pink", "white", "orange"];
+
 // showMaybe: whether the overlay marks the things that are not certain yet ("Måske"). Off by default.
-export const DEFAULT_PLAN = { kicker: "Plan for London", title: "POWER TRIP Aggo & Lucas", view: "compact", showMaybe: false };
+export const DEFAULT_PLAN = { kicker: "Plan for London", title: "POWER TRIP Aggo & Lucas", view: "compact", showMaybe: false, accent: "lime" };
 
 export function cleanPlan(input, existing = DEFAULT_PLAN) {
   const title = typeof input?.title === "string" ? clip(input.title, 40) : "";
@@ -17,7 +20,8 @@ export function cleanPlan(input, existing = DEFAULT_PLAN) {
     kicker: typeof input?.kicker === "string" ? clip(input.kicker, 30) : existing.kicker,
     title: title || existing.title,
     view: VIEWS.includes(input?.view) ? input.view : existing.view,
-    showMaybe: typeof input?.showMaybe === "boolean" ? input.showMaybe : existing.showMaybe
+    showMaybe: typeof input?.showMaybe === "boolean" ? input.showMaybe : existing.showMaybe,
+    accent: ACCENTS.includes(input?.accent) ? input.accent : existing.accent
   };
 }
 

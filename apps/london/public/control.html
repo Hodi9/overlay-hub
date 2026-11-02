@@ -83,6 +83,9 @@
   .status { min-height: 1.2em; margin-top: 10px; font-size: 13px; color: var(--muted); }
   .status.error { color: var(--danger); }
   .empty { padding: 18px; color: var(--muted); text-align: center; border: 1px dashed var(--line); border-radius: 4px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatches button { display: inline-flex; align-items: center; gap: 8px; }
+  .swatches i { display: block; width: 12px; height: 12px; border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -116,6 +119,8 @@
     <div class="line" style="margin-top:8px">
       <button type="button" id="toggle-maybe" aria-pressed="false">Vis "Måske"-mærket</button>
     </div>
+    <p class="label" style="margin-top:16px">Farve på "Lige nu"</p>
+    <div class="swatches" id="accents"></div>
   </section>
 
   <section>
@@ -258,6 +263,9 @@
       button.setAttribute('aria-pressed', String(button.dataset.view === state.plan.view));
     });
     $('toggle-maybe').setAttribute('aria-pressed', String(state.plan.showMaybe === true));
+    document.querySelectorAll('#accents button').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.accent === state.plan.accent));
+    });
     itemsEl.textContent = '';
     if (!state.items.length) itemsEl.appendChild(el('div', { className: 'empty', text: 'Ingen punkter endnu — skriv det første ovenfor.' }));
     state.items.forEach(function (item, index) { itemsEl.appendChild(itemRow(item, index, state.items.length)); });
@@ -293,6 +301,12 @@
     button.addEventListener('click', function () { act('/plan', 'PATCH', { view: button.dataset.view }); });
   });
   $('toggle-maybe').addEventListener('click', function () { act('/plan', 'PATCH', { showMaybe: !(state && state.plan.showMaybe) }); });
+  // The colour of "Lige nu" on the overlay. The overlay has the colours themselves; here they are only the small squares.
+  [['lime', 'Lime', '#c9f36b'], ['mint', 'Mint', '#72c99b'], ['blue', 'Isblå', '#5cc8ff'], ['violet', 'Violet', '#a78bfa'],
+   ['yellow', 'Gul', '#ffd23f'], ['pink', 'Rosa', '#ff6b9a'], ['white', 'Hvid', '#ededed'], ['orange', 'Orange', '#ff4c02']].forEach(function (accent) {
+    $('accents').appendChild(el('button', { type: 'button', 'data-accent': accent[0], 'aria-pressed': 'false', on: { click: function () { act('/plan', 'PATCH', { accent: accent[0] }); } } },
+      [el('i', { style: 'background:' + accent[2] }), el('span', { text: accent[1] })]));
+  });
   $('save-plan').addEventListener('click', function () { act('/plan', 'PATCH', { kicker: $('plan-kicker').value, title: $('plan-title').value }); });
   $('reset').addEventListener('click', function () { if (confirm('Sæt alle punkter tilbage til "Kommer"?')) act('/reset', 'POST'); });
 

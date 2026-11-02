@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
-import { MAX_ITEMS, addItem, advance, cleanItem, cleanPlan, defaultItems, moveNext, reorder, restore, updateItem } from "../apps/london/state.js";
+import { ACCENTS, MAX_ITEMS, addItem, advance, cleanItem, cleanPlan, defaultItems, moveNext, reorder, restore, updateItem } from "../apps/london/state.js";
 import { createLondonApp } from "../apps/london/app.js";
 
 const titles = (items) => items.map((item) => item.title);
@@ -23,7 +23,7 @@ test("cleanItem ignores invalid fields and keeps the old title when the new one 
 });
 
 test("cleanPlan keeps the old headline when the new one is empty but lets the small text be cleared", () => {
-  assert.deepEqual(cleanPlan({ kicker: "", title: "  " }, { kicker: "A", title: "B", view: "list", showMaybe: false }), { kicker: "", title: "B", view: "list", showMaybe: false });
+  assert.deepEqual(cleanPlan({ kicker: "", title: "  " }, { kicker: "A", title: "B", view: "list", showMaybe: false, accent: "mint" }), { kicker: "", title: "B", view: "list", showMaybe: false, accent: "mint" });
   assert.equal(cleanPlan({ title: "Aggo & Lucas på tur" }).title, "Aggo & Lucas på tur");
 });
 
@@ -44,6 +44,17 @@ test("the 'Måske' mark on the overlay is off unless it is switched on", () => {
   assert.equal(cleanPlan({ title: "C" }, before).showMaybe, true); // saving the headline does not reset it
   assert.equal(restore({ plan: { showMaybe: true }, items: [] }).plan.showMaybe, true);
   assert.equal(restore({ plan: { title: "Gemt" }, items: [] }).plan.showMaybe, false); // state saved before the setting existed
+});
+
+test("the colour of 'Lige nu' is one of the known ones and defaults to lime", () => {
+  const before = { kicker: "A", title: "B", view: "list", showMaybe: false, accent: "violet" };
+  assert.equal(cleanPlan({}).accent, "lime");
+  assert.deepEqual(ACCENTS, ["lime", "mint", "blue", "violet", "yellow", "pink", "white", "orange"]);
+  for (const accent of ACCENTS) assert.equal(cleanPlan({ accent }).accent, accent);
+  assert.equal(cleanPlan({ accent: "grøn" }, before).accent, "violet"); // an unknown colour: the old one stays
+  assert.equal(cleanPlan({ title: "C" }, before).accent, "violet"); // saving the headline does not reset it
+  assert.equal(restore({ plan: { accent: "pink" }, items: [] }).plan.accent, "pink");
+  assert.equal(restore({ plan: { title: "Gemt" }, items: [] }).plan.accent, "lime"); // state saved before the colours existed
 });
 
 test("only one thing is running now", () => {
@@ -159,6 +170,10 @@ test("adding, starting, finishing and removing through the API", async () => {
     const maybe = await (await send(`${base}/api/plan`, "PATCH", { showMaybe: true })).json();
     assert.deepEqual([maybe.plan.showMaybe, maybe.plan.view], [true, "list"]);
     assert.equal((await (await send(`${base}/api/plan`, "PATCH", { showMaybe: "ja" })).json()).plan.showMaybe, true);
+    assert.equal(maybe.plan.accent, "lime");
+    const violet = await (await send(`${base}/api/plan`, "PATCH", { accent: "violet" })).json();
+    assert.deepEqual([violet.plan.accent, violet.plan.title], ["violet", "Lucas & Aggo"]);
+    assert.equal((await (await send(`${base}/api/plan`, "PATCH", { accent: "rød" })).json()).plan.accent, "violet");
     const reset = await (await send(`${base}/api/reset`, "POST")).json();
     assert.ok(reset.items.every((item) => item.status === "todo"));
     const removed = await (await send(`${base}/api/items/${reset.items[0].id}`, "DELETE")).json();
