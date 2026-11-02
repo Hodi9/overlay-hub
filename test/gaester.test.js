@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
-import { ACCENTS, MAX_GUESTS, addGuest, cleanGuest, cleanPlan, everyoneOut, removeGuest, reorder, restore, updateGuest } from "../apps/gaester/state.js";
+import { ACCENTS, MAX_GUESTS, SCALE_MAX, SCALE_MIN, addGuest, cleanGuest, cleanPlan, everyoneOut, removeGuest, reorder, restore, updateGuest } from "../apps/gaester/state.js";
 import { createGaesterApp } from "../apps/gaester/app.js";
 
 const names = (guests) => guests.map((guest) => guest.name);
@@ -45,8 +45,21 @@ test("the colour is one of the known ones and defaults to lime", () => {
   assert.equal(cleanPlan({}).accent, "lime");
   for (const accent of ACCENTS) assert.equal(cleanPlan({ accent }).accent, accent);
   assert.equal(cleanPlan({ accent: "grøn" }, { kicker: "A", accent: "violet" }).accent, "violet");
-  assert.deepEqual(cleanPlan({ kicker: "" }, { kicker: "A", accent: "pink" }), { kicker: "", accent: "pink" });
+  assert.deepEqual(cleanPlan({ kicker: "" }, { kicker: "A", accent: "pink", scale: 1 }), { kicker: "", accent: "pink", scale: 1 });
   assert.equal(cleanPlan({ kicker: "x".repeat(100) }).kicker.length, 30);
+});
+
+test("the size is a number between 60 % and 200 % and defaults to 100 %", () => {
+  const before = { kicker: "A", accent: "pink", scale: 1.3 };
+  assert.equal(cleanPlan({}).scale, 1);
+  assert.equal(cleanPlan({ scale: 1.1 }).scale, 1.1);
+  assert.equal(cleanPlan({ scale: 0.1 }).scale, SCALE_MIN); // too small: the smallest
+  assert.equal(cleanPlan({ scale: 9 }).scale, SCALE_MAX); // too big: the biggest
+  assert.equal(cleanPlan({ scale: 1.2345 }).scale, 1.23); // two decimals are enough
+  for (const bad of ["1.2", "stor", null, NaN, Infinity, {}]) assert.equal(cleanPlan({ scale: bad }, before).scale, 1.3, String(bad)); // not a number: the old size stays
+  assert.equal(cleanPlan({ accent: "blue" }, before).scale, 1.3); // changing the colour does not reset it
+  assert.equal(restore({ plan: { scale: 1.5 }, guests: [] }).plan.scale, 1.5);
+  assert.equal(restore({ plan: { accent: "blue" }, guests: [] }).plan.scale, 1); // saved before the size existed
 });
 
 test("restore reads saved state and shrugs off garbage", () => {
@@ -104,6 +117,11 @@ test("guests come and go through the API", async () => {
     const planned = await (await send(`${base}/api/plan`, "PATCH", { accent: "violet", kicker: "Gæster" })).json();
     assert.deepEqual([planned.plan.accent, planned.plan.kicker], ["violet", "Gæster"]);
     assert.equal((await (await send(`${base}/api/plan`, "PATCH", { accent: "rød" })).json()).plan.accent, "violet");
+    assert.equal(planned.plan.scale, 1);
+    const bigger = await (await send(`${base}/api/plan`, "PATCH", { scale: 1.4 })).json();
+    assert.deepEqual([bigger.plan.scale, bigger.plan.accent], [1.4, "violet"]);
+    assert.equal((await (await send(`${base}/api/plan`, "PATCH", { scale: 50 })).json()).plan.scale, SCALE_MAX);
+    assert.equal((await (await send(`${base}/api/plan`, "PATCH", { scale: "stor" })).json()).plan.scale, SCALE_MAX);
     const removed = await (await send(`${base}/api/guests/${idB}`, "DELETE")).json();
     assert.deepEqual(removed.guests.map((g) => g.name), ["Alice Example"]);
     assert.equal((await read(base)).guests.length, 1);

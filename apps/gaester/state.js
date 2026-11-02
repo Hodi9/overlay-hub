@@ -6,12 +6,18 @@ export const MAX_GUESTS = 60;
 
 const clip = (value, max) => String(value ?? "").trim().slice(0, max);
 
-export const DEFAULT_PLAN = { kicker: "I studiet nu", accent: "lime" };
+// How big the overlay is, set with the slider in the panel: 1 is the normal size, 0.6 to 2 is 60 % to 200 %.
+export const SCALE_MIN = 0.6;
+export const SCALE_MAX = 2;
+
+export const DEFAULT_PLAN = { kicker: "I studiet nu", accent: "lime", scale: 1 };
 
 export function cleanPlan(input, existing = DEFAULT_PLAN) {
+  const scale = typeof input?.scale === "number" && Number.isFinite(input.scale) ? Math.round(Math.min(SCALE_MAX, Math.max(SCALE_MIN, input.scale)) * 100) / 100 : existing.scale;
   return {
     kicker: typeof input?.kicker === "string" ? clip(input.kicker, 30) : existing.kicker,
-    accent: ACCENTS.includes(input?.accent) ? input.accent : existing.accent
+    accent: ACCENTS.includes(input?.accent) ? input.accent : existing.accent,
+    scale
   };
 }
 

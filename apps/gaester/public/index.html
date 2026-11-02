@@ -24,9 +24,9 @@
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; color: var(--ink); }
 
   .card {
-    --gap: 3.3em;
+    --gap: 48px; /* the distance from the corner stays the same when the size changes */
     /* As wide as the longest name, between a minimum and a maximum; longer names are cut off with "…". */
-    position: absolute; top: var(--gap); left: var(--gap); width: max-content; min-width: 15em; max-width: 22em; font-size: 14.5px;
+    position: absolute; top: var(--gap); left: var(--gap); width: max-content; min-width: 15em; max-width: 22em; font-size: 16px;
     padding: .875em .875em .25em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
@@ -78,8 +78,11 @@
   var corner = String(params.get('corner') || 'top-left').split('-');
   card.classList.toggle('bottom', corner[0] === 'bottom');
   card.classList.toggle('right', corner[1] === 'right');
-  var scale = parseFloat(params.get('scale'));
-  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 14.5 * scale + 'px';
+  var urlScale = parseFloat(params.get('scale'));
+  if (!(urlScale >= 0.5 && urlScale <= 3)) urlScale = 1;
+  // The size is set with the slider in the panel (plan.scale); ?scale= in the address is an extra factor on top of it.
+  function setSize(planScale) { card.style.fontSize = 16 * (Number(planScale) || 1) * urlScale + 'px'; }
+  setSize(1);
 
   function makeRow() {
     var li = document.createElement('li');
@@ -94,6 +97,7 @@
     var shown = here.slice(0, MAX_ROWS);
 
     card.dataset.accent = plan.accent || 'lime';
+    setSize(plan.scale);
     $('kicker').textContent = plan.kicker || '';
     $('count').textContent = here.length ? String(here.length) : '';
 

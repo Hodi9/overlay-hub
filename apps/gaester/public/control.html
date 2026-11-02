@@ -69,6 +69,7 @@
   .more input { padding: 8px 10px; font-size: 13px; }
   .more button { padding: 8px 10px; }
 
+  input[type="range"] { accent-color: var(--lime); height: 28px; cursor: pointer; }
   .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
   .swatches button { display: inline-flex; align-items: center; gap: 8px; }
   .swatches i { display: block; width: 12px; height: 12px; border-radius: 2px; }
@@ -120,6 +121,16 @@
   <section>
     <p class="label">Farve</p>
     <div class="swatches" id="accents"></div>
+  </section>
+
+  <section>
+    <p class="label">Størrelse på overlayet · <span id="scale-label">100 %</span></p>
+    <div class="box">
+      <div class="line">
+        <input type="range" id="scale" min="60" max="200" step="5" value="100" aria-label="Størrelse på overlayet">
+        <button type="button" id="scale-reset">100 %</button>
+      </div>
+    </div>
   </section>
 
   <section>
@@ -223,6 +234,9 @@
       button.setAttribute('aria-pressed', String(button.dataset.accent === state.plan.accent));
     });
     if (document.activeElement !== $('plan-kicker')) $('plan-kicker').value = state.plan.kicker;
+    var percent = Math.round(state.plan.scale * 100);
+    if (document.activeElement !== $('scale')) $('scale').value = percent;
+    $('scale-label').textContent = percent + ' %';
   }
 
   guestsEl.addEventListener('focusout', function () {
@@ -251,6 +265,15 @@
   });
 
   $('everyone-out').addEventListener('click', function () { if (confirm('Send alle gæster ud af studiet?')) act('/everyone-out', 'POST'); });
+  // The size slider moves the overlay while you drag it (a short pause keeps it from sending every single step).
+  var scaleTimer = null;
+  $('scale').addEventListener('input', function () {
+    var value = Number($('scale').value);
+    $('scale-label').textContent = value + ' %';
+    clearTimeout(scaleTimer);
+    scaleTimer = setTimeout(function () { act('/plan', 'PATCH', { scale: value / 100 }); }, 120);
+  });
+  $('scale-reset').addEventListener('click', function () { clearTimeout(scaleTimer); act('/plan', 'PATCH', { scale: 1 }); });
   $('save-plan').addEventListener('click', function () { act('/plan', 'PATCH', { kicker: $('plan-kicker').value }); });
 
   // The colour on the overlay. The overlay has the colours themselves; here they are only the small squares.
