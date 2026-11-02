@@ -12,7 +12,7 @@
     --mono: "JetBrains Mono", ui-monospace, monospace;
     --bg: #0b0b0d;
     --ink: #ededed;
-    --muted: #9b9ba4;
+    --muted: #b8b8c1; /* the small texts: light enough to read on a bright stream */
     --line: #2b2b31;
     --lime: #c9f36b;
     --green: #72c99b;
@@ -27,7 +27,7 @@
   .card {
     --gap: 3em;
     position: absolute; top: var(--gap); right: var(--gap); width: 23.75em; font-size: 16px;
-    padding: 1em 1em .375em; background: rgba(11, 11, 13, .9); border: 1px solid var(--line); border-radius: 4px;
+    padding: 1em 1em .375em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
   .card.bottom { top: auto; bottom: var(--gap); }
@@ -52,9 +52,9 @@
   .tag { font: 500 .6875em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: .45em .6em; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
   .tag:empty { display: none; }
 
-  .row.now { background: var(--soft); border-left-color: var(--lime); }
-  .row.now .num { color: var(--lime); }
-  .row.now .tag { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  .row.now { background: var(--power); border-left-color: var(--power); color: var(--bg); }
+  .row.now .num, .row.now .note { color: var(--bg); }
+  .row.now .tag { background: var(--bg); border-color: var(--bg); color: var(--ink); }
   .row.done .name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
   .row.done .num { color: var(--green); }
 
@@ -62,15 +62,18 @@
   .focus { display: none; }
   .card.compact .list { display: none; }
   .card.compact .focus { display: block; }
-  .slot { padding: .75em .625em .8125em .6875em; border-top: 1px solid var(--line); border-left: 3px solid transparent; }
-  .slot.now { background: var(--soft); border-left-color: var(--lime); }
-  .slot.end { border-left-color: var(--green); }
-  .slot .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: .375em; }
-  .slot .label { font: 500 .6875em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .slot.now .label { color: var(--lime); }
-  .slot.end .label { color: var(--green); }
-  .slot .big { display: block; font: 400 2em/1.02 var(--display); letter-spacing: -.01em; }
-  .slot.next .big, .slot.end .big { font-size: 1.5em; }
+  /* The card is always the same size: two slots of fixed height, names on one line (cut off with "…" if too long),
+     the note sits on the label line, and an empty slot keeps its space with a muted text. */
+  .slot { padding: .625em .625em .6875em .6875em; border-top: 1px solid var(--line); border-left: 3px solid transparent; transition: background .4s ease, border-color .4s ease; }
+  .slot.live { background: var(--power); border-left-color: var(--power); color: var(--bg); }
+  .slot .label-row { display: flex; align-items: center; gap: .75em; min-height: 1.2em; margin-bottom: .25em; }
+  .slot .label { flex: none; font: 500 .6875em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .slot .note { display: block; flex: 1 1 auto; min-width: 0; margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .slot .tag { flex: none; padding: .25em .5em; }
+  .slot.live .label, .slot.live .note { color: var(--bg); }
+  .slot .big { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 400 1.875em/1.15 var(--display); letter-spacing: -.01em; }
+  .slot.next .big { font-size: 1.375em; }
+  .slot.idle .big { color: var(--muted); }
   .swap { animation: swap .5s ease; }
   @keyframes swap { from { opacity: 0; } to { opacity: 1; } }
 </style>
@@ -82,19 +85,13 @@
   <h1 class="title" id="title"></h1>
   <ol class="list" id="list"></ol>
   <div class="focus">
-    <div class="slot now" id="slot-now" hidden>
-      <div class="label-row"><span class="label">Lige nu</span></div>
+    <div class="slot now idle" id="slot-now">
+      <div class="label-row"><span class="label">Lige nu</span><span class="note" id="now-note"></span></div>
       <span class="big" id="now-name"></span>
-      <span class="note" id="now-note"></span>
     </div>
-    <div class="slot next" id="slot-next" hidden>
-      <div class="label-row"><span class="label" id="next-label"></span><span class="tag" id="next-tag"></span></div>
+    <div class="slot next idle" id="slot-next">
+      <div class="label-row"><span class="label" id="next-label"></span><span class="note" id="next-note"></span><span class="tag" id="next-tag"></span></div>
       <span class="big" id="next-name"></span>
-      <span class="note" id="next-note"></span>
-    </div>
-    <div class="slot end" id="slot-end" hidden>
-      <div class="label-row"><span class="label">Planen er færdig</span></div>
-      <span class="big">Alt er klaret</span>
     </div>
   </div>
 </div>
@@ -135,16 +132,16 @@
     var nextAt = all.findIndex(function (item, i) { return i > nowAt && item.status === 'todo'; });
     if (nextAt === -1) nextAt = all.findIndex(function (item) { return item.status === 'todo'; });
     var now = all[nowAt], next = all[nextAt];
-    $('slot-now').hidden = !now;
-    if (now) { swapText($('now-name'), now.title); swapText($('now-note'), now.note || ''); }
-    $('slot-next').hidden = !next;
-    if (next) {
-      swapText($('next-label'), nowAt === -1 && done === 0 ? 'Første stop' : 'Næste stop');
-      swapText($('next-name'), next.title);
-      swapText($('next-note'), next.note || '');
-      $('next-tag').textContent = next.maybe && showMaybe ? 'Måske' : '';
-    }
-    $('slot-end').hidden = Boolean(now || next);
+    // Both slots are always there, so the card never changes size; an empty one says why in a muted text.
+    $('slot-now').classList.toggle('live', Boolean(now));
+    $('slot-now').classList.toggle('idle', !now);
+    swapText($('now-name'), now ? now.title : done === 0 ? 'Ikke startet endnu' : next ? 'Intet i gang' : 'Alt er klaret');
+    swapText($('now-note'), now ? now.note || '' : '');
+    $('slot-next').classList.toggle('idle', !next);
+    swapText($('next-label'), nowAt === -1 && done === 0 ? 'Første stop' : 'Næste stop');
+    swapText($('next-name'), next ? next.title : 'Ingen flere stop');
+    swapText($('next-note'), next ? next.note || '' : '');
+    $('next-tag').textContent = next && next.maybe && showMaybe ? 'Måske' : '';
   }
 
   // One italic orange word in the headline: the "&" between two names, otherwise the last word.
