@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gæster — Kontrolpanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --raised: #1d1d21;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --lime: #c9f36b;
+    --green: #72c99b;
+    --soft: #192923;
+    --danger: #e0707a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 16px 72px; background: var(--bg); color: var(--ink); font: 400 15px/1.4 "Schibsted Grotesk", system-ui, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: var(--lime); }
+  [hidden] { display: none !important; }
+
+  .label { margin: 0 0 10px; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0 0 8px; font: 400 clamp(40px, 9vw, 56px)/.95 var(--display); letter-spacing: -.02em; }
+  h1 em { font-style: italic; color: var(--lime); }
+  .lede { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+  section { margin-bottom: 26px; }
+
+  input[type="text"], input[type="password"] {
+    width: 100%; min-width: 0; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); outline: none;
+  }
+  input[type="text"]:focus, input[type="password"]:focus { border-color: var(--green); }
+  button {
+    font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    padding: 10px 12px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  button:hover { border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  button.primary:hover { filter: brightness(1.06); }
+  button.danger:hover { color: var(--danger); border-color: var(--danger); }
+  button[aria-pressed="true"] { background: var(--soft); border-color: var(--green); color: var(--lime); }
+
+  .box { padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .line > input { flex: 1 1 200px; }
+  .stack { display: grid; gap: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button { padding: 8px 10px; }
+
+  .guests { display: grid; gap: 8px; }
+  .guest { display: grid; gap: 8px; padding: 12px; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 4px; }
+  .guest.here { border-left-color: var(--lime); background: var(--soft); }
+  .top { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+  .top .toggle { min-width: 112px; padding: 14px 12px; }
+  .more { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .more .role-input { flex: 1 1 160px; }
+  .more input { padding: 8px 10px; font-size: 13px; }
+  .more button { padding: 8px 10px; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatches button { display: inline-flex; align-items: center; gap: 8px; }
+  .swatches i { display: block; width: 12px; height: 12px; border-radius: 2px; }
+
+  .status { min-height: 1.2em; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .status.error { color: var(--danger); }
+  .empty { padding: 18px; color: var(--muted); text-align: center; border: 1px dashed var(--line); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="label">Dreamglow · Overlay</p>
+    <h1>Gæster <em>i studiet</em></h1>
+    <p class="lede">Skriv en gæst ind én gang, og tryk <b>I studiet</b>, når vedkommende er i lokalet. Så vises navn og titel med det samme på <a href="/gaester/" target="_blank">overlayet</a>. Adressen skal i OBS som browser source (1920 × 1080).</p>
+  </header>
+
+  <section id="auth" hidden>
+    <p class="label">Adgangskode</p>
+    <div class="box">
+      <div class="line">
+        <input type="password" id="token" placeholder="Adgangskode" autocomplete="off">
+        <button class="primary" id="save-token">Gem</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Tilføj gæst</p>
+    <form class="box stack" id="quick" autocomplete="off">
+      <input type="text" id="q-name" placeholder="Navn" maxlength="40" enterkeyhint="next">
+      <input type="text" id="q-role" placeholder="Titel, fx Producer" maxlength="50" enterkeyhint="done">
+      <div class="chips" id="chips"></div>
+      <div class="line">
+        <button type="submit" class="primary">Tilføj og vis nu</button>
+        <button type="button" id="add-later">Tilføj uden at vise</button>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <p class="label" id="guests-label">Gæster</p>
+    <div class="guests" id="guests"></div>
+    <div class="line" style="margin-top:10px">
+      <button type="button" class="danger" id="everyone-out">Send alle ud af studiet</button>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Farve</p>
+    <div class="swatches" id="accents"></div>
+  </section>
+
+  <section>
+    <p class="label">Lille overskrift på overlayet</p>
+    <div class="box">
+      <div class="line">
+        <input type="text" id="plan-kicker" placeholder="Fx I studiet nu" maxlength="30">
+        <button id="save-plan">Gem</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="status" id="status" role="status"></div>
+</div>
+
+<script>
+(function () {
+  var API = '/gaester/api';
+  var TOKEN_KEY = 'gaester-control-token';
+  var ROLES = ['Producer', 'Musiker', 'Vokalist', 'Sangskriver', 'Tekstforfatter', 'Rapper', 'DJ', 'Mixer', 'Fotograf', 'Manager'];
+  var state = null;
+  var pending = null; // a state that arrived while a field was being edited or a button pressed
+  var holding = false; // a pointer is down: rebuilding the list now would swallow the click
+  var rejected = false; // the server turned the saved password down
+  var $ = function (id) { return document.getElementById(id); };
+  var guestsEl = $('guests');
+  var statusEl = $('status');
+
+  function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  function setToken(value) { try { localStorage.setItem(TOKEN_KEY, value); } catch (e) {} }
+
+  function say(message, isError) {
+    statusEl.textContent = message;
+    statusEl.className = 'status' + (isError ? ' error' : '');
+    if (message && !isError) setTimeout(function () { if (statusEl.textContent === message) statusEl.textContent = ''; }, 2500);
+  }
+
+  function call(path, method, body) {
+    var headers = { 'x-gaester-key': getToken() };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    return fetch(API + path, { method: method, headers: headers, body: body === undefined ? undefined : JSON.stringify(body) }).then(function (r) {
+      if (r.status === 401) { rejected = true; $('auth').hidden = false; say('Forkert eller manglende adgangskode.', true); throw new Error('unauthorized'); }
+      return r.json().then(function (data) {
+        if (!r.ok) { say(data.error || 'Noget gik galt — prøv igen.', true); throw new Error('failed'); }
+        rejected = false;
+        return data;
+      });
+    });
+  }
+  function act(path, method, body) { return call(path, method, body).then(render).catch(function () {}); }
+
+  function el(tag, props, children) {
+    var node = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (key) {
+      if (key === 'text') node.textContent = props[key];
+      else if (key === 'on') Object.keys(props.on).forEach(function (type) { node.addEventListener(type, props.on[type]); });
+      else if (key in node) node[key] = props[key];
+      else node.setAttribute(key, props[key]);
+    });
+    (children || []).forEach(function (child) { node.appendChild(child); });
+    return node;
+  }
+
+  function moveGuest(id, by) {
+    var ids = state.guests.map(function (guest) { return guest.id; });
+    var at = ids.indexOf(id), to = at + by;
+    if (at === -1 || to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(at, 1)[0]);
+    act('/order', 'PUT', { ids: ids });
+  }
+
+  function guestRow(guest, index, count) {
+    var patch = function (data) { return act('/guests/' + encodeURIComponent(guest.id), 'PATCH', data); };
+    var nameInput = el('input', { type: 'text', value: guest.name, maxLength: 40, 'aria-label': 'Navn', on: { change: function () { if (nameInput.value.trim()) patch({ name: nameInput.value }); else nameInput.value = guest.name; } } });
+    var roleInput = el('input', { type: 'text', className: 'role-input', value: guest.role, maxLength: 50, placeholder: 'Titel', 'aria-label': 'Titel', on: { change: function () { patch({ role: roleInput.value }); } } });
+    var toggle = el('button', { type: 'button', className: 'toggle', text: guest.here ? 'I studiet' : 'Ude', 'aria-pressed': String(guest.here), title: guest.here ? 'Tryk for at sende ud af studiet' : 'Tryk for at vise på overlayet', on: { click: function () { patch({ here: !guest.here }); } } });
+    return el('div', { className: 'guest' + (guest.here ? ' here' : '') }, [
+      el('div', { className: 'top' }, [toggle, nameInput]),
+      el('div', { className: 'more' }, [
+        roleInput,
+        el('button', { type: 'button', text: '↑', title: 'Op', disabled: index === 0, on: { click: function () { moveGuest(guest.id, -1); } } }),
+        el('button', { type: 'button', text: '↓', title: 'Ned', disabled: index === count - 1, on: { click: function () { moveGuest(guest.id, 1); } } }),
+        el('button', { type: 'button', className: 'danger', text: 'Slet', on: { click: function () { if (confirm('Fjern ' + guest.name + ' fra listen?')) act('/guests/' + encodeURIComponent(guest.id), 'DELETE'); } } })
+      ])
+    ]);
+  }
+
+  function render(next) {
+    if (!next) return;
+    // Don't rebuild the list under someone who is typing or pressing; it is drawn when they are done.
+    if (holding || (guestsEl.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) { pending = next; return; }
+    pending = null;
+    state = next;
+    $('auth').hidden = !state.passwordRequired || (Boolean(getToken()) && !rejected);
+    var here = state.guests.filter(function (guest) { return guest.here; }).length;
+    $('guests-label').textContent = 'Gæster · ' + here + ' i studiet nu af ' + state.guests.length;
+    guestsEl.textContent = '';
+    if (!state.guests.length) guestsEl.appendChild(el('div', { className: 'empty', text: 'Ingen gæster endnu. Skriv den første ovenfor.' }));
+    state.guests.forEach(function (guest, index) { guestsEl.appendChild(guestRow(guest, index, state.guests.length)); });
+    document.querySelectorAll('#accents button').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.accent === state.plan.accent));
+    });
+    if (document.activeElement !== $('plan-kicker')) $('plan-kicker').value = state.plan.kicker;
+  }
+
+  guestsEl.addEventListener('focusout', function () {
+    setTimeout(function () { if (pending) render(pending); }, 0);
+  });
+  document.addEventListener('pointerdown', function () { holding = true; });
+  ['pointerup', 'pointercancel'].forEach(function (type) {
+    document.addEventListener(type, function () { setTimeout(function () { holding = false; if (pending) render(pending); }, 60); });
+  });
+
+  // Add a guest. "Tilføj og vis nu" shows them on the overlay straight away; the other one only puts them on the list.
+  function add(here) {
+    var name = $('q-name').value.trim();
+    if (!name) { $('q-name').focus(); return; }
+    call('/guests', 'POST', { name: name, role: $('q-role').value, here: here }).then(function (data) {
+      $('q-name').value = '';
+      $('q-role').value = '';
+      $('q-name').focus();
+      render(data);
+    }).catch(function () {});
+  }
+  $('quick').addEventListener('submit', function (event) { event.preventDefault(); add(true); });
+  $('add-later').addEventListener('click', function () { add(false); });
+  ROLES.forEach(function (role) {
+    $('chips').appendChild(el('button', { type: 'button', text: role, on: { click: function () { $('q-role').value = role; } } }));
+  });
+
+  $('everyone-out').addEventListener('click', function () { if (confirm('Send alle gæster ud af studiet?')) act('/everyone-out', 'POST'); });
+  $('save-plan').addEventListener('click', function () { act('/plan', 'PATCH', { kicker: $('plan-kicker').value }); });
+
+  // The colour on the overlay. The overlay has the colours themselves; here they are only the small squares.
+  [['lime', 'Lime', '#c9f36b'], ['mint', 'Mint', '#72c99b'], ['blue', 'Isblå', '#5cc8ff'], ['violet', 'Violet', '#a78bfa'],
+   ['yellow', 'Gul', '#ffd23f'], ['pink', 'Rosa', '#ff6b9a'], ['white', 'Hvid', '#ededed'], ['orange', 'Orange', '#ff4c02']].forEach(function (accent) {
+    $('accents').appendChild(el('button', { type: 'button', 'data-accent': accent[0], 'aria-pressed': 'false', on: { click: function () { act('/plan', 'PATCH', { accent: accent[0] }); } } },
+      [el('i', { style: 'background:' + accent[2] }), el('span', { text: accent[1] })]));
+  });
+
+  $('token').value = getToken();
+  $('save-token').addEventListener('click', function () {
+    setToken($('token').value.trim());
+    call('/login', 'POST', {}).then(function () { say('Koden virker og er gemt på denne enhed.'); $('auth').hidden = true; }).catch(function () {});
+  });
+  $('token').addEventListener('keydown', function (event) { if (event.key === 'Enter') $('save-token').click(); });
+
+  fetch(API + '/state').then(function (r) { return r.json(); }).then(render).catch(function () { say('Kunne ikke hente listen.', true); });
+  var events = new EventSource(API + '/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) {} };
+})();
+</script>
+</body>
+</html>

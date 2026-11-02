@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>Gæster — Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --bg: #0b0b0d;
+    --ink: #ededed;
+    --muted: #b8b8c1; /* the small texts: light enough to read on a bright stream */
+    --line: #2b2b31;
+    /* The colour of the stripe, the titles and the highlight when someone arrives: lime unless the panel picks another. */
+    --now: #c9f36b;
+    --now-soft: #192923;
+  }
+  * { box-sizing: border-box; }
+  /* The page fills whatever size the browser source has and the card sits in one corner of it (?corner=, default top-left).
+     Everything inside the card is sized in em from the card's font size, so ?scale= makes the whole card bigger or smaller. */
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; color: var(--ink); }
+
+  .card {
+    --gap: 3em;
+    position: absolute; top: var(--gap); left: var(--gap); width: 21em; font-size: 16px;
+    padding: 1em 1em .375em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
+    opacity: 0; transition: opacity .4s ease;
+  }
+  /* The colours the panel can pick ("lime" is the default above). */
+  .card[data-accent="mint"] { --now: #72c99b; --now-soft: rgba(114, 201, 155, .2); }
+  .card[data-accent="blue"] { --now: #5cc8ff; --now-soft: rgba(92, 200, 255, .2); }
+  .card[data-accent="violet"] { --now: #a78bfa; --now-soft: rgba(167, 139, 250, .22); }
+  .card[data-accent="yellow"] { --now: #ffd23f; --now-soft: rgba(255, 210, 63, .17); }
+  .card[data-accent="pink"] { --now: #ff6b9a; --now-soft: rgba(255, 107, 154, .2); }
+  .card[data-accent="white"] { --now: #ededed; --now-soft: rgba(255, 255, 255, .1); }
+  .card[data-accent="orange"] { --now: #ff4c02; --now-soft: rgba(255, 138, 61, .3); }
+  .card.bottom { top: auto; bottom: var(--gap); }
+  .card.right { left: auto; right: var(--gap); }
+  .card.on { opacity: 1; }
+
+  .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .75em; font: 500 .75em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+  .list { margin: 0; padding: 0; list-style: none; }
+  .guest { padding: .625em .75em .6875em .6875em; border-top: 1px solid var(--line); border-left: 3px solid var(--now); transition: opacity .4s ease; }
+  .guest.enter { opacity: 0; }
+  /* Someone who has just come into the studio is lit up for a few seconds. */
+  .guest.fresh { animation: arrive 9s ease-out; }
+  @keyframes arrive { 0%, 75% { background: var(--now-soft); } 100% { background: transparent; } }
+  .name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 400 1.625em/1.15 var(--display); letter-spacing: -.01em; }
+  .role { display: block; margin-top: .3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 500 .6875em/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--now); }
+  .role:empty { display: none; }
+  .more { padding: .75em .6875em .6875em; border-top: 1px solid var(--line); font: 500 .75em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="head"><span id="kicker"></span><span id="count"></span></div>
+  <ol class="list" id="list"></ol>
+  <div class="more" id="more" hidden></div>
+</div>
+
+<script>
+(function () {
+  var MAX_ROWS = 8; // more than that and the card would grow too tall: the rest become "+ N flere"
+  var $ = function (id) { return document.getElementById(id); };
+  var card = $('card'), list = $('list');
+  var rows = {};
+  var known = null; // who was in the studio at the last drawing; null until the first one, so nobody lights up just because the page was opened
+
+  // The card sits top left, 48px in from the edges, and is moved in OBS. The OBS address can also set the corner
+  // (?corner=top-right, bottom-right or bottom-left) and the size (?scale=0.5 to 3).
+  var params = new URLSearchParams(location.search);
+  var corner = String(params.get('corner') || 'top-left').split('-');
+  card.classList.toggle('bottom', corner[0] === 'bottom');
+  card.classList.toggle('right', corner[1] === 'right');
+  var scale = parseFloat(params.get('scale'));
+  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 16 * scale + 'px';
+
+  function makeRow() {
+    var li = document.createElement('li');
+    li.className = 'guest enter';
+    li.innerHTML = '<span class="name"></span><span class="role"></span>';
+    return li;
+  }
+
+  function render(state) {
+    var plan = state.plan || {};
+    var here = (state.guests || []).filter(function (guest) { return guest.here; });
+    var shown = here.slice(0, MAX_ROWS);
+
+    card.dataset.accent = plan.accent || 'lime';
+    $('kicker').textContent = plan.kicker || '';
+    $('count').textContent = here.length ? String(here.length) : '';
+
+    var seen = {};
+    shown.forEach(function (guest, i) {
+      var li = rows[guest.id];
+      if (!li) {
+        li = rows[guest.id] = makeRow();
+        if (known && !known[guest.id]) li.classList.add('fresh');
+        list.appendChild(li);
+        requestAnimationFrame(function () { requestAnimationFrame(function () { li.classList.remove('enter'); }); });
+      }
+      li.querySelector('.name').textContent = guest.name;
+      li.querySelector('.role').textContent = guest.role || '';
+      // Only move a row when it is in the wrong place.
+      if (list.children[i] !== li) list.insertBefore(li, list.children[i] || null);
+      seen[guest.id] = true;
+    });
+    Object.keys(rows).forEach(function (id) {
+      if (!seen[id]) { rows[id].remove(); delete rows[id]; }
+    });
+
+    var extra = here.length - shown.length;
+    $('more').hidden = extra <= 0;
+    $('more').textContent = extra > 0 ? '+ ' + extra + ' flere' : '';
+
+    known = {};
+    here.forEach(function (guest) { known[guest.id] = true; });
+    card.classList.toggle('on', here.length > 0);
+  }
+
+  fetch('/gaester/api/state').then(function (r) { return r.json(); }).then(render).catch(function () {});
+  var events = new EventSource('/gaester/api/events');
+  events.onmessage = function (event) {
+    try { render(JSON.parse(event.data)); } catch (e) {}
+  };
+})();
+</script>
+
+</body>
+</html>
