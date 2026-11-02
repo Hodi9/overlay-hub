@@ -5,13 +5,17 @@ export const MAX_ITEMS = 40;
 
 const clip = (value, max) => String(value ?? "").trim().slice(0, max);
 
-export const DEFAULT_PLAN = { kicker: "Plan for London", title: "Aggo & Lucas" };
+// "list" shows the whole plan; "compact" shows only what is happening now and the next stop.
+export const VIEWS = ["list", "compact"];
+
+export const DEFAULT_PLAN = { kicker: "Plan for London", title: "POWER TRIP: Aggo & Lucas", view: "list" };
 
 export function cleanPlan(input, existing = DEFAULT_PLAN) {
   const title = typeof input?.title === "string" ? clip(input.title, 40) : "";
   return {
     kicker: typeof input?.kicker === "string" ? clip(input.kicker, 30) : existing.kicker,
-    title: title || existing.title
+    title: title || existing.title,
+    view: VIEWS.includes(input?.view) ? input.view : existing.view
   };
 }
 

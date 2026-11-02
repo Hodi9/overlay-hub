@@ -17,6 +17,7 @@
     --lime: #c9f36b;
     --green: #72c99b;
     --soft: #192923;
+    --power: #ff4c02; /* the orange of the Power logo */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; color: var(--ink); }
@@ -30,7 +31,7 @@
 
   .head { display: flex; justify-content: space-between; align-items: baseline; font: 500 13px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .title { margin: 12px 0 20px; font: 400 60px/.95 var(--display); letter-spacing: -.02em; }
-  .title em { font-style: italic; color: var(--lime); }
+  .title em { font-style: italic; color: var(--power); }
 
   .list { margin: 0; padding: 0; list-style: none; }
   .row {
@@ -52,9 +53,21 @@
   .row.done .name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
   .row.done .num { color: var(--green); }
 
-  .sponsor { display: flex; justify-content: space-between; align-items: center; margin-top: 0; padding: 14px 12px 12px 13px; border-top: 1px solid var(--line); }
-  .sponsor span { font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .sponsor img { display: block; height: 48px; width: auto; }
+  /* Compact view: only what is happening now, and the next stop. */
+  .focus { display: none; }
+  .card.compact .list { display: none; }
+  .card.compact .focus { display: block; }
+  .slot { padding: 16px 12px 18px 13px; border-top: 1px solid var(--line); border-left: 3px solid transparent; }
+  .slot.now { background: var(--soft); border-left-color: var(--lime); }
+  .slot.end { border-left-color: var(--green); }
+  .slot .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .slot .label { font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .slot.now .label { color: var(--lime); }
+  .slot.end .label { color: var(--green); }
+  .slot .big { display: block; font: 400 46px/1.02 var(--display); letter-spacing: -.01em; }
+  .slot.next .big, .slot.end .big { font-size: 34px; }
+  .swap { animation: swap .5s ease; }
+  @keyframes swap { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -63,7 +76,22 @@
   <div class="head"><span id="kicker"></span><span id="count"></span></div>
   <h1 class="title" id="title"></h1>
   <ol class="list" id="list"></ol>
-  <div class="sponsor"><span>Sponsoreret af</span><img src="power.png" alt="Power"></div>
+  <div class="focus">
+    <div class="slot now" id="slot-now" hidden>
+      <div class="label-row"><span class="label">Lige nu</span></div>
+      <span class="big" id="now-name"></span>
+      <span class="note" id="now-note"></span>
+    </div>
+    <div class="slot next" id="slot-next" hidden>
+      <div class="label-row"><span class="label" id="next-label"></span><span class="tag" id="next-tag"></span></div>
+      <span class="big" id="next-name"></span>
+      <span class="note" id="next-note"></span>
+    </div>
+    <div class="slot end" id="slot-end" hidden>
+      <div class="label-row"><span class="label">Planen er færdig</span></div>
+      <span class="big">Alt er klaret</span>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -75,14 +103,50 @@
   var titleEl = document.getElementById('title');
   var list = document.getElementById('list');
   var rows = {};
+  var $ = function (id) { return document.getElementById(id); };
 
-  // One italic green word in the headline: the "&" between two names, otherwise the last word.
+  // Text that fades in when it changes, so the compact view does not just snap from one stop to the next.
+  function swapText(el, text) {
+    if (el.textContent === text) return;
+    el.textContent = text;
+    el.classList.remove('swap');
+    void el.offsetWidth;
+    el.classList.add('swap');
+  }
+
+  // Compact view. The next stop is the same pick as "Færdig · start næste" in the panel (advance() in state.js):
+  // the next open thing after what is running now, otherwise the first open one.
+  function renderFocus(all, done) {
+    var nowAt = all.findIndex(function (item) { return item.status === 'now'; });
+    var nextAt = all.findIndex(function (item, i) { return i > nowAt && item.status === 'todo'; });
+    if (nextAt === -1) nextAt = all.findIndex(function (item) { return item.status === 'todo'; });
+    var now = all[nowAt], next = all[nextAt];
+    $('slot-now').hidden = !now;
+    if (now) { swapText($('now-name'), now.title); swapText($('now-note'), now.note || ''); }
+    $('slot-next').hidden = !next;
+    if (next) {
+      swapText($('next-label'), nowAt === -1 && done === 0 ? 'Første stop' : 'Næste stop');
+      swapText($('next-name'), next.title);
+      swapText($('next-note'), next.note || '');
+      $('next-tag').textContent = next.maybe ? 'Måske' : '';
+    }
+    $('slot-end').hidden = Boolean(now || next);
+  }
+
+  // One italic orange word in the headline: the "&" between two names, otherwise the last word.
+  // What stands before a colon ("POWER TRIP: Aggo & Lucas") gets a line of its own.
   function setTitle(text) {
+    titleEl.textContent = '';
+    var colon = text.indexOf(': ');
+    if (colon > 0) {
+      titleEl.appendChild(document.createTextNode(text.slice(0, colon + 1)));
+      titleEl.appendChild(document.createElement('br'));
+      text = text.slice(colon + 2);
+    }
     var head = '', accent = text, tail = '';
     var amp = text.indexOf(' & ');
     if (amp !== -1) { head = text.slice(0, amp + 1); accent = '&'; tail = text.slice(amp + 2); }
     else if (text.lastIndexOf(' ') !== -1) { head = text.slice(0, text.lastIndexOf(' ') + 1); accent = text.slice(text.lastIndexOf(' ') + 1); }
-    titleEl.textContent = '';
     if (head) titleEl.appendChild(document.createTextNode(head));
     var em = document.createElement('em');
     em.textContent = accent;
@@ -135,6 +199,8 @@
       if (!seen[id]) { rows[id].remove(); delete rows[id]; }
     });
 
+    card.classList.toggle('compact', plan.view === 'compact');
+    renderFocus(all, done);
     card.classList.toggle('on', shown.length > 0);
   }
 
