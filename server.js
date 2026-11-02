@@ -7,7 +7,6 @@ import pg from "pg";
 import brovsbroModule from "./apps/brovsbro/app.cjs";
 import brosvsbrosModule from "./apps/brosvsbros/app.cjs";
 import { createMinecraftApp } from "./apps/minecraft/app.js";
-import { createGearApp } from "./apps/gear/app.js";
 import { createGearBfApp } from "./apps/gear-bf/app.js";
 import { createGauntletApp } from "./apps/gauntlet/app.js";
 import { createTlou2App } from "./apps/tlou2/app.js";
@@ -94,7 +93,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
 // Adds ?profile=<channel> to a channel page's own requests and sends its key along (public/_hub/channel.js).
 const CHANNEL_SHIM_TAG = '<script src="/_hub/channel.js"></script>';
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -155,7 +154,6 @@ app.use("/minecraft", createTenantDispatcher({
   legacy: createMinecraftApp({ pool }),
   factory: (context) => createMinecraftApp(context)
 }));
-app.use("/gear", createGearApp());
 app.use("/gear-bf", createGearBfApp());
 app.use("/gauntlet", createTenantDispatcher({
   registry: channels, pool,
