@@ -20,31 +20,36 @@
     --power: #ff4c02; /* the orange of the Power logo */
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; color: var(--ink); }
+  /* The page fills whatever size the browser source has and the card sits in one corner of it (?corner=, default bottom-right).
+     Everything inside the card is sized in em from the card's font size, so ?scale= makes the whole card bigger or smaller. */
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; color: var(--ink); }
 
   .card {
-    position: absolute; left: 48px; top: 48px; width: 560px;
-    padding: 24px 24px 10px; background: rgba(11, 11, 13, .9); border: 1px solid var(--line); border-radius: 4px;
+    --gap: 1.25em;
+    position: absolute; top: var(--gap); right: var(--gap); width: 23.75em; font-size: 16px;
+    padding: 1em 1em .375em; background: rgba(11, 11, 13, .9); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
+  .card.bottom { top: auto; bottom: var(--gap); }
+  .card.left { right: auto; left: var(--gap); }
   .card.on { opacity: 1; }
 
-  .head { display: flex; justify-content: space-between; align-items: baseline; font: 500 13px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .title { margin: 12px 0 20px; font: 400 54px/.95 var(--display); letter-spacing: -.02em; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; font: 500 .75em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .title { margin: .25em 0 .35em; font: 400 2.125em/.95 var(--display); letter-spacing: -.02em; }
   .title em { font-style: italic; color: var(--power); }
 
   .list { margin: 0; padding: 0; list-style: none; }
   .row {
-    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px;
-    padding: 13px 12px 13px 10px; border-top: 1px solid var(--line); border-left: 3px solid transparent;
+    display: grid; grid-template-columns: 1.625em 1fr auto; align-items: center; gap: .625em;
+    padding: .5625em .5em; border-top: 1px solid var(--line); border-left: 3px solid transparent;
     transition: background .4s ease, border-color .4s ease, opacity .4s ease;
   }
   .row.enter { opacity: 0; }
-  .num { font: 500 13px/1 var(--mono); letter-spacing: .04em; color: var(--muted); transition: color .4s ease; }
-  .name { display: block; font: 400 32px/1.05 var(--display); letter-spacing: -.005em; transition: color .4s ease; }
-  .note { display: block; margin-top: 6px; font: 500 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .num { font: 500 .75em/1 var(--mono); letter-spacing: .04em; color: var(--muted); transition: color .4s ease; }
+  .name { display: block; font: 400 1.5em/1.05 var(--display); letter-spacing: -.005em; transition: color .4s ease; }
+  .note { display: block; margin-top: .4em; font: 500 .6875em/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
   .note:empty { display: none; }
-  .tag { font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+  .tag { font: 500 .6875em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: .45em .6em; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
   .tag:empty { display: none; }
 
   .row.now { background: var(--soft); border-left-color: var(--lime); }
@@ -57,15 +62,15 @@
   .focus { display: none; }
   .card.compact .list { display: none; }
   .card.compact .focus { display: block; }
-  .slot { padding: 16px 12px 18px 13px; border-top: 1px solid var(--line); border-left: 3px solid transparent; }
+  .slot { padding: .75em .625em .8125em .6875em; border-top: 1px solid var(--line); border-left: 3px solid transparent; }
   .slot.now { background: var(--soft); border-left-color: var(--lime); }
   .slot.end { border-left-color: var(--green); }
-  .slot .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .slot .label { font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .slot .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: .375em; }
+  .slot .label { font: 500 .6875em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .slot.now .label { color: var(--lime); }
   .slot.end .label { color: var(--green); }
-  .slot .big { display: block; font: 400 46px/1.02 var(--display); letter-spacing: -.01em; }
-  .slot.next .big, .slot.end .big { font-size: 34px; }
+  .slot .big { display: block; font: 400 2em/1.02 var(--display); letter-spacing: -.01em; }
+  .slot.next .big, .slot.end .big { font-size: 1.5em; }
   .swap { animation: swap .5s ease; }
   @keyframes swap { from { opacity: 0; } to { opacity: 1; } }
 </style>
@@ -104,6 +109,15 @@
   var list = document.getElementById('list');
   var rows = {};
   var $ = function (id) { return document.getElementById(id); };
+
+  // Where the card sits and how big it is, set in the OBS address: ?corner=bottom-right (the default), top-right, top-left
+  // or bottom-left, and ?scale=0.5 to 3 for a smaller or bigger card.
+  var params = new URLSearchParams(location.search);
+  var corner = String(params.get('corner') || 'bottom-right').split('-');
+  card.classList.toggle('bottom', corner[0] === 'bottom');
+  card.classList.toggle('left', corner[1] === 'left');
+  var scale = parseFloat(params.get('scale'));
+  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 16 * scale + 'px';
 
   // Text that fades in when it changes, so the compact view does not just snap from one stop to the next.
   function swapText(el, text) {
