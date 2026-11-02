@@ -51,6 +51,13 @@
   .state.running { color: var(--ink); }
   .state.running::before { background: var(--a1); }
 
+  /* What just counted up the timer ("+5 gifted"): a small chip in the top line, in the place of the state, for a few seconds. */
+  .status-cell { display: grid; justify-items: end; align-items: center; }
+  .status-cell > * { grid-area: 1 / 1; transition: opacity .3s; }
+  .chip { opacity: 0; padding: 3px 10px; border-radius: 2px; background: linear-gradient(100deg, var(--a1), var(--a2)); color: var(--on); font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .05em; white-space: nowrap; }
+  .head.alert .chip { opacity: 1; animation: chip-in .5s cubic-bezier(.2, .8, .2, 1); }
+  .head.alert .state { opacity: 0; }
+
   /* Fixed-width cells for the digits, so the clock does not jitter when 1 turns into 0. */
   .clock {
     display: flex; width: max-content; margin: 6px 0 4px -4px; font-family: var(--display); font-size: 132px; line-height: 1.02; white-space: nowrap;
@@ -102,13 +109,14 @@
   @keyframes bump { 0% { transform: scale(1); color: var(--a1); } 30% { transform: scale(1.14); color: var(--a1); } 100% { transform: scale(1); } }
   @keyframes sweep { 0% { transform: scaleX(0); opacity: 1; } 70% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
   @keyframes lift { 0% { filter: brightness(1.55); } 100% { filter: brightness(1); } }
+  @keyframes chip-in { 0% { transform: translateY(8px) scale(.92); } 100% { transform: none; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="stack" id="stack">
   <section class="card" id="timer-card">
-    <div class="head"><span class="label">Subathon</span><span class="label state" id="state">Not started</span></div>
+    <div class="head" id="timer-head"><span class="label">Subathon</span><span class="status-cell"><span class="label state" id="state">Not started</span><span class="chip" id="chip"></span></span></div>
     <div class="clock idle" id="clock" aria-live="off"></div>
     <div class="foot" id="foot">
       <div class="added"><span class="label">Added so far</span><b id="added">+0:00</b></div>
@@ -217,14 +225,22 @@
     return text + (entry.tier > 1 ? ' · Tier ' + entry.tier : '');
   }
 
+  // The short version for the chip above the timer: "+5 gifted", "+1 sub", "+1 resub" (and the tier, if it is not Tier 1).
+  function chipText(entry) {
+    var what = entry.kind === 'subgift' || entry.kind === 'submysterygift' ? 'gifted' : entry.kind === 'resub' ? 'resub' : 'sub';
+    return '+' + (entry.count || 1) + ' ' + what + (entry.tier > 1 ? ' · T' + entry.tier : '');
+  }
+
   function announce(entry) {
     $('ping-plus').textContent = entry.addedMs ? formatDelta(entry.addedMs) : '';
     $('ping-who').textContent = describe(entry);
+    $('chip').textContent = chipText(entry);
     foot.classList.add('alert');
+    $('timer-head').classList.add('alert');
     replay($('timer-card'), 'hit');
     replay(clock, 'lift');
     clearTimeout(pingTimer);
-    pingTimer = setTimeout(function () { foot.classList.remove('alert'); }, 6500);
+    pingTimer = setTimeout(function () { foot.classList.remove('alert'); $('timer-head').classList.remove('alert'); }, 6500);
   }
 
   function renderGoals(state) {
