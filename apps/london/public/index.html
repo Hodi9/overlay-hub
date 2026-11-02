@@ -23,14 +23,14 @@
   html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; color: var(--ink); }
 
   .card {
-    position: absolute; left: 48px; top: 48px; width: 480px;
+    position: absolute; left: 48px; top: 48px; width: 560px;
     padding: 24px 24px 10px; background: rgba(11, 11, 13, .9); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
   .card.on { opacity: 1; }
 
   .head { display: flex; justify-content: space-between; align-items: baseline; font: 500 13px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .title { margin: 12px 0 20px; font: 400 60px/.95 var(--display); letter-spacing: -.02em; }
+  .title { margin: 12px 0 20px; font: 400 54px/.95 var(--display); letter-spacing: -.02em; }
   .title em { font-style: italic; color: var(--power); }
 
   .list { margin: 0; padding: 0; list-style: none; }
@@ -134,15 +134,8 @@
   }
 
   // One italic orange word in the headline: the "&" between two names, otherwise the last word.
-  // What stands before a colon ("POWER TRIP: Aggo & Lucas") gets a line of its own.
   function setTitle(text) {
     titleEl.textContent = '';
-    var colon = text.indexOf(': ');
-    if (colon > 0) {
-      titleEl.appendChild(document.createTextNode(text.slice(0, colon + 1)));
-      titleEl.appendChild(document.createElement('br'));
-      text = text.slice(colon + 2);
-    }
     var head = '', accent = text, tail = '';
     var amp = text.indexOf(' & ');
     if (amp !== -1) { head = text.slice(0, amp + 1); accent = '&'; tail = text.slice(amp + 2); }
