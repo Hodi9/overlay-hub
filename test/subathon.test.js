@@ -542,6 +542,9 @@ describe("the subathon app", () => {
     assert.deepEqual([state.count - before.count, state.timer.remainingMs - before.timer.remainingMs], [11, 240_000]);
     state = await postOk("/simulate", { kind: "subgift", tier: 3 });
     assert.equal(state.timer.remainingMs - before.timer.remainingMs, 340_000);
+    state = await postOk("/simulate", { kind: "subgift", tier: 1, count: 10 }); // "Antal gaver" also sets how many single gifts
+    assert.deepEqual([state.count - before.count, state.timer.remainingMs - before.timer.remainingMs], [22, 540_000]);
+    assert.equal(state.events.filter((e) => e.kind === "subgift" && e.test).length, 11);
 
     state = await postOk("/undo-tests");
     assert.deepEqual([state.count, state.timer.remainingMs, state.timer.addedMs], [before.count, before.timer.remainingMs, before.timer.addedMs]);
@@ -550,6 +553,7 @@ describe("the subathon app", () => {
     assert.equal((await post("/simulate", { kind: "raid", tier: 1 })).status, 400);
     assert.equal((await post("/simulate", { kind: "sub", tier: 4 })).status, 400);
     assert.equal((await post("/simulate", { kind: "submysterygift", tier: 1, count: 101 })).status, 400);
+    assert.equal((await post("/simulate", { kind: "subgift", tier: 1, count: 51 })).status, 400);
   });
 
   test("changing the seconds per sub, the maximum and the start time", async () => {

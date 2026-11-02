@@ -300,22 +300,28 @@ export function createSubathonApp({ channels: hubChannels = null, pool = null, h
     if (!SIMULATED_KINDS.includes(kind) || ![1, 2, 3].includes(tier)) {
       throw new ValidationError("Ukendt type eller tier.");
     }
-    const count = kind === "submysterygift" ? Math.trunc(Number(request.body?.count ?? 5)) : 1;
-    if (!Number.isInteger(count) || count < 1 || count > 100) throw new ValidationError("Antal gaver skal være mellem 1 og 100.");
-    const testId = crypto.randomBytes(4).toString("hex"); // each test gift is its own gifter, so tests never merge
-    await applySub(key, {
-      id: null,
-      kind,
-      channel: twitchOf(key, slot.state) || "",
-      user: kind === "sub" || kind === "resub" ? "Test viewer" : "Test gifter",
-      login: `test-${testId}`,
-      anonymous: false,
-      tier,
-      prime: false,
-      count,
-      recipient: kind === "subgift" ? "Test recipient" : null,
-      giftKeys: kind === "subgift" || kind === "submysterygift" ? [`o:test-${testId}`] : []
-    }, { test: true });
+    // "Antal gaver" sets how many gifts the test stands for: one bulk gift of that size, or that many single gifts.
+    // Single gifts get a list entry each and "Fjern tests" can only take back what is still in the list, so they stop at its length.
+    const asked = kind === "submysterygift" || kind === "subgift" ? Number(request.body?.count ?? (kind === "subgift" ? 1 : 5)) : 1;
+    const count = Math.trunc(asked);
+    const most = kind === "subgift" ? LIMITS.events : 100;
+    if (!Number.isInteger(count) || count < 1 || count > most) throw new ValidationError(`Antal gaver skal være mellem 1 og ${most}.`);
+    for (let sent = 0; sent < (kind === "subgift" ? count : 1); sent++) {
+      const testId = crypto.randomBytes(4).toString("hex"); // each test gift is its own gifter, so tests never merge
+      await applySub(key, {
+        id: null,
+        kind,
+        channel: twitchOf(key, slot.state) || "",
+        user: kind === "sub" || kind === "resub" ? "Test viewer" : "Test gifter",
+        login: `test-${testId}`,
+        anonymous: false,
+        tier,
+        prime: false,
+        count: kind === "submysterygift" ? count : 1,
+        recipient: kind === "subgift" ? "Test recipient" : null,
+        giftKeys: kind === "subgift" || kind === "submysterygift" ? [`o:test-${testId}`] : []
+      }, { test: true });
+    }
     response.json(payload(key, slot));
   });
 
