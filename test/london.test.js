@@ -23,7 +23,7 @@ test("cleanItem ignores invalid fields and keeps the old title when the new one 
 });
 
 test("cleanPlan keeps the old headline when the new one is empty but lets the small text be cleared", () => {
-  assert.deepEqual(cleanPlan({ kicker: "", title: "  " }, { kicker: "A", title: "B", view: "list" }), { kicker: "", title: "B", view: "list" });
+  assert.deepEqual(cleanPlan({ kicker: "", title: "  " }, { kicker: "A", title: "B", view: "list", showMaybe: false }), { kicker: "", title: "B", view: "list", showMaybe: false });
   assert.equal(cleanPlan({ title: "Aggo & Lucas på tur" }).title, "Aggo & Lucas på tur");
 });
 
@@ -34,6 +34,16 @@ test("the overlay view is either just now and next or the whole list, and defaul
   assert.equal(cleanPlan({ title: "C" }, { kicker: "A", title: "B", view: "list" }).view, "list"); // saving the headline does not reset it
   assert.equal(restore({ plan: { view: "list" }, items: [] }).plan.view, "list");
   assert.equal(restore({ plan: { title: "Gemt" }, items: [] }).plan.view, "compact"); // state saved before the setting existed
+});
+
+test("the 'Måske' mark on the overlay is off unless it is switched on", () => {
+  const before = { kicker: "A", title: "B", view: "list", showMaybe: true };
+  assert.equal(cleanPlan({}).showMaybe, false);
+  assert.equal(cleanPlan({ showMaybe: true }).showMaybe, true);
+  assert.equal(cleanPlan({ showMaybe: "ja" }, before).showMaybe, true); // invalid value: the old one stays
+  assert.equal(cleanPlan({ title: "C" }, before).showMaybe, true); // saving the headline does not reset it
+  assert.equal(restore({ plan: { showMaybe: true }, items: [] }).plan.showMaybe, true);
+  assert.equal(restore({ plan: { title: "Gemt" }, items: [] }).plan.showMaybe, false); // state saved before the setting existed
 });
 
 test("only one thing is running now", () => {
@@ -145,6 +155,10 @@ test("adding, starting, finishing and removing through the API", async () => {
     const list = await (await send(`${base}/api/plan`, "PATCH", { view: "list" })).json();
     assert.deepEqual([list.plan.view, list.plan.title], ["list", "Lucas & Aggo"]);
     assert.equal((await (await send(`${base}/api/plan`, "PATCH", { view: "noget andet" })).json()).plan.view, "list");
+    assert.equal(list.plan.showMaybe, false);
+    const maybe = await (await send(`${base}/api/plan`, "PATCH", { showMaybe: true })).json();
+    assert.deepEqual([maybe.plan.showMaybe, maybe.plan.view], [true, "list"]);
+    assert.equal((await (await send(`${base}/api/plan`, "PATCH", { showMaybe: "ja" })).json()).plan.showMaybe, true);
     const reset = await (await send(`${base}/api/reset`, "POST")).json();
     assert.ok(reset.items.every((item) => item.status === "todo"));
     const removed = await (await send(`${base}/api/items/${reset.items[0].id}`, "DELETE")).json();

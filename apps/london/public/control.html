@@ -113,6 +113,9 @@
       <button type="button" data-view="list">Hele listen</button>
       <button type="button" data-view="compact">Kun nu + næste</button>
     </div>
+    <div class="line" style="margin-top:8px">
+      <button type="button" id="toggle-maybe" aria-pressed="false">Vis "Måske"-mærket</button>
+    </div>
   </section>
 
   <section>
@@ -219,7 +222,7 @@
       el('div', { className: 'top' }, [el('span', { className: 'num', text: String(index + 1).padStart(2, '0') }), titleInput]),
       el('div', { className: 'more' }, [
         el('div', { className: 'seg' }, [statusButton('todo', 'Kommer'), statusButton('now', 'Nu'), statusButton('done', 'Færdig')]),
-        el('button', { type: 'button', text: 'Måske', 'aria-pressed': String(item.maybe), title: 'Vis "Måske" på overlayet', on: { click: function () { patch({ maybe: !item.maybe }); } } }),
+        el('button', { type: 'button', text: 'Måske', 'aria-pressed': String(item.maybe), title: 'Marker som usikker. Mærket vises kun på overlayet, hvis "Vis Måske-mærket" er slået til', on: { click: function () { patch({ maybe: !item.maybe }); } } }),
         el('button', { type: 'button', text: 'Næste', title: 'Flyt til lige efter det, der sker nu', hidden: item.status === 'now', on: { click: function () { act('/items/' + encodeURIComponent(item.id) + '/next', 'POST'); } } })
       ]),
       el('div', { className: 'more' }, [
@@ -254,6 +257,7 @@
     document.querySelectorAll('#view button').forEach(function (button) {
       button.setAttribute('aria-pressed', String(button.dataset.view === state.plan.view));
     });
+    $('toggle-maybe').setAttribute('aria-pressed', String(state.plan.showMaybe === true));
     itemsEl.textContent = '';
     if (!state.items.length) itemsEl.appendChild(el('div', { className: 'empty', text: 'Ingen punkter endnu — skriv det første ovenfor.' }));
     state.items.forEach(function (item, index) { itemsEl.appendChild(itemRow(item, index, state.items.length)); });
@@ -288,6 +292,7 @@
   document.querySelectorAll('#view button').forEach(function (button) {
     button.addEventListener('click', function () { act('/plan', 'PATCH', { view: button.dataset.view }); });
   });
+  $('toggle-maybe').addEventListener('click', function () { act('/plan', 'PATCH', { showMaybe: !(state && state.plan.showMaybe) }); });
   $('save-plan').addEventListener('click', function () { act('/plan', 'PATCH', { kicker: $('plan-kicker').value, title: $('plan-title').value }); });
   $('reset').addEventListener('click', function () { if (confirm('Sæt alle punkter tilbage til "Kommer"?')) act('/reset', 'POST'); });
 

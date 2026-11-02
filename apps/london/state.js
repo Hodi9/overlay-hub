@@ -8,14 +8,16 @@ const clip = (value, max) => String(value ?? "").trim().slice(0, max);
 // "compact" shows only what is happening now and the next stop; "list" shows the whole plan.
 export const VIEWS = ["compact", "list"];
 
-export const DEFAULT_PLAN = { kicker: "Plan for London", title: "POWER TRIP Aggo & Lucas", view: "compact" };
+// showMaybe: whether the overlay marks the things that are not certain yet ("Måske"). Off by default.
+export const DEFAULT_PLAN = { kicker: "Plan for London", title: "POWER TRIP Aggo & Lucas", view: "compact", showMaybe: false };
 
 export function cleanPlan(input, existing = DEFAULT_PLAN) {
   const title = typeof input?.title === "string" ? clip(input.title, 40) : "";
   return {
     kicker: typeof input?.kicker === "string" ? clip(input.kicker, 30) : existing.kicker,
     title: title || existing.title,
-    view: VIEWS.includes(input?.view) ? input.view : existing.view
+    view: VIEWS.includes(input?.view) ? input.view : existing.view,
+    showMaybe: typeof input?.showMaybe === "boolean" ? input.showMaybe : existing.showMaybe
   };
 }
 

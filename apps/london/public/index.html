@@ -130,7 +130,7 @@
 
   // Compact view. The next stop is the same pick as "Færdig · start næste" in the panel (advance() in state.js):
   // the next open thing after what is running now, otherwise the first open one.
-  function renderFocus(all, done) {
+  function renderFocus(all, done, showMaybe) {
     var nowAt = all.findIndex(function (item) { return item.status === 'now'; });
     var nextAt = all.findIndex(function (item, i) { return i > nowAt && item.status === 'todo'; });
     if (nextAt === -1) nextAt = all.findIndex(function (item) { return item.status === 'todo'; });
@@ -142,7 +142,7 @@
       swapText($('next-label'), nowAt === -1 && done === 0 ? 'Første stop' : 'Næste stop');
       swapText($('next-name'), next.title);
       swapText($('next-note'), next.note || '');
-      $('next-tag').textContent = next.maybe ? 'Måske' : '';
+      $('next-tag').textContent = next.maybe && showMaybe ? 'Måske' : '';
     }
     $('slot-end').hidden = Boolean(now || next);
   }
@@ -197,7 +197,7 @@
       li.querySelector('.num').textContent = item.status === 'done' ? '✓' : (number.length < 2 ? '0' : '') + number;
       li.querySelector('.name').textContent = item.title;
       li.querySelector('.note').textContent = item.note || '';
-      li.querySelector('.tag').textContent = item.status === 'now' ? 'Nu' : item.status === 'done' ? 'Færdig' : item.maybe ? 'Måske' : '';
+      li.querySelector('.tag').textContent = item.status === 'now' ? 'Nu' : item.status === 'done' ? 'Færdig' : item.maybe && plan.showMaybe ? 'Måske' : '';
       // Only move a row when it is in the wrong place, so a row that just changed state keeps its transition.
       if (list.children[i] !== li) list.insertBefore(li, list.children[i] || null);
       seen[item.id] = true;
@@ -207,7 +207,7 @@
     });
 
     card.classList.toggle('compact', plan.view === 'compact');
-    renderFocus(all, done);
+    renderFocus(all, done, plan.showMaybe === true);
     card.classList.toggle('on', shown.length > 0);
   }
 
