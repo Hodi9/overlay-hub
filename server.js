@@ -22,6 +22,7 @@ import { createRdr2App } from "./apps/rdr2/app.js";
 import { createSubathonApp } from "./apps/subathon/app.js";
 import { createLetterboxdApp } from "./apps/letterboxd/app.js";
 import { createWalkApp } from "./apps/walk/app.js";
+import { walkMountPath } from "./apps/walk/path.js";
 import { createLondonApp } from "./apps/london/app.js";
 import { createGaesterApp } from "./apps/gaester/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
@@ -184,8 +185,8 @@ app.use("/gaester", createGaesterApp({ pool }));
 
 // Hidden walk-through-Denmark overlay (apps/walk). Same idea: not on the index page,
 // only mounted at the secret address in WALK_PATH, 404 everywhere else.
-const walkPath = "/" + String(process.env.WALK_PATH || "").trim().replace(/^\/+|\/+$/g, "");
-if (/^\/[A-Za-z0-9_-]{12,}$/.test(walkPath)) {
+const walkPath = walkMountPath(process.env.WALK_PATH, [...OVERLAY_PREFIXES, "/api", "/health", "/img", "/_hub", "/films", "/ratings", "/kanal"]);
+if (walkPath) {
   OVERLAY_PREFIXES.push(walkPath);
   app.use(walkPath, createWalkApp());
   // Marcel Walk-kortet på forsiden er skjult, til WALK_SHOW_ON_HOME=1 (se apps/walk/homeCard.js).
@@ -197,7 +198,7 @@ if (/^\/[A-Za-z0-9_-]{12,}$/.test(walkPath)) {
       } catch (error) { next(error); }
     });
   }
-} else if (process.env.WALK_PATH) console.warn("walk: WALK_PATH must be 12+ letters/digits/-/_ — overlay not mounted.");
+} else if (process.env.WALK_PATH) console.warn("walk: WALK_PATH must be 3+ letters/digits/-/_ and not the name of another page — overlay not mounted.");
 
 app.use(express.static(path.join(__dirname, "public")));
 
