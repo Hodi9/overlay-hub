@@ -24,9 +24,10 @@
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; color: var(--ink); }
 
   .card {
-    --gap: 3em;
-    position: absolute; top: var(--gap); left: var(--gap); width: 21em; font-size: 16px;
-    padding: 1em 1em .375em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
+    --gap: 3.3em;
+    /* As wide as the longest name, between a minimum and a maximum; longer names are cut off with "…". */
+    position: absolute; top: var(--gap); left: var(--gap); width: max-content; min-width: 15em; max-width: 22em; font-size: 14.5px;
+    padding: .875em .875em .25em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
   /* The colours the panel can pick ("lime" is the default above). */
@@ -41,16 +42,16 @@
   .card.right { left: auto; right: var(--gap); }
   .card.on { opacity: 1; }
 
-  .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .75em; font: 500 .75em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 1.5em; margin-bottom: .5em; font: 500 .75em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 
   .list { margin: 0; padding: 0; list-style: none; }
-  .guest { padding: .625em .75em .6875em .6875em; border-top: 1px solid var(--line); border-left: 3px solid var(--now); transition: opacity .4s ease; }
+  .guest { padding: .5em .75em .5625em .6875em; border-top: 1px solid var(--line); border-left: 3px solid var(--now); transition: opacity .4s ease; }
   .guest.enter { opacity: 0; }
   /* Someone who has just come into the studio is lit up for a few seconds. */
   .guest.fresh { animation: arrive 9s ease-out; }
   @keyframes arrive { 0%, 75% { background: var(--now-soft); } 100% { background: transparent; } }
-  .name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 400 1.625em/1.15 var(--display); letter-spacing: -.01em; }
-  .role { display: block; margin-top: .3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 500 .6875em/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--now); }
+  .name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 400 1.5em/1.12 var(--display); letter-spacing: -.01em; }
+  .role { display: block; margin-top: .25em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: 500 .6875em/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--now); }
   .role:empty { display: none; }
   .more { padding: .75em .6875em .6875em; border-top: 1px solid var(--line); font: 500 .75em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 </style>
@@ -78,7 +79,7 @@
   card.classList.toggle('bottom', corner[0] === 'bottom');
   card.classList.toggle('right', corner[1] === 'right');
   var scale = parseFloat(params.get('scale'));
-  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 16 * scale + 'px';
+  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 14.5 * scale + 'px';
 
   function makeRow() {
     var li = document.createElement('li');
