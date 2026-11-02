@@ -20,12 +20,12 @@
     --power: #ff4c02; /* the orange of the Power logo */
   }
   * { box-sizing: border-box; }
-  /* The page fills whatever size the browser source has and the card sits in one corner of it (?corner=, default bottom-right).
+  /* The page fills whatever size the browser source has and the card sits in one corner of it (?corner=, default top-left).
      Everything inside the card is sized in em from the card's font size, so ?scale= makes the whole card bigger or smaller. */
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; color: var(--ink); }
 
   .card {
-    --gap: 1.25em;
+    --gap: 3em;
     position: absolute; top: var(--gap); right: var(--gap); width: 23.75em; font-size: 16px;
     padding: 1em 1em .375em; background: rgba(11, 11, 13, .9); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
@@ -110,10 +110,10 @@
   var rows = {};
   var $ = function (id) { return document.getElementById(id); };
 
-  // Where the card sits and how big it is, set in the OBS address: ?corner=bottom-right (the default), top-right, top-left
-  // or bottom-left, and ?scale=0.5 to 3 for a smaller or bigger card.
+  // The card sits top left, 48px in from the edges, and is moved in OBS. The OBS address can also set the corner
+  // (?corner=top-right, bottom-right or bottom-left) and the size (?scale=0.5 to 3).
   var params = new URLSearchParams(location.search);
-  var corner = String(params.get('corner') || 'bottom-right').split('-');
+  var corner = String(params.get('corner') || 'top-left').split('-');
   card.classList.toggle('bottom', corner[0] === 'bottom');
   card.classList.toggle('left', corner[1] === 'left');
   var scale = parseFloat(params.get('scale'));
