@@ -126,7 +126,7 @@ test("adding, starting, finishing and removing through the API", async () => {
   await withLondon("", async (base) => {
     const first = await read(base);
     assert.equal(first.passwordRequired, false);
-    assert.equal(first.plan.title, "POWER TRIP: Aggo & Lucas");
+    assert.equal(first.plan.title, "POWER TRIP Aggo & Lucas");
     assert.equal((await send(`${base}/api/items`, "POST", { title: "   " })).status, 400);
     const start = await (await send(`${base}/api/advance`, "POST")).json();
     assert.deepEqual([start.items[0].status, start.items[1].status], ["now", "todo"]);

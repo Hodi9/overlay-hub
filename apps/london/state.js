@@ -8,7 +8,7 @@ const clip = (value, max) => String(value ?? "").trim().slice(0, max);
 // "compact" shows only what is happening now and the next stop; "list" shows the whole plan.
 export const VIEWS = ["compact", "list"];
 
-export const DEFAULT_PLAN = { kicker: "Plan for London", title: "POWER TRIP: Aggo & Lucas", view: "compact" };
+export const DEFAULT_PLAN = { kicker: "Plan for London", title: "POWER TRIP Aggo & Lucas", view: "compact" };
 
 export function cleanPlan(input, existing = DEFAULT_PLAN) {
   const title = typeof input?.title === "string" ? clip(input.title, 40) : "";
