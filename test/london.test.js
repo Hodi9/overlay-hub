@@ -27,13 +27,13 @@ test("cleanPlan keeps the old headline when the new one is empty but lets the sm
   assert.equal(cleanPlan({ title: "Aggo & Lucas på tur" }).title, "Aggo & Lucas på tur");
 });
 
-test("the overlay view is either the whole list or just now and next, and defaults to the list", () => {
-  assert.equal(cleanPlan({}).view, "list");
-  assert.equal(cleanPlan({ view: "compact" }).view, "compact");
-  assert.equal(cleanPlan({ view: "alt" }, { kicker: "A", title: "B", view: "compact" }).view, "compact"); // invalid value: the old one stays
-  assert.equal(cleanPlan({ title: "C" }, { kicker: "A", title: "B", view: "compact" }).view, "compact"); // saving the headline does not reset it
-  assert.equal(restore({ plan: { view: "compact" }, items: [] }).plan.view, "compact");
-  assert.equal(restore({ plan: { title: "Gemt" }, items: [] }).plan.view, "list"); // state saved before the setting existed
+test("the overlay view is either just now and next or the whole list, and defaults to now and next", () => {
+  assert.equal(cleanPlan({}).view, "compact");
+  assert.equal(cleanPlan({ view: "list" }).view, "list");
+  assert.equal(cleanPlan({ view: "alt" }, { kicker: "A", title: "B", view: "list" }).view, "list"); // invalid value: the old one stays
+  assert.equal(cleanPlan({ title: "C" }, { kicker: "A", title: "B", view: "list" }).view, "list"); // saving the headline does not reset it
+  assert.equal(restore({ plan: { view: "list" }, items: [] }).plan.view, "list");
+  assert.equal(restore({ plan: { title: "Gemt" }, items: [] }).plan.view, "compact"); // state saved before the setting existed
 });
 
 test("only one thing is running now", () => {
@@ -141,10 +141,10 @@ test("adding, starting, finishing and removing through the API", async () => {
     assert.equal((await (await send(`${base}/api/order`, "PUT", { ids })).json()).items[0].title, "Skøjte");
     const planned = await (await send(`${base}/api/plan`, "PATCH", { title: "Lucas & Aggo" })).json();
     assert.equal(planned.plan.title, "Lucas & Aggo");
-    assert.equal(planned.plan.view, "list");
-    const compact = await (await send(`${base}/api/plan`, "PATCH", { view: "compact" })).json();
-    assert.deepEqual([compact.plan.view, compact.plan.title], ["compact", "Lucas & Aggo"]);
-    assert.equal((await (await send(`${base}/api/plan`, "PATCH", { view: "noget andet" })).json()).plan.view, "compact");
+    assert.equal(planned.plan.view, "compact");
+    const list = await (await send(`${base}/api/plan`, "PATCH", { view: "list" })).json();
+    assert.deepEqual([list.plan.view, list.plan.title], ["list", "Lucas & Aggo"]);
+    assert.equal((await (await send(`${base}/api/plan`, "PATCH", { view: "noget andet" })).json()).plan.view, "list");
     const reset = await (await send(`${base}/api/reset`, "POST")).json();
     assert.ok(reset.items.every((item) => item.status === "todo"));
     const removed = await (await send(`${base}/api/items/${reset.items[0].id}`, "DELETE")).json();
