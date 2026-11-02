@@ -28,8 +28,8 @@
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; color: var(--ink); }
 
   .card {
-    --gap: 3em;
-    position: absolute; top: var(--gap); right: var(--gap); width: 23.75em; font-size: 16px;
+    --gap: 3.3em;
+    position: absolute; top: var(--gap); right: var(--gap); width: 21.25em; font-size: 14.5px;
     padding: 1em 1em .375em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
@@ -125,7 +125,7 @@
   card.classList.toggle('bottom', corner[0] === 'bottom');
   card.classList.toggle('left', corner[1] === 'left');
   var scale = parseFloat(params.get('scale'));
-  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 16 * scale + 'px';
+  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 14.5 * scale + 'px';
 
   // Text that fades in when it changes, so the compact view does not just snap from one stop to the next.
   function swapText(el, text) {
