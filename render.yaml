@@ -50,6 +50,8 @@ services:
         sync: false
       - key: POKEMON_CONTROL_PASSWORD
         sync: false
+      - key: LONDON_CONTROL_PASSWORD
+        sync: false
       - key: TCGGRAPH_KEY
         sync: false
       - key: RDR2DEATHS_CONTROL_PASSWORD

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>London-plan — Overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --bg: #0b0b0d;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --lime: #c9f36b;
+    --green: #72c99b;
+    --soft: #192923;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; color: var(--ink); }
+
+  .card {
+    position: absolute; left: 48px; top: 48px; width: 480px;
+    padding: 24px 24px 10px; background: rgba(11, 11, 13, .9); border: 1px solid var(--line); border-radius: 4px;
+    opacity: 0; transition: opacity .4s ease;
+  }
+  .card.on { opacity: 1; }
+
+  .head { display: flex; justify-content: space-between; align-items: baseline; font: 500 13px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .title { margin: 12px 0 20px; font: 400 60px/.95 var(--display); letter-spacing: -.02em; }
+  .title em { font-style: italic; color: var(--lime); }
+
+  .list { margin: 0; padding: 0; list-style: none; }
+  .row {
+    display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px;
+    padding: 13px 12px 13px 10px; border-top: 1px solid var(--line); border-left: 3px solid transparent;
+    transition: background .4s ease, border-color .4s ease, opacity .4s ease;
+  }
+  .row.enter { opacity: 0; }
+  .num { font: 500 13px/1 var(--mono); letter-spacing: .04em; color: var(--muted); transition: color .4s ease; }
+  .name { display: block; font: 400 32px/1.05 var(--display); letter-spacing: -.005em; transition: color .4s ease; }
+  .note { display: block; margin-top: 6px; font: 500 12px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .note:empty { display: none; }
+  .tag { font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 5px 8px; border: 1px solid var(--line); border-radius: 3px; color: var(--muted); }
+  .tag:empty { display: none; }
+
+  .row.now { background: var(--soft); border-left-color: var(--lime); }
+  .row.now .num { color: var(--lime); }
+  .row.now .tag { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  .row.done .name { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .row.done .num { color: var(--green); }
+
+  .sponsor { display: flex; justify-content: space-between; align-items: center; margin-top: 0; padding: 14px 12px 12px 13px; border-top: 1px solid var(--line); }
+  .sponsor span { font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .sponsor img { display: block; height: 48px; width: auto; }
+</style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="head"><span id="kicker"></span><span id="count"></span></div>
+  <h1 class="title" id="title"></h1>
+  <ol class="list" id="list"></ol>
+  <div class="sponsor"><span>Sponsoreret af</span><img src="power.png" alt="Power"></div>
+</div>
+
+<script>
+(function () {
+  var MAX_ROWS = 9; // longer than that and the card would run off the canvas: finished things drop off first
+  var card = document.getElementById('card');
+  var kickerEl = document.getElementById('kicker');
+  var countEl = document.getElementById('count');
+  var titleEl = document.getElementById('title');
+  var list = document.getElementById('list');
+  var rows = {};
+
+  // One italic green word in the headline: the "&" between two names, otherwise the last word.
+  function setTitle(text) {
+    var head = '', accent = text, tail = '';
+    var amp = text.indexOf(' & ');
+    if (amp !== -1) { head = text.slice(0, amp + 1); accent = '&'; tail = text.slice(amp + 2); }
+    else if (text.lastIndexOf(' ') !== -1) { head = text.slice(0, text.lastIndexOf(' ') + 1); accent = text.slice(text.lastIndexOf(' ') + 1); }
+    titleEl.textContent = '';
+    if (head) titleEl.appendChild(document.createTextNode(head));
+    var em = document.createElement('em');
+    em.textContent = accent;
+    titleEl.appendChild(em);
+    if (tail) titleEl.appendChild(document.createTextNode(tail));
+  }
+
+  function makeRow() {
+    var li = document.createElement('li');
+    li.className = 'row enter';
+    li.innerHTML = '<span class="num"></span><div><span class="name"></span><span class="note"></span></div><span class="tag"></span>';
+    return li;
+  }
+
+  function render(state) {
+    var plan = state.plan || {};
+    var all = (state.items || []).filter(function (item) { return item.visible; });
+    var done = all.filter(function (item) { return item.status === 'done'; }).length;
+
+    var shown = all.slice();
+    while (shown.length > MAX_ROWS) {
+      var oldest = shown.findIndex(function (item) { return item.status === 'done'; });
+      if (oldest === -1) { shown = shown.slice(0, MAX_ROWS); break; }
+      shown.splice(oldest, 1);
+    }
+
+    kickerEl.textContent = plan.kicker || '';
+    countEl.textContent = all.length ? done + ' / ' + all.length : '';
+    setTitle(plan.title || '');
+
+    var seen = {};
+    shown.forEach(function (item, i) {
+      var li = rows[item.id];
+      if (!li) {
+        li = rows[item.id] = makeRow();
+        list.appendChild(li);
+        requestAnimationFrame(function () { requestAnimationFrame(function () { li.classList.remove('enter'); }); });
+      }
+      ['todo', 'now', 'done'].forEach(function (status) { li.classList.toggle(status, item.status === status); });
+      var number = String(all.indexOf(item) + 1);
+      li.querySelector('.num').textContent = item.status === 'done' ? '✓' : (number.length < 2 ? '0' : '') + number;
+      li.querySelector('.name').textContent = item.title;
+      li.querySelector('.note').textContent = item.note || '';
+      li.querySelector('.tag').textContent = item.status === 'now' ? 'Nu' : item.status === 'done' ? 'Færdig' : item.maybe ? 'Måske' : '';
+      // Only move a row when it is in the wrong place, so a row that just changed state keeps its transition.
+      if (list.children[i] !== li) list.insertBefore(li, list.children[i] || null);
+      seen[item.id] = true;
+    });
+    Object.keys(rows).forEach(function (id) {
+      if (!seen[id]) { rows[id].remove(); delete rows[id]; }
+    });
+
+    card.classList.toggle('on', shown.length > 0);
+  }
+
+  fetch('/london/api/state').then(function (r) { return r.json(); }).then(render).catch(function () {});
+  var events = new EventSource('/london/api/events');
+  events.onmessage = function (event) {
+    try { render(JSON.parse(event.data)); } catch (e) {}
+  };
+})();
+</script>
+
+</body>
+</html>

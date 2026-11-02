@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>London plan — Kontrolpanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --raised: #1d1d21;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --lime: #c9f36b;
+    --green: #72c99b;
+    --soft: #192923;
+    --danger: #e0707a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 16px 72px; background: var(--bg); color: var(--ink); font: 400 15px/1.4 "Schibsted Grotesk", system-ui, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: var(--lime); }
+  [hidden] { display: none !important; }
+
+  .label { margin: 0 0 10px; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0 0 8px; font: 400 clamp(40px, 9vw, 56px)/.95 var(--display); letter-spacing: -.02em; }
+  h1 em { font-style: italic; color: var(--lime); }
+  .lede { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+  section { margin-bottom: 26px; }
+
+  input[type="text"], input[type="password"] {
+    width: 100%; min-width: 0; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); outline: none;
+  }
+  input[type="text"]:focus, input[type="password"]:focus { border-color: var(--green); }
+  button {
+    font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    padding: 10px 12px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  button:hover { border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  button.primary:hover { filter: brightness(1.06); }
+  button.danger:hover { color: var(--danger); border-color: var(--danger); }
+  button[aria-pressed="true"] { background: var(--soft); border-color: var(--green); color: var(--lime); }
+
+  .box { padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .line > input { flex: 1 1 200px; }
+
+  .running { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 14px; border: 1px solid var(--green); background: var(--soft); border-radius: 4px; }
+  .running b { display: block; font: 400 28px/1.05 var(--display); }
+  .running .label { margin: 0 0 6px; color: var(--green); }
+  .running button { padding: 14px 16px; font-size: 12px; }
+
+  .items { display: grid; gap: 8px; }
+  .item { display: grid; gap: 8px; padding: 12px; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 4px; }
+  .item.now { border-left-color: var(--lime); background: var(--soft); }
+  .item.done { border-left-color: var(--green); }
+  .item.done .title-input { color: var(--muted); text-decoration: line-through; }
+  .item.off { opacity: .55; }
+  .top { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+  .num { font: 500 12px/1 var(--mono); color: var(--muted); min-width: 22px; }
+  .item.now .num { color: var(--lime); }
+  .seg { display: flex; }
+  .seg button { border-radius: 0; margin-left: -1px; }
+  .seg button:first-child { border-radius: var(--r) 0 0 var(--r); margin-left: 0; }
+  .seg button:last-child { border-radius: 0 var(--r) var(--r) 0; }
+  .more { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .more .note-input { flex: 1 1 160px; }
+  .more input { padding: 8px 10px; font-size: 13px; }
+  .more button { padding: 8px 10px; }
+  .spacer { flex: 1 1 8px; }
+
+  .status { min-height: 1.2em; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .status.error { color: var(--danger); }
+  .empty { padding: 18px; color: var(--muted); text-align: center; border: 1px dashed var(--line); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="label">Dreamglow · Overlay</p>
+    <h1>London <em>plan</em></h1>
+    <p class="lede">Ændringer vises med det samme på <a href="/london/" target="_blank">overlayet</a> — det er den adresse, der skal i OBS som browser source (1920 × 1080).</p>
+  </header>
+
+  <section id="auth" hidden>
+    <p class="label">Adgangskode</p>
+    <div class="box">
+      <div class="line">
+        <input type="password" id="token" placeholder="Adgangskode" autocomplete="off">
+        <button class="primary" id="save-token">Gem</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="running-section">
+    <div class="running" id="running"></div>
+  </section>
+
+  <section>
+    <p class="label">Tilføj noget</p>
+    <form class="box" id="quick" autocomplete="off">
+      <div class="line">
+        <input type="text" id="quick-title" placeholder="Fx Borough Market" maxlength="60" enterkeyhint="done">
+      </div>
+      <div class="line" style="margin-top:8px">
+        <button type="submit" class="primary" id="add-end">Tilføj sidst</button>
+        <button type="button" id="add-next">Tilføj som næste</button>
+        <button type="button" id="add-now">Start med det samme</button>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <p class="label">Planen</p>
+    <div class="items" id="items"></div>
+  </section>
+
+  <section>
+    <p class="label">Overskrift</p>
+    <div class="box">
+      <div class="line">
+        <input type="text" id="plan-kicker" placeholder="Lille tekst over" maxlength="30">
+        <input type="text" id="plan-title" placeholder="Overskrift" maxlength="40">
+        <button id="save-plan">Gem</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <button class="danger" id="reset">Nulstil alle til "Kommer"</button>
+  </section>
+
+  <div class="status" id="status" role="status"></div>
+</div>
+
+<script>
+(function () {
+  var API = '/london/api';
+  var TOKEN_KEY = 'london-control-token';
+  var state = null;
+  var pending = null; // a state that arrived while a field was being edited or a button pressed
+  var holding = false; // a pointer is down: rebuilding the list now would swallow the click
+  var rejected = false; // the server turned the saved password down
+  var $ = function (id) { return document.getElementById(id); };
+  var itemsEl = $('items');
+  var statusEl = $('status');
+  var tokenInput = $('token');
+
+  function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  function setToken(value) { try { localStorage.setItem(TOKEN_KEY, value); } catch (e) {} }
+
+  function say(message, isError) {
+    statusEl.textContent = message;
+    statusEl.className = 'status' + (isError ? ' error' : '');
+    if (message && !isError) setTimeout(function () { if (statusEl.textContent === message) statusEl.textContent = ''; }, 2500);
+  }
+
+  function call(path, method, body) {
+    var headers = { 'x-london-key': getToken() };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    return fetch(API + path, { method: method, headers: headers, body: body === undefined ? undefined : JSON.stringify(body) }).then(function (r) {
+      if (r.status === 401) { rejected = true; $('auth').hidden = false; say('Forkert eller manglende adgangskode.', true); throw new Error('unauthorized'); }
+      return r.json().then(function (data) {
+        if (!r.ok) { say(data.error || 'Noget gik galt — prøv igen.', true); throw new Error('failed'); }
+        rejected = false;
+        return data;
+      });
+    });
+  }
+  function act(path, method, body) { return call(path, method, body).then(render).catch(function () {}); }
+
+  function el(tag, props, children) {
+    var node = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (key) {
+      if (key === 'text') node.textContent = props[key];
+      else if (key === 'on') Object.keys(props.on).forEach(function (type) { node.addEventListener(type, props.on[type]); });
+      else if (key in node) node[key] = props[key];
+      else node.setAttribute(key, props[key]);
+    });
+    (children || []).forEach(function (child) { node.appendChild(child); });
+    return node;
+  }
+
+  function moveItem(id, by) {
+    var ids = state.items.map(function (item) { return item.id; });
+    var at = ids.indexOf(id), to = at + by;
+    if (at === -1 || to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(at, 1)[0]);
+    act('/order', 'PUT', { ids: ids });
+  }
+
+  function itemRow(item, index, count) {
+    var patch = function (data) { return act('/items/' + encodeURIComponent(item.id), 'PATCH', data); };
+    var titleInput = el('input', { type: 'text', className: 'title-input', value: item.title, maxLength: 60, 'aria-label': 'Navn', on: { change: function () { if (titleInput.value.trim()) patch({ title: titleInput.value }); else titleInput.value = item.title; } } });
+    var statusButton = function (status, label) {
+      return el('button', { type: 'button', text: label, 'aria-pressed': String(item.status === status), on: { click: function () { patch({ status: status }); } } });
+    };
+    var noteInput = el('input', { type: 'text', className: 'note-input', value: item.note, maxLength: 80, placeholder: 'Lille note (valgfri)', 'aria-label': 'Note', on: { change: function () { patch({ note: noteInput.value }); } } });
+    return el('div', { className: 'item ' + item.status + (item.visible ? '' : ' off') }, [
+      el('div', { className: 'top' }, [el('span', { className: 'num', text: String(index + 1).padStart(2, '0') }), titleInput]),
+      el('div', { className: 'more' }, [
+        el('div', { className: 'seg' }, [statusButton('todo', 'Kommer'), statusButton('now', 'Nu'), statusButton('done', 'Færdig')]),
+        el('button', { type: 'button', text: 'Måske', 'aria-pressed': String(item.maybe), title: 'Vis "Måske" på overlayet', on: { click: function () { patch({ maybe: !item.maybe }); } } }),
+        el('button', { type: 'button', text: 'Næste', title: 'Flyt til lige efter det, der sker nu', hidden: item.status === 'now', on: { click: function () { act('/items/' + encodeURIComponent(item.id) + '/next', 'POST'); } } })
+      ]),
+      el('div', { className: 'more' }, [
+        noteInput,
+        el('button', { type: 'button', text: '↑', title: 'Op', disabled: index === 0, on: { click: function () { moveItem(item.id, -1); } } }),
+        el('button', { type: 'button', text: '↓', title: 'Ned', disabled: index === count - 1, on: { click: function () { moveItem(item.id, 1); } } }),
+        el('button', { type: 'button', text: item.visible ? 'Skjul' : 'Vis', title: 'Skjul fra overlayet uden at slette', on: { click: function () { patch({ visible: !item.visible }); } } }),
+        el('button', { type: 'button', className: 'danger', text: 'Slet', on: { click: function () { if (confirm('Fjern "' + item.title + '"?')) act('/items/' + encodeURIComponent(item.id), 'DELETE'); } } })
+      ])
+    ]);
+  }
+
+  function renderRunning() {
+    var box = $('running');
+    var now = state.items.find(function (item) { return item.status === 'now'; });
+    var open = state.items.some(function (item) { return item.status === 'todo' && item.visible; });
+    box.textContent = '';
+    var info = el('div', {}, [el('p', { className: 'label', text: now ? 'Sker nu' : 'Intet er i gang' }), el('b', { text: now ? now.title : open ? 'Start den første' : 'Planen er færdig' })]);
+    var button = el('button', { type: 'button', className: 'primary', text: now ? 'Færdig · start næste' : 'Start næste', disabled: !now && !open, on: { click: function () { act('/advance', 'POST'); } } });
+    box.appendChild(info);
+    box.appendChild(button);
+  }
+
+  function render(next) {
+    if (!next) return;
+    // Don't rebuild the list under someone who is typing; it is drawn when they leave the field.
+    if (holding || (itemsEl.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) { pending = next; return; }
+    pending = null;
+    state = next;
+    $('auth').hidden = !state.passwordRequired || (Boolean(getToken()) && !rejected);
+    renderRunning();
+    itemsEl.textContent = '';
+    if (!state.items.length) itemsEl.appendChild(el('div', { className: 'empty', text: 'Ingen punkter endnu — skriv det første ovenfor.' }));
+    state.items.forEach(function (item, index) { itemsEl.appendChild(itemRow(item, index, state.items.length)); });
+    if (document.activeElement !== $('plan-kicker') && document.activeElement !== $('plan-title')) {
+      $('plan-kicker').value = state.plan.kicker;
+      $('plan-title').value = state.plan.title;
+    }
+  }
+
+  itemsEl.addEventListener('focusout', function () {
+    setTimeout(function () { if (pending) render(pending); }, 0);
+  });
+  document.addEventListener('pointerdown', function () { holding = true; });
+  ['pointerup', 'pointercancel'].forEach(function (type) {
+    document.addEventListener(type, function () { setTimeout(function () { holding = false; if (pending) render(pending); }, 60); });
+  });
+
+  // Add: "last" by default, "next" puts it right after what is happening now, "now" starts it straight away.
+  function add(position, status) {
+    var title = $('quick-title').value.trim();
+    if (!title) { $('quick-title').focus(); return; }
+    call('/items', 'POST', { title: title, position: position, status: status }).then(function (data) {
+      $('quick-title').value = '';
+      $('quick-title').focus();
+      render(data);
+    }).catch(function () {});
+  }
+  $('quick').addEventListener('submit', function (event) { event.preventDefault(); add('end'); });
+  $('add-next').addEventListener('click', function () { add('next'); });
+  $('add-now').addEventListener('click', function () { add('next', 'now'); });
+
+  $('save-plan').addEventListener('click', function () { act('/plan', 'PATCH', { kicker: $('plan-kicker').value, title: $('plan-title').value }); });
+  $('reset').addEventListener('click', function () { if (confirm('Sæt alle punkter tilbage til "Kommer"?')) act('/reset', 'POST'); });
+
+  tokenInput.value = getToken();
+  $('save-token').addEventListener('click', function () {
+    setToken(tokenInput.value.trim());
+    call('/login', 'POST', {}).then(function () { say('Koden virker og er gemt på denne enhed.'); $('auth').hidden = true; }).catch(function () {});
+  });
+  tokenInput.addEventListener('keydown', function (event) { if (event.key === 'Enter') $('save-token').click(); });
+
+  fetch(API + '/state').then(function (r) { return r.json(); }).then(render).catch(function () { say('Kunne ikke hente planen.', true); });
+  var events = new EventSource(API + '/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) {} };
+})();
+</script>
+</body>
+</html>

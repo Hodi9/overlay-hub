@@ -23,6 +23,7 @@ import { createRdr2App } from "./apps/rdr2/app.js";
 import { createSubathonApp } from "./apps/subathon/app.js";
 import { createLetterboxdApp } from "./apps/letterboxd/app.js";
 import { createWalkApp } from "./apps/walk/app.js";
+import { createLondonApp } from "./apps/london/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
 import { collapseLeadingSlashes } from "./collapseLeadingSlashes.js";
 import { createChannelRegistry, createChannelsRouter, createTenantDispatcher } from "./apps/_lib/channels.js";
@@ -92,7 +93,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
 // Adds ?profile=<channel> to a channel page's own requests and sends its key along (public/_hub/channel.js).
 const CHANNEL_SHIM_TAG = '<script src="/_hub/channel.js"></script>';
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -177,6 +178,8 @@ app.use("/pokemon", createTenantDispatcher({
 app.use("/rdr2-deaths", createRdr2DeathsApp({ channels, pool }));
 app.use("/rdr2", createRdr2App({ channels, pool }));
 app.use("/subathon", createSubathonApp({ channels, pool }));
+// Aggo & Lucas' plan for London: not on the front page, the address is the link.
+app.use("/london", createLondonApp({ pool }));
 
 // Hidden walk-through-Denmark overlay (apps/walk). Same idea: not on the index page,
 // only mounted at the secret address in WALK_PATH, 404 everywhere else.
