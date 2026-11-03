@@ -5,7 +5,7 @@
 <title>London-plan — Overlay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Instrument+Serif:ital@0;1&family=Anton&display=swap" rel="stylesheet">
 <style>
   :root {
     --display: "Instrument Serif", Georgia, serif;
@@ -28,8 +28,8 @@
   html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; color: var(--ink); }
 
   .card {
-    --gap: 3.3em;
-    position: absolute; top: var(--gap); right: var(--gap); width: 21.25em; font-size: 14.5px;
+    --gap: 48px; /* the distance from the corner stays the same whatever the size */
+    position: absolute; top: var(--gap); right: var(--gap); width: 21.25em; font-size: 13.05px; /* 90% of the former 14.5px */
     padding: 1em 1em .375em; background: rgba(11, 11, 13, .96); border: 1px solid var(--line); border-radius: 4px;
     opacity: 0; transition: opacity .4s ease;
   }
@@ -46,8 +46,10 @@
   .card.on { opacity: 1; }
 
   .head { display: flex; justify-content: space-between; align-items: baseline; font: 500 .75em/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .title { margin: .25em 0 .35em; font: 400 2.125em/.95 var(--display); letter-spacing: -.02em; }
-  .title em { font-style: italic; color: var(--power); }
+  /* The headline is the heaviest thing on the card: Anton (one heavy weight, so no "bold" to turn up), capitals, a little bigger than the names. */
+  .title { margin: .3em 0 .45em; font: 400 1.86em/1.05 "Anton", var(--display); text-transform: uppercase; letter-spacing: .01em; }
+  /* Only the "&" stays light: the thin serif italic in the orange of the Power logo, against the heavy words. */
+  .title em { font-family: var(--display); font-weight: 400; font-style: italic; font-size: 1.1em; line-height: 0; letter-spacing: 0; color: var(--power); }
 
   .list { margin: 0; padding: 0; list-style: none; }
   .row {
@@ -125,7 +127,7 @@
   card.classList.toggle('bottom', corner[0] === 'bottom');
   card.classList.toggle('left', corner[1] === 'left');
   var scale = parseFloat(params.get('scale'));
-  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 14.5 * scale + 'px';
+  if (scale >= 0.5 && scale <= 3) card.style.fontSize = 13.05 * scale + 'px';
 
   // Text that fades in when it changes, so the compact view does not just snap from one stop to the next.
   function swapText(el, text) {
