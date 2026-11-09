@@ -4,7 +4,10 @@ window.GauntletTheme = (function(){
     warzone: "'Black Ops One', cursive",
     minecraft: "'Press Start 2P', monospace",
     lol: "'Cinzel', serif",
-    rocketleague: "'Bebas Neue', sans-serif"
+    rocketleague: "'Bebas Neue', sans-serif",
+    fallguys: "'Lilita One', cursive",
+    cswingman: "'Teko', sans-serif",
+    apex: "'Chakra Petch', sans-serif"
   };
   var FONT_BY_NAME = {
     'fortnite': FONT_BY_ID.fortnite,
@@ -12,7 +15,11 @@ window.GauntletTheme = (function(){
     'call of duty': FONT_BY_ID.warzone,
     'minecraft': FONT_BY_ID.minecraft,
     'league of legends': FONT_BY_ID.lol,
-    'rocket league': FONT_BY_ID.rocketleague
+    'rocket league': FONT_BY_ID.rocketleague,
+    'fall guys': FONT_BY_ID.fallguys,
+    'cs wingman': FONT_BY_ID.cswingman,
+    'apex legends': FONT_BY_ID.apex,
+    'apex': FONT_BY_ID.apex
   };
 
   function fontFor(game){
@@ -49,6 +56,9 @@ window.GauntletTheme = (function(){
     var name = String(game.name || '').trim().toLowerCase();
     if (name === 'league of legends') return 'lol';
     if (name === 'rocket league') return 'rocketleague';
+    if (name === 'fall guys') return 'fallguys';
+    if (name === 'cs wingman') return 'cswingman';
+    if (name === 'apex legends' || name === 'apex') return 'apex';
     if (name.indexOf('warzone') !== -1 || name.indexOf('call of duty') !== -1) return 'warzone';
     if (name === 'fortnite' || name === 'minecraft') return name;
     return 'generic';

@@ -9,10 +9,12 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 const defaultGames = () => [
   { id: "fortnite", name: "Fortnite", color: "#2f7fe0", icon: "F", done: false, count: 0, deaths: 0, visible: true },
+  { id: "rocketleague", name: "Rocket League", color: "#e8631f", icon: "RL", done: false, count: 0, deaths: 0, visible: true },
   { id: "warzone", name: "Warzone", color: "#6f7a3f", icon: "WZ", done: false, count: 0, deaths: 0, visible: true },
-  { id: "minecraft", name: "Minecraft", color: "#96622f", icon: "creeper", done: false, count: 0, deaths: 0, visible: true },
-  { id: "lol", name: "League of Legends", color: "#0aa8a0", icon: "LoL", done: false, count: 0, deaths: 0, visible: true },
-  { id: "rocketleague", name: "Rocket League", color: "#e8631f", icon: "RL", done: false, count: 0, deaths: 0, visible: true }
+  { id: "fallguys", name: "Fall Guys", color: "#ee3f96", icon: "FG", done: false, count: 0, deaths: 0, visible: true },
+  { id: "cswingman", name: "CS Wingman", color: "#4d6f9c", icon: "CS", done: false, count: 0, deaths: 0, visible: true },
+  { id: "apex", name: "Apex Legends", color: "#c4302b", icon: "AL", done: false, count: 0, deaths: 0, visible: true },
+  { id: "lol", name: "League of Legends", color: "#0aa8a0", icon: "LoL", done: false, count: 0, deaths: 0, visible: true }
 ];
 
 function safeEqual(a, b) {
@@ -99,6 +101,28 @@ export function createGauntletApp(context = {}) {
     } else {
       await persist();
     }
+
+    if (!isChannel) await applyListUpdate();
+  }
+
+  // One-time update of the primary list (Nov 2026): add the games that are missing and put the
+  // list in the agreed order. Existing games keep their progress; games that are not on the new
+  // list (Minecraft) are kept, last. A marker row makes sure it never runs twice, so games the
+  // owner later removes in the control panel stay removed.
+  async function applyListUpdate() {
+    const markerId = `${stateId}:list-2026-11`;
+    const marker = await db.query("SELECT 1 FROM gauntlet_state WHERE id = $1", [markerId]);
+    if (marker.rows.length) return;
+
+    const byName = new Map(games.map((g) => [g.name.toLowerCase(), g]));
+    const wanted = defaultGames().map((d) => byName.get(d.name.toLowerCase())
+      || cleanGame(d, { id: `${slugify(d.name)}-${crypto.randomUUID().slice(0, 6)}`, done: false, count: 0, deaths: 0 }));
+    games = [...wanted, ...games.filter((g) => !wanted.includes(g))];
+    await persist();
+    await db.query(
+      `INSERT INTO gauntlet_state (id, data) VALUES ($1, '{"applied":true}'::jsonb) ON CONFLICT (id) DO NOTHING`,
+      [markerId]
+    );
   }
 
   async function persist() {
