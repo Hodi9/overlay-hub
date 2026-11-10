@@ -33,10 +33,23 @@
   }
   .badge::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 48%,rgba(0,0,0,.08));pointer-events:none;}
   .badge-name{position:relative;z-index:1;white-space:nowrap;line-height:1;}
-  .badge.done{
-    box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 3px 0 rgba(0,0,0,.42),0 0 0 2px #52db38,0 0 12px rgba(82,219,56,.48);
-    transform:translateY(-1px);
+  /* Completed: greyed out, with a check mark where the game's mark was. */
+  .badge.done{filter:grayscale(1) brightness(.72);opacity:.8;}
+  /* Being played now: a bright frame around the badge. */
+  .badge.current{
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 3px 0 rgba(0,0,0,.42),0 0 0 3px #fff,0 0 16px 3px rgba(255,255,255,.6);
+    transform:translateX(6px);
+    animation:now 2.2s ease-in-out infinite;
   }
+  @keyframes now{50%{box-shadow:inset 0 2px 0 rgba(255,255,255,.25),0 3px 0 rgba(0,0,0,.42),0 0 0 3px #fff,0 0 7px 1px rgba(255,255,255,.3);}}
+  @media (prefers-reduced-motion:reduce){.badge.current{animation:none;}}
+  .resets{
+    display:inline-flex;align-items:center;gap:10px;height:40px;margin-top:4px;padding:0 13px;border-radius:11px;
+    background:#050609;border:3px solid rgba(8,10,14,.9);color:#fff;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 0 rgba(0,0,0,.48),0 6px 10px rgba(0,0,0,.25);
+    font-weight:700;font-size:.95rem;text-transform:uppercase;letter-spacing:.08em;
+  }
+  .resets b{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.25rem;letter-spacing:0;font-variant-numeric:tabular-nums;}
   .game-mark{position:relative;z-index:1;width:48px;height:46px;margin-left:-2px;display:flex;align-items:center;justify-content:center;flex:none;font-weight:900;font-size:1.22rem;color:#fff;border-right:2px solid rgba(0,0,0,.25);text-shadow:0 2px 0 rgba(0,0,0,.35);}
   .game-mark svg{width:34px;height:34px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25));}
   .game-mark img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 1px rgba(0,0,0,.35));}
@@ -84,9 +97,10 @@
 
   function isDoneOf(g){ return g.type === 'count' ? g.count > 0 : g.done; }
 
-  function render(games){
-    var visible = games.filter(function(g){ return g.visible !== false; });
-    var sorted = visible.slice().sort(function(a,b){ return Number(isDoneOf(a)) - Number(isDoneOf(b)); });
+  // The games stay in the order of the gauntlet; a completed one is greyed out where it stands.
+  function render(state){
+    var games = state.games || [];
+    var sorted = games.filter(function(g){ return g.visible !== false; });
 
     var badgesEl = document.getElementById('badges');
     badgesEl.innerHTML = '';
@@ -95,7 +109,7 @@
       var badge = document.createElement('div');
       var themeClass = (window.GauntletTheme && window.GauntletTheme.classFor(g)) || 'generic';
       var isDone = isDoneOf(g);
-      badge.className = 'badge ' + themeClass + (isDone ? ' done' : '');
+      badge.className = 'badge ' + themeClass + (isDone ? ' done' : '') + (!isDone && g.id === state.current ? ' current' : '');
       badge.style.background = g.color;
       badge.style.borderColor = 'color-mix(in srgb, ' + g.color + ' 65%, black)';
       badge.style.fontFamily = (window.GauntletTheme && window.GauntletTheme.fontFor(g)) || '';
@@ -112,13 +126,20 @@
       badge.innerHTML = '<span class="game-mark">' + mark + '</span>' + name;
       badgesEl.appendChild(badge);
     });
+
+    if (state.showResets !== false) {
+      var resets = document.createElement('div');
+      resets.className = 'resets';
+      resets.innerHTML = '<span>Resets</span><b>' + (Number(state.resets) || 0) + '</b>';
+      badgesEl.appendChild(resets);
+    }
   }
 
-  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(function(s){ render(s.games || []); }).catch(function(){});
+  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
 
   var events = new EventSource('/gauntlet/api/events');
   events.onmessage = function(event){
-    try { render(JSON.parse(event.data).games || []); } catch(e){}
+    try { render(JSON.parse(event.data)); } catch(e){}
   };
 })();
 </script>

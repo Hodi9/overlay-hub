@@ -33,11 +33,9 @@
 <script src="game-theme.js"></script>
 <script>
 (function(){
-  function isDoneOf(g){ return g.type === 'count' ? g.count > 0 : g.done; }
-
   function render(games){
-    var visible = games.filter(function(g){ return g.visible !== false; });
-    var sorted = visible.slice().sort(function(a,b){ return Number(isDoneOf(a)) - Number(isDoneOf(b)); });
+    // Same order as the badges on the main overlay, so each counter stays next to its game.
+    var sorted = games.filter(function(g){ return g.visible !== false; });
 
     var deathsEl = document.getElementById('deaths');
     deathsEl.innerHTML = '';
