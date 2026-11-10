@@ -7,6 +7,7 @@ import pg from "pg";
 import brovsbroModule from "./apps/brovsbro/app.cjs";
 import brosvsbrosModule from "./apps/brosvsbros/app.cjs";
 import { createMinecraftApp } from "./apps/minecraft/app.js";
+import { createGearApp } from "./apps/gear/app.js";
 import { createGearBfApp } from "./apps/gear-bf/app.js";
 import { createGauntletApp } from "./apps/gauntlet/app.js";
 import { createTlou2App } from "./apps/tlou2/app.js";
@@ -25,6 +26,7 @@ import { createWalkApp } from "./apps/walk/app.js";
 import { walkMountPath } from "./apps/walk/path.js";
 import { createLondonApp } from "./apps/london/app.js";
 import { createGaesterApp } from "./apps/gaester/app.js";
+import { createTurneringApp } from "./apps/turnering/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
 import { collapseLeadingSlashes } from "./collapseLeadingSlashes.js";
 import { createChannelRegistry, createChannelsRouter, createTenantDispatcher } from "./apps/_lib/channels.js";
@@ -94,7 +96,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
 // Adds ?profile=<channel> to a channel page's own requests and sends its key along (public/_hub/channel.js).
 const CHANNEL_SHIM_TAG = '<script src="/_hub/channel.js"></script>';
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester", "/turnering"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -155,11 +157,23 @@ app.use("/minecraft", createTenantDispatcher({
   legacy: createMinecraftApp({ pool }),
   factory: (context) => createMinecraftApp(context)
 }));
+// The streamer's own equipment, one product at a time. Each channel keeps its own list.
+app.use("/gear", createTenantDispatcher({
+  registry: channels, pool,
+  legacy: createGearApp({ pool }),
+  factory: (context) => createGearApp(context)
+}));
 app.use("/gear-bf", createGearBfApp());
 app.use("/gauntlet", createTenantDispatcher({
   registry: channels, pool,
   legacy: createGauntletApp({ pool }),
   factory: (context) => createGauntletApp(context)
+}));
+// A knockout tournament: the whole bracket, or only the match being played. One tournament per channel.
+app.use("/turnering", createTenantDispatcher({
+  registry: channels, pool,
+  legacy: createTurneringApp({ pool }),
+  factory: (context) => createTurneringApp(context)
 }));
 app.use("/tlou2", createTlou2App({ channels, pool }));
 app.use("/gta5", createGta5App({ channels, pool }));

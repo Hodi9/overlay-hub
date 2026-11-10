@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear — Kontrolpanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --raised: #1d1d21;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --lime: #c9f36b;
+    --green: #72c99b;
+    --soft: #192923;
+    --danger: #e0707a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 16px 72px; background: var(--bg); color: var(--ink); font: 400 15px/1.4 "Schibsted Grotesk", system-ui, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  a { color: var(--lime); }
+  [hidden] { display: none !important; }
+
+  .label { margin: 0 0 10px; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0 0 8px; font: 400 clamp(40px, 9vw, 56px)/.95 var(--display); letter-spacing: -.02em; }
+  h1 em { font-style: italic; color: var(--lime); }
+  .lede { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+  .note { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+  section { margin-bottom: 26px; }
+
+  input[type="text"], input[type="password"], input[type="url"], input[type="number"] {
+    width: 100%; min-width: 0; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); outline: none;
+  }
+  input:focus { border-color: var(--green); }
+  .box input { background: var(--bg); }
+  button, .file {
+    display: inline-block; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    padding: 10px 12px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  button:hover, .file:hover { border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  button.primary:hover { filter: brightness(1.06); }
+  button.danger:hover { color: var(--danger); border-color: var(--danger); }
+  button[aria-pressed="true"] { background: var(--soft); border-color: var(--green); color: var(--lime); }
+  .file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .file:focus-within { border-color: var(--green); }
+
+  .box { padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .line > input { flex: 1 1 200px; }
+  .stack { display: grid; gap: 8px; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .field { display: grid; gap: 5px; font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .field input { font: 400 14px/1.3 "Schibsted Grotesk", system-ui, sans-serif; letter-spacing: 0; text-transform: none; }
+  .field.wide { grid-column: 1 / -1; }
+  .or { margin: 4px 0; font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+
+  .products { display: grid; gap: 8px; }
+  .product { display: grid; grid-template-columns: 76px 1fr; gap: 12px; padding: 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .thumb { width: 76px; height: 76px; display: grid; place-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; color: var(--muted); font: 500 9px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; text-align: center; }
+  .thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .product input { padding: 8px 10px; font-size: 13px; background: var(--bg); }
+  .product button, .product .file { padding: 8px 10px; }
+  .more { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+  input[type="range"] { flex: 1 1 200px; accent-color: var(--lime); height: 28px; cursor: pointer; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatches button { display: inline-flex; align-items: center; gap: 8px; }
+  .swatches i { display: block; width: 12px; height: 12px; border-radius: 2px; }
+  .portrait-thumb { width: 56px; height: 56px; object-fit: cover; object-position: 50% 0; border: 1px solid var(--line); border-radius: var(--r); }
+
+  .status { position: sticky; bottom: 12px; min-height: 1.2em; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .status:not(:empty) { padding: 10px 12px; background: var(--raised); border: 1px solid var(--line); border-radius: var(--r); }
+  .status.error { color: var(--danger); border-color: var(--danger); }
+  .empty { padding: 18px; color: var(--muted); text-align: center; border: 1px dashed var(--line); border-radius: 4px; }
+  @media (max-width: 480px) { .product { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="label">Dreamglow · Overlay</p>
+    <h1>Mit <em>gear</em></h1>
+    <p class="lede">Læg dit udstyr ind én gang. <a href="/gear/" target="_blank">Overlayet</a> viser ét produkt ad gangen nederst i billedet og gentager rækken med det mellemrum, du vælger. Adressen skal i OBS som browser source (1920 × 1080).</p>
+  </header>
+
+  <section id="auth" hidden>
+    <p class="label">Adgangskode</p>
+    <div class="box">
+      <div class="line">
+        <input type="password" id="token" placeholder="Adgangskode" autocomplete="off">
+        <button class="primary" id="save-token">Gem</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Tilføj produkt</p>
+    <div class="box stack">
+      <form class="line" id="from-link" autocomplete="off">
+        <input type="url" id="link" placeholder="Link til produktet i en webshop" inputmode="url">
+        <button type="submit" class="primary" id="fetch">Hent fra link</button>
+      </form>
+      <p class="or">eller skriv det selv</p>
+      <form class="stack" id="by-hand" autocomplete="off">
+        <div class="fields">
+          <label class="field">Mærke<input type="text" id="n-brand" maxlength="30" placeholder="Fx Logitech"></label>
+          <label class="field">Pris<input type="text" id="n-price" maxlength="24" placeholder="Fx 1.399 kr."></label>
+          <label class="field">Chat-kommando<input type="text" id="n-command" maxlength="24" placeholder="Fx !mus"></label>
+          <label class="field wide">Navn<input type="text" id="n-name" maxlength="80" placeholder="Fx G PRO X2 Superstrike gaming mus"></label>
+        </div>
+        <div class="line"><button type="submit">Tilføj</button></div>
+      </form>
+    </div>
+    <p class="note">“Hent fra link” læser mærke, navn, pris og billede fra produktsiden. Virker ikke i alle butikker — så skriv det ind og vælg selv et billede.</p>
+  </section>
+
+  <section>
+    <p class="label" id="products-label">Produkter</p>
+    <div class="products" id="products"></div>
+    <div class="line" style="margin-top:10px">
+      <button type="button" class="primary" id="play">Vis rækken nu</button>
+    </div>
+    <p class="note">Kommandoen står kun på kortet. Svaret i chatten (linket til produktet) laver du som en almindelig kommando i din bot.</p>
+  </section>
+
+  <section>
+    <p class="label">Tekster på kortet</p>
+    <div class="box stack">
+      <div class="fields">
+        <label class="field">Lille overskrift<input type="text" id="p-eyebrow" maxlength="30" placeholder="Fx Jeg bruger"></label>
+        <label class="field">Butik (øverst til højre)<input type="text" id="p-shop" maxlength="30" placeholder="Fx Power.dk — kan stå tom"></label>
+        <label class="field wide">Linje nederst<input type="text" id="p-hint" maxlength="70" placeholder="Fx Skriv kommandoen i chatten for mere info"></label>
+        <label class="field wide">Afslutning efter sidste produkt<input type="text" id="p-outro" maxlength="120" placeholder="Fx Find mit gear og meget mere på …"></label>
+      </div>
+      <div class="line">
+        <button type="button" id="save-texts" class="primary">Gem tekster</button>
+        <button type="button" id="outro-toggle" aria-pressed="false">Afslutning: fra</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Tempo</p>
+    <div class="box">
+      <div class="fields">
+        <label class="field">Sekunder pr. produkt<input type="number" id="p-seconds" min="3" max="30" step="1"></label>
+        <label class="field">Minutter mellem hver runde<input type="number" id="p-minutes" min="1" max="180" step="1"></label>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Billede af dig (venstre side af kortet)</p>
+    <div class="box">
+      <div class="line">
+        <img class="portrait-thumb" id="portrait-thumb" alt="" hidden>
+        <label class="file">Vælg billede<input type="file" id="portrait-file" accept="image/png,image/jpeg,image/webp"></label>
+        <button type="button" class="danger" id="portrait-remove" hidden>Fjern</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Farve</p>
+    <div class="swatches" id="accents"></div>
+  </section>
+
+  <section>
+    <p class="label">Størrelse på overlayet · <span id="scale-label">100 %</span></p>
+    <div class="box">
+      <div class="line">
+        <input type="range" id="scale" min="50" max="200" step="5" value="100" aria-label="Størrelse på overlayet">
+        <button type="button" id="scale-reset">100 %</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="status" id="status" role="status"></div>
+</div>
+
+<script>
+(function () {
+  var API = '/gear/api';
+  var TOKEN_KEY = 'gear-control-token';
+  var state = null;
+  var pending = null; // a state that arrived while a field was being edited or a button pressed
+  var holding = false; // a pointer is down: rebuilding the list now would swallow the click
+  var rejected = false; // the server turned the saved password down
+  var $ = function (id) { return document.getElementById(id); };
+  var productsEl = $('products');
+  var statusEl = $('status');
+  var profile = new URLSearchParams(location.search).get('profile');
+
+  function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  function setToken(value) { try { localStorage.setItem(TOKEN_KEY, value); } catch (e) {} }
+
+  function say(message, isError) {
+    statusEl.textContent = message;
+    statusEl.className = 'status' + (isError ? ' error' : '');
+    if (message && !isError) setTimeout(function () { if (statusEl.textContent === message) statusEl.textContent = ''; }, 2500);
+  }
+
+  function call(path, method, body) {
+    var headers = { 'x-gear-key': getToken() };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    return fetch(API + path, { method: method, headers: headers, body: body === undefined ? undefined : JSON.stringify(body) }).then(function (r) {
+      if (r.status === 401) { rejected = true; $('auth').hidden = false; say('Forkert eller manglende adgangskode.', true); throw new Error('unauthorized'); }
+      return r.json().then(function (data) {
+        if (!r.ok) { say(data.error || 'Noget gik galt — prøv igen.', true); throw new Error('failed'); }
+        rejected = false;
+        return data;
+      });
+    });
+  }
+  function act(path, method, body) { return call(path, method, body).then(render).catch(function () {}); }
+
+  function el(tag, props, children) {
+    var node = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (key) {
+      if (key === 'text') node.textContent = props[key];
+      else if (key === 'on') Object.keys(props.on).forEach(function (type) { node.addEventListener(type, props.on[type]); });
+      else if (key in node) node[key] = props[key];
+      else node.setAttribute(key, props[key]);
+    });
+    (children || []).forEach(function (child) { node.appendChild(child); });
+    return node;
+  }
+
+  function imageUrl(id, version) {
+    return API + '/image/' + encodeURIComponent(id) + '?v=' + encodeURIComponent(version) + (profile ? '&profile=' + encodeURIComponent(profile) : '');
+  }
+
+  // Shrinks a chosen picture in the browser before it is sent, so a phone photo does not become a huge upload.
+  function shrink(file, max) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = reject;
+        img.onload = function () {
+          var ratio = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * ratio));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/webp', 0.9)); // browsers without WebP give a PNG here, which is fine too
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function upload(input, max, path) {
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    shrink(file, max).then(function (dataUrl) { return act(path, 'PUT', { dataUrl: dataUrl }); }, function () { say('Billedet kunne ikke læses.', true); });
+  }
+
+  function move(id, by) {
+    var ids = state.products.map(function (product) { return product.id; });
+    var at = ids.indexOf(id), to = at + by;
+    if (at === -1 || to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(at, 1)[0]);
+    act('/order', 'PUT', { ids: ids });
+  }
+
+  function field(label, input, wide) { return el('label', { className: 'field' + (wide ? ' wide' : '') }, [document.createTextNode(label), input]); }
+
+  function productRow(product, index, count) {
+    var path = '/products/' + encodeURIComponent(product.id);
+    var input = function (key, max, placeholder) {
+      var node = el('input', { type: 'text', value: product[key], maxLength: max, placeholder: placeholder || '', on: { change: function () {
+        if (key === 'name' && !node.value.trim()) { node.value = product.name; return; }
+        var patch = {}; patch[key] = node.value; act(path, 'PATCH', patch);
+      } } });
+      return node;
+    };
+    var file = el('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp', on: { change: function () { upload(file, 320, path + '/image'); } } });
+    var buttons = [
+      el('label', { className: 'file' }, [document.createTextNode(product.image ? 'Skift billede' : 'Vælg billede'), file]),
+      el('button', { type: 'button', text: '↑', title: 'Op', disabled: index === 0, on: { click: function () { move(product.id, -1); } } }),
+      el('button', { type: 'button', text: '↓', title: 'Ned', disabled: index === count - 1, on: { click: function () { move(product.id, 1); } } })
+    ];
+    if (product.url) buttons.splice(1, 0, el('button', { type: 'button', text: 'Opdatér fra link', title: 'Henter pris og billede igen fra ' + product.url, on: { click: function (event) {
+      event.target.disabled = true; say('Henter fra butikken …');
+      call(path, 'PATCH', { refresh: true }).then(function (data) { say('Opdateret.'); render(data); }).catch(function () { event.target.disabled = false; });
+    } } }));
+    buttons.push(el('button', { type: 'button', className: 'danger', text: 'Slet', on: { click: function () { if (confirm('Fjern ' + product.name + ' fra listen?')) act(path, 'DELETE'); } } }));
+
+    return el('div', { className: 'product' }, [
+      el('div', { className: 'thumb' }, product.image ? [el('img', { src: imageUrl(product.id, product.image), alt: '' })] : [document.createTextNode('Intet billede')]),
+      el('div', { className: 'stack' }, [
+        el('div', { className: 'fields' }, [
+          field('Navn', input('name', 80), true),
+          field('Mærke', input('brand', 30)),
+          field('Pris', input('price', 24)),
+          field('Før-pris', input('before', 24, 'Kan stå tom')),
+          field('Chat-kommando', input('command', 24))
+        ]),
+        el('div', { className: 'more' }, buttons)
+      ])
+    ]);
+  }
+
+  function setValue(id, value) { if (document.activeElement !== $(id)) $(id).value = value; }
+
+  function render(next) {
+    if (!next || !next.plan) return;
+    // Don't rebuild the list under someone who is typing or pressing; it is drawn when they are done.
+    if (holding || (productsEl.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) { pending = next; return; }
+    pending = null;
+    state = next;
+    var plan = state.plan;
+    $('auth').hidden = !state.passwordRequired || (Boolean(getToken()) && !rejected);
+    $('products-label').textContent = 'Produkter · ' + state.products.length;
+    productsEl.textContent = '';
+    if (!state.products.length) productsEl.appendChild(el('div', { className: 'empty', text: 'Ingen produkter endnu. Tilføj det første ovenfor.' }));
+    state.products.forEach(function (product, index) { productsEl.appendChild(productRow(product, index, state.products.length)); });
+    $('play').disabled = !state.products.length;
+
+    setValue('p-eyebrow', plan.eyebrow); setValue('p-shop', plan.shop); setValue('p-hint', plan.hint); setValue('p-outro', plan.outroText);
+    setValue('p-seconds', plan.showSeconds); setValue('p-minutes', plan.everyMinutes);
+    $('outro-toggle').setAttribute('aria-pressed', String(plan.outroEnabled));
+    $('outro-toggle').textContent = 'Afslutning: ' + (plan.outroEnabled ? 'til' : 'fra');
+    $('portrait-thumb').hidden = $('portrait-remove').hidden = !plan.portrait;
+    if (plan.portrait) $('portrait-thumb').src = imageUrl('portrait', plan.portrait);
+    document.querySelectorAll('#accents button').forEach(function (button) { button.setAttribute('aria-pressed', String(button.dataset.accent === plan.accent)); });
+    var percent = Math.round(plan.scale * 100);
+    setValue('scale', percent);
+    $('scale-label').textContent = percent + ' %';
+  }
+
+  productsEl.addEventListener('focusout', function () { setTimeout(function () { if (pending) render(pending); }, 0); });
+  document.addEventListener('pointerdown', function () { holding = true; });
+  ['pointerup', 'pointercancel'].forEach(function (type) {
+    document.addEventListener(type, function () { setTimeout(function () { holding = false; if (pending) render(pending); }, 60); });
+  });
+
+  $('from-link').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var url = $('link').value.trim();
+    if (!url) { $('link').focus(); return; }
+    $('fetch').disabled = true;
+    say('Henter fra butikken …');
+    call('/products', 'POST', { url: url }).then(function (data) { $('link').value = ''; say('Produktet er tilføjet.'); render(data); })
+      .catch(function () {}).then(function () { $('fetch').disabled = false; });
+  });
+  $('by-hand').addEventListener('submit', function (event) {
+    event.preventDefault();
+    var name = $('n-name').value.trim();
+    if (!name) { $('n-name').focus(); return; }
+    call('/products', 'POST', { name: name, brand: $('n-brand').value, price: $('n-price').value, command: $('n-command').value }).then(function (data) {
+      ['n-name', 'n-brand', 'n-price', 'n-command'].forEach(function (id) { $(id).value = ''; });
+      render(data);
+    }).catch(function () {});
+  });
+
+  $('play').addEventListener('click', function () { call('/play', 'POST', {}).then(function () { say('Rækken vises nu på overlayet.'); }).catch(function () {}); });
+  $('save-texts').addEventListener('click', function () {
+    call('/plan', 'PATCH', { eyebrow: $('p-eyebrow').value, shop: $('p-shop').value, hint: $('p-hint').value, outroText: $('p-outro').value })
+      .then(function (data) { say('Teksterne er gemt.'); render(data); }).catch(function () {});
+  });
+  $('outro-toggle').addEventListener('click', function () { act('/plan', 'PATCH', { outroEnabled: !state.plan.outroEnabled, outroText: $('p-outro').value }); });
+  $('p-seconds').addEventListener('change', function () { act('/plan', 'PATCH', { showSeconds: Number($('p-seconds').value) }); });
+  $('p-minutes').addEventListener('change', function () { act('/plan', 'PATCH', { everyMinutes: Number($('p-minutes').value) }); });
+  $('portrait-file').addEventListener('change', function () { upload($('portrait-file'), 480, '/portrait'); });
+  $('portrait-remove').addEventListener('click', function () { act('/portrait', 'PUT', { dataUrl: '' }); });
+
+  // The size slider moves the overlay while you drag it (a short pause keeps it from sending every single step).
+  var scaleTimer = null;
+  $('scale').addEventListener('input', function () {
+    var value = Number($('scale').value);
+    $('scale-label').textContent = value + ' %';
+    clearTimeout(scaleTimer);
+    scaleTimer = setTimeout(function () { act('/plan', 'PATCH', { scale: value / 100 }); }, 120);
+  });
+  $('scale-reset').addEventListener('click', function () { clearTimeout(scaleTimer); act('/plan', 'PATCH', { scale: 1 }); });
+
+  // The colour on the overlay. The overlay has the colours themselves; here they are only the small squares.
+  [['orange', 'Orange', '#ff8a3d'], ['lime', 'Lime', '#c9f36b'], ['mint', 'Mint', '#72c99b'], ['blue', 'Isblå', '#5cc8ff'],
+   ['violet', 'Violet', '#a78bfa'], ['yellow', 'Gul', '#ffd23f'], ['pink', 'Rosa', '#ff6b9a'], ['white', 'Hvid', '#ededed']].forEach(function (accent) {
+    $('accents').appendChild(el('button', { type: 'button', 'data-accent': accent[0], 'aria-pressed': 'false', on: { click: function () { act('/plan', 'PATCH', { accent: accent[0] }); } } },
+      [el('i', { style: 'background:' + accent[2] }), el('span', { text: accent[1] })]));
+  });
+
+  $('token').value = getToken();
+  $('save-token').addEventListener('click', function () {
+    setToken($('token').value.trim());
+    call('/login', 'POST', {}).then(function () { say('Koden virker og er gemt på denne enhed.'); $('auth').hidden = true; }).catch(function () {});
+  });
+  $('token').addEventListener('keydown', function (event) { if (event.key === 'Enter') $('save-token').click(); });
+
+  fetch(API + '/state').then(function (r) { return r.json(); }).then(render).catch(function () { say('Kunne ikke hente listen.', true); });
+  var events = new EventSource(API + '/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) {} };
+})();
+</script>
+</body>
+</html>
