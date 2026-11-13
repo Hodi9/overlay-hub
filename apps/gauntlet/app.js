@@ -61,7 +61,8 @@ function cleanRun(input, existing) {
   return {
     resets: Math.min(9999, Math.max(0, Math.round(toNumber(input?.resets, existing.resets)))),
     showResets: typeof input?.showResets === "boolean" ? input.showResets : existing.showResets,
-    current: typeof input?.current === "string" ? input.current.slice(0, 80) : existing.current || ""
+    current: typeof input?.current === "string" ? input.current.slice(0, 80) : existing.current || "",
+    cover: typeof input?.cover === "boolean" ? input.cover : Boolean(existing.cover)
   };
 }
 
@@ -74,7 +75,8 @@ export function createGauntletApp(context = {}) {
   let games = defaultGames();
   // How many times the run has been reset (a lost game sends everyone back to the start), whether the
   // overlay shows that number, and which game is being played now (its id; the overlay puts a frame around it).
-  let run = { resets: 0, showResets: true, current: "" };
+  // "cover" hides everything on both overlays; the main one shows only the line "Får jeg løn?" instead.
+  let run = { resets: 0, showResets: true, current: "", cover: false };
 
   // The games are played in order and a loss sends the run back to the first one, so the game being played now
   // is the first one that is not completed. One picked in the panel goes first, while it is shown and not completed.
@@ -167,7 +169,7 @@ export function createGauntletApp(context = {}) {
   }
 
   function payload() {
-    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
+    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), cover: run.cover, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
   }
 
   function broadcast() {
@@ -255,7 +257,7 @@ export function createGauntletApp(context = {}) {
     }
   });
 
-  // Correct the reset counter by hand, or show/hide it on the overlay.
+  // Correct the reset counter by hand, show/hide it on the overlay, or cover the whole overlay.
   router.patch("/api/run", requireAuth, async (request, response, next) => {
     try {
       run = cleanRun(request.body, run);

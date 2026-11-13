@@ -42,6 +42,15 @@ test("completing the game being played moves the frame on, and a reset counts up
 
     ({ data } = await call("/run", "PATCH", { resets: -5, showResets: false, current: "findes-ikke" }));
     assert.deepEqual([data.resets, data.showResets, data.current], [0, false, first.id]);
+
+    // The cover ("Får jeg løn?") is off until it is switched on, and a reset or another change leaves it alone.
+    assert.equal(data.cover, false);
+    ({ data } = await call("/run", "PATCH", { cover: true }));
+    assert.equal(data.cover, true);
+    ({ data } = await call("/reset", "POST", {}));
+    assert.deepEqual([data.cover, data.games.length], [true, 7]);
+    ({ data } = await call("/run", "PATCH", { cover: false }));
+    assert.equal(data.cover, false);
   } finally {
     await close();
   }

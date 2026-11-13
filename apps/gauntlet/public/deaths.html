@@ -33,9 +33,10 @@
 <script src="game-theme.js"></script>
 <script>
 (function(){
-  function render(games){
+  function render(state){
     // Same order as the badges on the main overlay, so each counter stays next to its game.
-    var sorted = games.filter(function(g){ return g.visible !== false; });
+    // While the overlay is covered ("Får jeg løn?"), the counters are hidden too.
+    var sorted = state.cover ? [] : (state.games || []).filter(function(g){ return g.visible !== false; });
 
     var deathsEl = document.getElementById('deaths');
     deathsEl.innerHTML = '';
@@ -54,11 +55,11 @@
     });
   }
 
-  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(function(s){ render(s.games || []); }).catch(function(){});
+  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
 
   var events = new EventSource('/gauntlet/api/events');
   events.onmessage = function(event){
-    try { render(JSON.parse(event.data).games || []); } catch(e){}
+    try { render(JSON.parse(event.data)); } catch(e){}
   };
 })();
 </script>

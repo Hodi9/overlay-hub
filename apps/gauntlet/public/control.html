@@ -50,6 +50,14 @@
   .small-btn:hover{background:var(--line);}
   .small-btn[aria-pressed="true"]{border-color:var(--check);color:var(--check);}
 
+  .cover{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .cover p{flex:1;min-width:200px;margin:0;font-size:0.88rem;color:var(--text-dim);}
+  .cover p b{color:var(--text);}
+  .cover-btn{padding:12px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:0.92rem;flex:none;}
+  .cover-btn:hover{background:var(--line);}
+  .cover-btn[aria-pressed="true"]{background:rgba(255,210,63,0.14);border-color:var(--now);color:var(--now);}
+  .box.covered{border-color:var(--now);}
+
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
   .row{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);border-left:3px solid transparent;flex-wrap:wrap;}
   .row:last-child{border-bottom:none;}
@@ -118,6 +126,16 @@
   </section>
 
   <section>
+    <p class="section-label">Skjul alt</p>
+    <div class="box" id="cover-box">
+      <div class="cover">
+        <p id="cover-text"></p>
+        <button type="button" class="cover-btn" id="cover-btn" aria-pressed="false"></button>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <p class="section-label">Spil</p>
     <p class="hint">Tryk <b>Gennemført</b>, når et spil er klaret: så bliver det gråt med et flueben på overlayet, og rammen rykker til det næste. Rammen står selv om det første spil, der ikke er klaret; <b>Spilles nu</b> flytter den i hånden. 👁 viser/skjuler spillet på begge overlays.</p>
     <div class="panel" id="panel"></div>
@@ -151,7 +169,7 @@
   var saveTokenBtn = document.getElementById('save-token-btn');
   var tokenStatus = document.getElementById('token-status');
   var globalStatus = document.getElementById('global-status');
-  var state = { games: [], resets: 0, showResets: true, current: '' };
+  var state = { games: [], resets: 0, showResets: true, current: '', cover: false };
   var pending = null;  // a state that arrived while a button was being pressed
   var holding = false; // a pointer is down: rebuilding the rows now would swallow the click
 
@@ -260,6 +278,13 @@
     show.setAttribute('aria-pressed', String(state.showResets !== false));
     show.textContent = state.showResets !== false ? 'Vises på overlayet' : 'Skjult på overlayet';
     document.getElementById('auth').hidden = state.passwordRequired === false;
+    var covered = state.cover === true;
+    document.getElementById('cover-box').classList.toggle('covered', covered);
+    document.getElementById('cover-btn').setAttribute('aria-pressed', String(covered));
+    document.getElementById('cover-btn').textContent = covered ? 'Vis gauntleten igen' : 'Skjul alt';
+    document.getElementById('cover-text').innerHTML = covered
+      ? '<b>Alt er skjult lige nu.</b> Overlayet viser kun teksten »Får jeg løn?«, og dødstælleren er tom.'
+      : 'Fjerner spil, resets og dødstæller fra skærmen og skriver i stedet »Får jeg løn?« på overlayet. Intet bliver slettet.';
 
     var panel = document.getElementById('panel');
     var deathsPanel = document.getElementById('deaths-panel');
@@ -295,6 +320,8 @@
   document.getElementById('resets-minus').addEventListener('click', function(){ send('/run', 'PATCH', { resets: Math.max(0, (state.resets || 0) - 1) }); });
   document.getElementById('resets-plus').addEventListener('click', function(){ send('/run', 'PATCH', { resets: (state.resets || 0) + 1 }); });
   document.getElementById('resets-show').addEventListener('click', function(){ send('/run', 'PATCH', { showResets: state.showResets === false }); });
+
+  document.getElementById('cover-btn').addEventListener('click', function(){ send('/run', 'PATCH', { cover: state.cover !== true }); });
 
   fetch(API + '/state').then(function(r){ return r.json(); }).then(render).catch(function(){ setGlobalStatus('Kunne ikke hente spillene.', 'status-msg error'); });
   var events = new EventSource(API + '/events');
