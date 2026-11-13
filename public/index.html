@@ -404,10 +404,12 @@ const OVERLAYS = [
   { id: "turnering", cat: "show", tag: "Event", title: "Turnering", sub: "Bracket og kamp-score for hold eller enkeltspillere",
     links: [["Bracket", "/turnering/"], ["Kun kampen nu", "/turnering/?view=match"]], control: "/turnering/control.html",
     info: "Knockout-turnering med op til 16 deltagere. Skriv hold eller spillere ind, upload logoer, og tast stillingen undervejs — vinderen rykker selv videre i bracketen. De to overlays er separate browser sources." },
+  /* GAUNTLET-SKJULT: midlertidigt skjult, se server.js
   { id: "gauntlet", cat: "show", tag: "Event", title: "God Gamer Gauntlet", sub: "Multi-game challenge-badges + dødstæller",
     image: { src: "/img/gauntlet.jpg", aspect: "960 / 853" },
     links: [["Overlay", "/gauntlet/"], ["Dødstæller", "/gauntlet/deaths.html"]], control: "/gauntlet/control.html",
     info: "Overlay og dødstæller er separate browser sources — placér dem hver for sig i OBS." },
+  GAUNTLET-SKJULT slut */
   { id: "tlou2", cat: "spil", tag: "Spil", title: "The Last of Us Part II", sub: "Story-progression — auto-opdateres via OCR",
     image: { src: "/img/tlou2.jpg", credit: "soniagipi.artstation.com", url: "https://soniagipi.artstation.com" },
     links: [["Overlay", "/tlou2/?demo=1"]], control: "/tlou2/control.html",
