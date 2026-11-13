@@ -164,18 +164,11 @@ app.use("/gear", createTenantDispatcher({
   factory: (context) => createGearApp(context)
 }));
 app.use("/gear-bf", createGearBfApp());
-// GAUNTLET-SKJULT: God Gamer Gauntlet is temporarily hidden — every /gauntlet address answers 404
-// and the cards on the front page and the channel page are commented out (search for GAUNTLET-SKJULT).
-// Set GAUNTLET_SHOW=1 to mount it again.
-if (process.env.GAUNTLET_SHOW === "1") {
-  app.use("/gauntlet", createTenantDispatcher({
-    registry: channels, pool,
-    legacy: createGauntletApp({ pool }),
-    factory: (context) => createGauntletApp(context)
-  }));
-} else {
-  app.use("/gauntlet", (_req, res) => res.status(404).type("text").send("Not found"));
-}
+app.use("/gauntlet", createTenantDispatcher({
+  registry: channels, pool,
+  legacy: createGauntletApp({ pool }),
+  factory: (context) => createGauntletApp(context)
+}));
 // A knockout tournament: the whole bracket, or only the match being played. One tournament per channel.
 app.use("/turnering", createTenantDispatcher({
   registry: channels, pool,
