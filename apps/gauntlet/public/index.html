@@ -151,7 +151,7 @@
         : '<span class="badge-name">' + g.name + '</span>';
       badge.innerHTML = '<span class="game-mark">' + mark + '</span>' + name;
       // The record: the game furthest down the list that has been reached so far, and how many times.
-      if (g.id === state.best) {
+      if (g.id === state.best && state.showBest !== false) {
         var row = document.createElement('div');
         row.className = 'badge-row';
         var best = document.createElement('div');
@@ -174,11 +174,21 @@
     }
   }
 
-  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+  // A new version of this page on the server: load it, so nobody has to refresh the browser source in OBS.
+  var pageVersion = null;
+  function fresh(state){
+    if (state && state.version) {
+      if (pageVersion && pageVersion !== state.version) { location.reload(); return false; }
+      pageVersion = state.version;
+    }
+    return true;
+  }
+
+  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(function(s){ if (fresh(s)) render(s); }).catch(function(){});
 
   var events = new EventSource('/gauntlet/api/events');
   events.onmessage = function(event){
-    try { render(JSON.parse(event.data)); } catch(e){}
+    try { var s = JSON.parse(event.data); if (fresh(s)) render(s); } catch(e){}
   };
 })();
 </script>

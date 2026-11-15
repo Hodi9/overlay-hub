@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -64,6 +65,7 @@ function cleanRun(input, existing) {
     current: typeof input?.current === "string" ? input.current.slice(0, 80) : existing.current || "",
     cover: typeof input?.cover === "boolean" ? input.cover : Boolean(existing.cover),
     best: typeof input?.best === "string" ? input.best.slice(0, 80) : existing.best || "",
+    showBest: typeof input?.showBest === "boolean" ? input.showBest : existing.showBest !== false,
     bestCount: Math.min(999, Math.max(0, Math.round(toNumber(input?.bestCount, existing.bestCount || 0))))
   };
 }
@@ -80,7 +82,13 @@ export function createGauntletApp(context = {}) {
   // "cover" hides everything on both overlays; the main one shows only the line "Får jeg løn?" instead.
   // "best" is the record: the id of the game furthest down the list that the run has reached so far, and
   // "bestCount" how many times it got there. Both are set by hand in the panel; no game picked means no record shown.
-  let run = { resets: 0, showResets: true, current: "", cover: false, best: "", bestCount: 0 };
+  let run = { resets: 0, showResets: true, current: "", cover: false, best: "", bestCount: 0, showBest: true };
+
+  // A fingerprint of the overlay pages. It goes out with every state, and an overlay that is open in OBS
+  // reloads itself when it changes, so a new version shows without anyone refreshing the browser source.
+  const version = crypto.createHash("sha1").update(["index.html", "deaths.html", "game-theme.js"]
+    .map((name) => { try { return fs.readFileSync(path.join(__dirname, "public", name)); } catch { return ""; } })
+    .join("")).digest("hex").slice(0, 12);
 
   // The games are played in order and a loss sends the run back to the first one, so the game being played now
   // is the first one that is not completed. One picked in the panel goes first, while it is shown and not completed.
@@ -173,7 +181,7 @@ export function createGauntletApp(context = {}) {
   }
 
   function payload() {
-    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), cover: run.cover, best: games.some((g) => g.id === run.best) ? run.best : "", bestCount: run.bestCount, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
+    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), cover: run.cover, best: games.some((g) => g.id === run.best) ? run.best : "", bestCount: run.bestCount, showBest: run.showBest, version, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
   }
 
   function broadcast() {

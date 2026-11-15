@@ -141,9 +141,10 @@
           <button type="button" id="best-plus" aria-label="Én gang mere">+</button>
           <label>gange</label>
         </div>
+        <button type="button" class="small-btn" id="best-show" aria-pressed="true">Vises på overlayet</button>
       </div>
     </div>
-    <p class="hint" style="margin:10px 0 0;">Vælg det spil, de er nået længst til indtil nu, og hvor mange gange de har nået det. På overlayet står »PR« og antallet til højre for spillet. Vælg »Ingen« for at fjerne det.</p>
+    <p class="hint" style="margin:10px 0 0;">Vælg det spil, de er nået længst til indtil nu, og hvor mange gange de har nået det. På overlayet står »PR« og antallet til højre for spillet. Knappen til højre skjuler det på overlayet uden at slette det.</p>
   </section>
 
   <section>
@@ -319,6 +320,10 @@
     bestSelect.value = state.best || '';
     document.getElementById('best-times').hidden = !state.best;
     document.getElementById('best-count').textContent = state.bestCount || 0;
+    var bestShow = document.getElementById('best-show');
+    bestShow.hidden = !state.best;
+    bestShow.setAttribute('aria-pressed', String(state.showBest !== false));
+    bestShow.textContent = state.showBest !== false ? 'Vises på overlayet' : 'Skjult på overlayet';
 
     var panel = document.getElementById('panel');
     var deathsPanel = document.getElementById('deaths-panel');
@@ -356,6 +361,7 @@
   document.getElementById('resets-show').addEventListener('click', function(){ send('/run', 'PATCH', { showResets: state.showResets === false }); });
 
   document.getElementById('best-game').addEventListener('change', function(){ send('/run', 'PATCH', { best: this.value }); });
+  document.getElementById('best-show').addEventListener('click', function(){ send('/run', 'PATCH', { showBest: state.showBest === false }); });
   document.getElementById('best-minus').addEventListener('click', function(){ send('/run', 'PATCH', { bestCount: Math.max(1, (state.bestCount || 0) - 1) }); });
   document.getElementById('best-plus').addEventListener('click', function(){ send('/run', 'PATCH', { bestCount: (state.bestCount || 0) + 1 }); });
 

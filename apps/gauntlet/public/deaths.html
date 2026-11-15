@@ -55,11 +55,21 @@
     });
   }
 
-  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+  // A new version of this page on the server: load it, so nobody has to refresh the browser source in OBS.
+  var pageVersion = null;
+  function fresh(state){
+    if (state && state.version) {
+      if (pageVersion && pageVersion !== state.version) { location.reload(); return false; }
+      pageVersion = state.version;
+    }
+    return true;
+  }
+
+  fetch('/gauntlet/api/state').then(function(r){ return r.json(); }).then(function(s){ if (fresh(s)) render(s); }).catch(function(){});
 
   var events = new EventSource('/gauntlet/api/events');
   events.onmessage = function(event){
-    try { render(JSON.parse(event.data)); } catch(e){}
+    try { var s = JSON.parse(event.data); if (fresh(s)) render(s); } catch(e){}
   };
 })();
 </script>

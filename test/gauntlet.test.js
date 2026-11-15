@@ -61,6 +61,10 @@ test("completing the game being played moves the frame on, and a reset counts up
     assert.deepEqual([data.best, data.bestCount], [third.id, 3]);
     ({ data } = await call("/run", "PATCH", { best: data.games[3].id }));
     assert.deepEqual([data.best, data.bestCount], [data.games[3].id, 1]);
+    // It can be hidden on the overlay without being forgotten.
+    assert.equal(data.showBest, true);
+    ({ data } = await call("/run", "PATCH", { showBest: false }));
+    assert.deepEqual([data.showBest, data.best, data.bestCount, typeof data.version], [false, data.games[3].id, 1, "string"]);
     ({ data } = await call("/run", "PATCH", { best: "findes-ikke" }));
     assert.equal(data.best, "");
     ({ data } = await call("/run", "PATCH", { best: "" }));
