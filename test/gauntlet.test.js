@@ -51,6 +51,20 @@ test("completing the game being played moves the frame on, and a reset counts up
     assert.deepEqual([data.cover, data.games.length], [true, 7]);
     ({ data } = await call("/run", "PATCH", { cover: false }));
     assert.equal(data.cover, false);
+
+    // The record: no game until one is picked; a newly picked game starts at one time, and a reset leaves it alone.
+    assert.deepEqual([data.best, data.bestCount], ["", 0]);
+    ({ data } = await call("/run", "PATCH", { best: third.id }));
+    assert.deepEqual([data.best, data.bestCount], [third.id, 1]);
+    ({ data } = await call("/run", "PATCH", { bestCount: 3 }));
+    ({ data } = await call("/reset", "POST", {}));
+    assert.deepEqual([data.best, data.bestCount], [third.id, 3]);
+    ({ data } = await call("/run", "PATCH", { best: data.games[3].id }));
+    assert.deepEqual([data.best, data.bestCount], [data.games[3].id, 1]);
+    ({ data } = await call("/run", "PATCH", { best: "findes-ikke" }));
+    assert.equal(data.best, "");
+    ({ data } = await call("/run", "PATCH", { best: "" }));
+    assert.deepEqual([data.best, data.bestCount], ["", 0]);
   } finally {
     await close();
   }

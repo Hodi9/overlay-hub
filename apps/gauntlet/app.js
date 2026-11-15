@@ -62,7 +62,9 @@ function cleanRun(input, existing) {
     resets: Math.min(9999, Math.max(0, Math.round(toNumber(input?.resets, existing.resets)))),
     showResets: typeof input?.showResets === "boolean" ? input.showResets : existing.showResets,
     current: typeof input?.current === "string" ? input.current.slice(0, 80) : existing.current || "",
-    cover: typeof input?.cover === "boolean" ? input.cover : Boolean(existing.cover)
+    cover: typeof input?.cover === "boolean" ? input.cover : Boolean(existing.cover),
+    best: typeof input?.best === "string" ? input.best.slice(0, 80) : existing.best || "",
+    bestCount: Math.min(999, Math.max(0, Math.round(toNumber(input?.bestCount, existing.bestCount || 0))))
   };
 }
 
@@ -76,7 +78,9 @@ export function createGauntletApp(context = {}) {
   // How many times the run has been reset (a lost game sends everyone back to the start), whether the
   // overlay shows that number, and which game is being played now (its id; the overlay puts a frame around it).
   // "cover" hides everything on both overlays; the main one shows only the line "Får jeg løn?" instead.
-  let run = { resets: 0, showResets: true, current: "", cover: false };
+  // "best" is the record: the id of the game furthest down the list that the run has reached so far, and
+  // "bestCount" how many times it got there. Both are set by hand in the panel; no game picked means no record shown.
+  let run = { resets: 0, showResets: true, current: "", cover: false, best: "", bestCount: 0 };
 
   // The games are played in order and a loss sends the run back to the first one, so the game being played now
   // is the first one that is not completed. One picked in the panel goes first, while it is shown and not completed.
@@ -169,7 +173,7 @@ export function createGauntletApp(context = {}) {
   }
 
   function payload() {
-    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), cover: run.cover, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
+    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), cover: run.cover, best: games.some((g) => g.id === run.best) ? run.best : "", bestCount: run.bestCount, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
   }
 
   function broadcast() {
@@ -257,10 +261,13 @@ export function createGauntletApp(context = {}) {
     }
   });
 
-  // Correct the reset counter by hand, show/hide it on the overlay, or cover the whole overlay.
+  // Correct the reset counter by hand, show/hide it on the overlay, cover the whole overlay, or set the record.
   router.patch("/api/run", requireAuth, async (request, response, next) => {
     try {
+      const picked = typeof request.body?.best === "string" && request.body.best !== run.best;
       run = cleanRun(request.body, run);
+      // Another game as the record starts its count over, at one, unless a count came along.
+      if (picked && request.body?.bestCount === undefined) run.bestCount = run.best ? 1 : 0;
       await commit();
       response.json(payload());
     } catch (error) {

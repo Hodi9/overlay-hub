@@ -50,6 +50,17 @@
     font-weight:700;font-size:.95rem;text-transform:uppercase;letter-spacing:.08em;
   }
   .resets b{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.25rem;letter-spacing:0;font-variant-numeric:tabular-nums;}
+  /* The record sits to the right of the game it belongs to, pointing at it. */
+  .badge-row{display:flex;align-items:center;gap:18px;}
+  .best::before{content:'';position:absolute;left:-12px;top:50%;margin-top:-8px;border:8px solid transparent;border-left:0;border-right:9px solid #050609;}
+  .best{
+    position:relative;
+    display:inline-flex;align-items:center;gap:10px;height:40px;padding:0 13px;border-radius:11px;
+    background:#050609;border:3px solid rgba(8,10,14,.9);color:#fff;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 0 rgba(0,0,0,.48),0 6px 10px rgba(0,0,0,.25);
+    font-weight:700;font-size:.95rem;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;
+  }
+  .best b{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.1rem;letter-spacing:0;color:#ffd23f;font-variant-numeric:tabular-nums;}
   /* The cover: everything else is gone and only this line is shown. */
   .cover{
     display:inline-flex;align-items:center;height:64px;padding:0 20px;border-radius:11px;
@@ -139,6 +150,19 @@
         ? '<img class="game-wordmark" src="' + logoUrl + '" alt="Minecraft">'
         : '<span class="badge-name">' + g.name + '</span>';
       badge.innerHTML = '<span class="game-mark">' + mark + '</span>' + name;
+      // The record: the game furthest down the list that has been reached so far, and how many times.
+      if (g.id === state.best) {
+        var row = document.createElement('div');
+        row.className = 'badge-row';
+        var best = document.createElement('div');
+        best.className = 'best';
+        var label = document.createElement('span'); label.textContent = 'PR';
+        var times = document.createElement('b'); times.textContent = Number(state.bestCount) || 1;
+        best.appendChild(label); best.appendChild(times);
+        row.appendChild(badge); row.appendChild(best);
+        badgesEl.appendChild(row);
+        return;
+      }
       badgesEl.appendChild(badge);
     });
 
