@@ -18,6 +18,8 @@
     background:#050609;border:3px solid rgba(8,10,14,.9);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 3px 0 rgba(0,0,0,.48),0 6px 10px rgba(0,0,0,.25);
   }
+  /* A completed game: greyed out like its badge on the main overlay. */
+  .death-card.done{filter:grayscale(1) brightness(.72);opacity:.8;}
   .death-body{display:grid;grid-template-rows:20px 1fr;width:100%;height:100%;min-width:0;background:#050609;}
   .death-label{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.69rem;text-transform:none;letter-spacing:.03em;color:#fff;background:var(--game);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
   .death-card.minecraft{--game:#3f9144!important;}
@@ -44,7 +46,7 @@
     sorted.forEach(function(g){
       var card = document.createElement('div');
       var themeClass = (window.GauntletTheme && window.GauntletTheme.classFor(g)) || 'generic';
-      card.className = 'death-card ' + themeClass;
+      card.className = 'death-card ' + themeClass + (g.done ? ' done' : '');
       card.style.setProperty('--game', g.color);
       card.innerHTML =
         '<div class="death-body">' +
