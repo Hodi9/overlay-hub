@@ -10,7 +10,7 @@ const COMMAND_RE = /^![a-z0-9æøå_]{1,24}$/;
 export const DEFAULT_COUNTERS = [
   { label: "Dødsfald", command: "!death" },
   { label: "Stripklub", command: "!strip" },
-  { label: "Lucia sex", command: "!lucia" }
+  { label: "Brage Lucia", command: "!lucia" }
 ];
 
 const clip = (value, max) => String(value ?? "").trim().slice(0, max);

@@ -13,7 +13,7 @@ test("starts with the three GTA VI counters at 0 and chat off", () => {
   assert.deepEqual(s.counters.map((c) => [c.label, c.command, c.count, c.visible]), [
     ["Dødsfald", "!death", 0, true],
     ["Stripklub", "!strip", 0, true],
-    ["Lucia sex", "!lucia", 0, true]
+    ["Brage Lucia", "!lucia", 0, true]
   ]);
   assert.equal(s.channel, "");
 });
@@ -56,7 +56,7 @@ test("a chat message matches a counter by its first word only", () => {
 
 test("reorder and restore keep things sane", () => {
   const counters = defaultState().counters;
-  assert.deepEqual(reorder(counters, [counters[2].id]).map((c) => c.label), ["Lucia sex", "Dødsfald", "Stripklub"]);
+  assert.deepEqual(reorder(counters, [counters[2].id]).map((c) => c.label), ["Brage Lucia", "Dødsfald", "Stripklub"]);
   assert.equal(restore(null).counters.length, 3);
   const r = restore({ channel: "bad name", counters: [{ id: "a", label: "X", count: 4 }, { id: "a", label: "dupe" }] });
   assert.deepEqual([r.channel, r.counters.length, r.counters[0].count], ["", 1, 4]);
