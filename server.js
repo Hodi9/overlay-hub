@@ -16,6 +16,7 @@ import { createCyberpunkApp } from "./apps/cyberpunk/app.js";
 import { createMafia1App } from "./apps/mafia1/app.js";
 import { createMafia2App } from "./apps/mafia2/app.js";
 import { createMafia3App } from "./apps/mafia3/app.js";
+import { createGta6App } from "./apps/gta6/app.js";
 import { createPerfektMatchApp } from "./apps/perfektmatch/app.js";
 import { createPokemonApp } from "./apps/pokemon/app.js";
 import { createRdr2DeathsApp } from "./apps/rdr2-deaths/app.js";
@@ -96,7 +97,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
 // Adds ?profile=<channel> to a channel page's own requests and sends its key along (public/_hub/channel.js).
 const CHANNEL_SHIM_TAG = '<script src="/_hub/channel.js"></script>';
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester", "/turnering"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/gta6", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester", "/turnering"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -181,6 +182,7 @@ app.use("/cyberpunk", createCyberpunkApp({ channels, pool }));
 app.use("/mafia1", createMafia1App({ channels, pool }));
 app.use("/mafia2", createMafia2App({ channels, pool }));
 app.use("/mafia3", createMafia3App({ channels, pool }));
+app.use("/gta6", createGta6App({ channels, pool }));
 app.use("/perfektmatch", createPerfektMatchApp());
 // Channels copy their chase list from the main instance instead of scraping the price sources again.
 const pokemonMain = createPokemonApp({ context: { pool } });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import express from "express";
 
 delete process.env.DATABASE_URL;
-for (const key of ["TLOU2", "GTA5", "RDR2", "CYBERPUNK", "MAFIA1"]) {
+for (const key of ["TLOU2", "GTA5", "RDR2", "CYBERPUNK", "MAFIA1", "GTA6"]) {
   delete process.env[`${key}_CONTROL_PASSWORD`];
   delete process.env[`${key}_TRACKER_KEY`];
 }
@@ -14,13 +14,15 @@ const { createCyberpunkApp } = await import("../apps/cyberpunk/app.js");
 const { createMafia1App } = await import("../apps/mafia1/app.js");
 const { createGta5App } = await import("../apps/gta5/app.js");
 const { createRdr2App } = await import("../apps/rdr2/app.js");
+const { createGta6App } = await import("../apps/gta6/app.js");
 
 const TRACKERS = [
   { name: "TLOU2", mount: "/tlou2", create: createTlou2App },
   { name: "Cyberpunk", mount: "/cyberpunk", create: createCyberpunkApp },
   { name: "Mafia I", mount: "/mafia1", create: createMafia1App },
   { name: "GTA V", mount: "/gta5", create: createGta5App },
-  { name: "RDR2", mount: "/rdr2", create: createRdr2App }
+  { name: "RDR2", mount: "/rdr2", create: createRdr2App },
+  { name: "GTA VI", mount: "/gta6", create: createGta6App }
 ];
 
 async function withServer(tracker, fn) {
