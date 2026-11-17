@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA VI-tællere — Kontrolpanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --raised: #1d1d21;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --lime: #c9f36b;
+    --green: #72c99b;
+    --soft: #192923;
+    --danger: #e0707a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 16px 72px; background: var(--bg); color: var(--ink); font: 400 15px/1.4 "Schibsted Grotesk", system-ui, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: var(--lime); }
+  code { font: 500 12px var(--mono); background: var(--raised); padding: 1px 5px; border-radius: 3px; }
+
+  .label { margin: 0 0 10px; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0 0 8px; font: 400 clamp(40px, 9vw, 56px)/.95 var(--display); letter-spacing: -.02em; }
+  h1 em { font-style: italic; color: var(--lime); }
+  .lede { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+  section { margin-bottom: 26px; }
+
+  input[type="text"], input[type="password"], input[type="number"] {
+    width: 100%; min-width: 0; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); outline: none;
+  }
+  input:focus { border-color: var(--green); }
+  button {
+    font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    padding: 10px 12px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  button.danger:hover { color: var(--danger); border-color: var(--danger); }
+  button[aria-pressed="true"] { background: var(--soft); border-color: var(--green); color: var(--lime); }
+
+  .box { padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .line > input { flex: 1 1 180px; }
+  .hint { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+
+  .counters { display: grid; gap: 10px; }
+  .counter { display: grid; gap: 10px; padding: 14px; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--lime); border-radius: 4px; }
+  .counter.hidden-on-overlay { border-left-color: var(--line); opacity: .7; }
+  .count-row { display: grid; grid-template-columns: 64px 1fr 64px; gap: 10px; align-items: center; }
+  .count-row button { height: 64px; font-size: 26px; padding: 0; }
+  .count-row button.plus { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  .count-big { text-align: center; }
+  .count-big .n { display: block; font: 600 48px/1 var(--mono); font-variant-numeric: tabular-nums; }
+  .count-big .t { display: block; margin-top: 4px; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .edit { display: grid; grid-template-columns: 1.4fr 1fr 90px; gap: 6px; }
+  .edit input { padding: 8px 10px; font-size: 13px; }
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tools button { padding: 8px 10px; }
+  @media (max-width: 520px) { .edit { grid-template-columns: 1fr 1fr; } .edit .set-input { grid-column: span 2; } }
+
+  .status { min-height: 1.2em; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .status.error { color: var(--danger); }
+  ul.tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+  ul.tips li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="label">Kontrolpanel</p>
+  <h1>GTA VI-<em>tællere</em></h1>
+  <p class="lede">Tryk + og − her, eller lad mods tælle op med en kommando i chatten. <a href="./" target="_blank">Åbn overlayet</a></p>
+
+  <section>
+    <p class="label">Adgangskode</p>
+    <div class="box">
+      <div class="line">
+        <input type="password" id="f-key" placeholder="Adgangskode" autocomplete="off">
+        <button class="primary" id="save-key">Gem</button>
+      </div>
+      <div class="status" id="key-status"></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Tællere</p>
+    <div class="counters" id="counters"></div>
+    <div class="status" id="last-change"></div>
+  </section>
+
+  <section>
+    <p class="label">Ny tæller</p>
+    <div class="box">
+      <div class="line">
+        <input type="text" id="new-label" maxlength="30" placeholder="Navn, fx Politijagter">
+        <input type="text" id="new-command" maxlength="25" placeholder="Kommando, fx !politi (valgfri)">
+        <button class="primary" id="add">Tilføj</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Chat-kommandoer</p>
+    <div class="box">
+      <p class="hint">Twitch-kanalen hvor kommandoerne læses. Kun streameren og mods kan tælle op, og samme tæller tæller kun én gang inden for 5 sekunder (så to mods ikke tæller samme død to gange). Lad feltet stå tomt for at slå chatten fra.</p>
+      <div class="line">
+        <input type="text" id="f-channel" placeholder="fx wendelbolol" autocomplete="off">
+        <button class="primary" id="save-channel">Gem kanal</button>
+      </div>
+      <div class="status" id="chat-status"></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Nulstil</p>
+    <div class="box">
+      <div class="line"><button class="danger" id="reset-all">Sæt alle tællere til 0</button></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">I OBS</p>
+    <div class="box">
+      <ul class="tips">
+        <li>Browser source: <code id="overlay-url"></code> — samme GTA-skrift som timeren, uden baggrund.</li>
+        <li><code>?layout=row</code> sætter tællerne ved siden af hinanden (tal over navn) i stedet for under hinanden.</li>
+        <li><code>?only=1</code>, <code>?only=2</code> … viser kun én tæller (nummer efter rækkefølgen af dem der vises), så de kan placeres hver for sig.</li>
+        <li><code>?corner=top-right</code>, <code>bottom-left</code> eller <code>bottom-right</code> flytter det, <code>?scale=1.5</code> gør det større.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="status" id="global-status"></div>
+</div>
+
+<script>
+(function () {
+  var KEY = 'gta6counters-control-key';
+  var $ = function (id) { return document.getElementById(id); };
+  var state = null;
+
+  function getKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function setKey(v) { try { localStorage.setItem(KEY, v); } catch (e) {} }
+  $('f-key').value = getKey();
+  $('overlay-url').textContent = location.origin + '/gta6-counters/';
+
+  function say(msg, error) {
+    $('global-status').textContent = msg || '';
+    $('global-status').className = 'status' + (error ? ' error' : '');
+  }
+
+  function api(method, url, body) {
+    return fetch('/gta6-counters/api/' + url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'x-gta6counters-key': getKey() },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        if (r.status === 401) { say('Forkert eller manglende adgangskode.', true); throw new Error('401'); }
+        if (!r.ok) { say(data.error || 'Noget gik galt — prøv igen.', true); throw new Error('fail'); }
+        say('');
+        render(data);
+        return data;
+      });
+    });
+  }
+
+  function el(tag, attrs, text) {
+    var node = document.createElement(tag);
+    for (var k in attrs || {}) node.setAttribute(k, attrs[k]);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function counterCard(c, i, all) {
+    var card = el('div', { class: 'counter' + (c.visible ? '' : ' hidden-on-overlay') });
+
+    var row = el('div', { class: 'count-row' });
+    var minus = el('button', { 'aria-label': 'Træk 1 fra ' + c.label }, '−');
+    minus.onclick = function () { api('POST', 'counters/' + c.id + '/bump', { by: -1 }); };
+    var big = el('div', { class: 'count-big' });
+    big.appendChild(el('span', { class: 'n' }, String(c.count)));
+    big.appendChild(el('span', { class: 't' }, c.label + (c.command ? ' · ' + c.command : '')));
+    var plus = el('button', { class: 'plus', 'aria-label': 'Læg 1 til ' + c.label }, '+');
+    plus.onclick = function () { api('POST', 'counters/' + c.id + '/bump', { by: 1 }); };
+    row.appendChild(minus); row.appendChild(big); row.appendChild(plus);
+    card.appendChild(row);
+
+    var edit = el('div', { class: 'edit' });
+    var label = el('input', { type: 'text', maxlength: '30', placeholder: 'Navn' });
+    label.value = c.label;
+    label.onchange = function () { label.blur(); api('PATCH', 'counters/' + c.id, { label: label.value }); };
+    var command = el('input', { type: 'text', maxlength: '25', placeholder: 'Kommando, fx !death' });
+    command.value = c.command;
+    command.onchange = function () { command.blur(); api('PATCH', 'counters/' + c.id, { command: command.value }).catch(function () { command.value = c.command; }); };
+    var set = el('input', { type: 'number', min: '0', class: 'set-input', title: 'Sæt tallet direkte' });
+    set.value = c.count;
+    set.onchange = function () { set.blur(); var n = parseInt(set.value, 10); if (n >= 0) api('PATCH', 'counters/' + c.id, { count: n }); };
+    edit.appendChild(label); edit.appendChild(command); edit.appendChild(set);
+    card.appendChild(edit);
+
+    var tools = el('div', { class: 'tools' });
+    var vis = el('button', { 'aria-pressed': String(c.visible) }, c.visible ? 'Vises på overlay' : 'Skjult på overlay');
+    vis.onclick = function () { api('PATCH', 'counters/' + c.id, { visible: !c.visible }); };
+    tools.appendChild(vis);
+    if (i > 0) {
+      var up = el('button', {}, '↑ Op');
+      up.onclick = function () { var ids = all.map(function (x) { return x.id; }); ids.splice(i - 1, 0, ids.splice(i, 1)[0]); api('PUT', 'order', { ids: ids }); };
+      tools.appendChild(up);
+    }
+    var zero = el('button', {}, 'Sæt til 0');
+    zero.onclick = function () { if (confirm('Sæt "' + c.label + '" til 0?')) api('PATCH', 'counters/' + c.id, { count: 0 }); };
+    tools.appendChild(zero);
+    var del = el('button', { class: 'danger' }, 'Slet');
+    del.onclick = function () { if (confirm('Slet tælleren "' + c.label + '"?')) api('DELETE', 'counters/' + c.id); };
+    tools.appendChild(del);
+    card.appendChild(tools);
+    return card;
+  }
+
+  function render(next) {
+    var first = !state;
+    state = next;
+    // Don't rebuild while someone is typing in a counter's fields, or their text would be thrown away.
+    var active = document.activeElement;
+    var typing = active && active.tagName === 'INPUT' && $('counters').contains(active);
+    if (!typing) {
+      var list = $('counters');
+      list.innerHTML = '';
+      next.counters.forEach(function (c, i) { list.appendChild(counterCard(c, i, next.counters)); });
+    }
+    if (first || document.activeElement !== $('f-channel')) $('f-channel').value = next.channel;
+    $('chat-status').textContent = next.channel
+      ? (next.chatChannel === next.channel ? 'Lytter i #' + next.channel + "'s chat." : 'Forbinder til #' + next.channel + '…')
+      : 'Chat er slået fra — kun knapperne her tæller.';
+    var lc = next.lastChange;
+    if (lc) {
+      var c = next.counters.find(function (x) { return x.id === lc.id; });
+      $('last-change').textContent = 'Seneste: ' + (lc.by > 0 ? '+1 ' : '−1 ') + (c ? c.label : '(slettet)') +
+        (lc.via === 'chat' ? ' fra ' + lc.username + ' i chatten' : ' fra panelet') + ' kl. ' + new Date(lc.at).toLocaleTimeString('da-DK');
+    }
+  }
+
+  $('save-key').onclick = function () {
+    setKey($('f-key').value.trim());
+    fetch('/gta6-counters/api/login', { method: 'POST', headers: { 'x-gta6counters-key': getKey() } }).then(function (r) {
+      $('key-status').textContent = r.ok ? 'Koden virker og er gemt på denne enhed.' : 'Koden er forkert.';
+      $('key-status').className = 'status' + (r.ok ? '' : ' error');
+    });
+  };
+  $('f-key').onkeydown = function (e) { if (e.key === 'Enter') $('save-key').click(); };
+  $('save-channel').onclick = function () { api('PATCH', 'settings', { channel: $('f-channel').value }); };
+  $('f-channel').onkeydown = function (e) { if (e.key === 'Enter') $('save-channel').click(); };
+  $('add').onclick = function () {
+    api('POST', 'counters', { label: $('new-label').value, command: $('new-command').value }).then(function () {
+      $('new-label').value = ''; $('new-command').value = '';
+    });
+  };
+  $('reset-all').onclick = function () { if (confirm('Sæt ALLE tællere til 0?')) api('POST', 'reset-all'); };
+
+  fetch('/gta6-counters/api/state').then(function (r) { return r.json(); }).then(render).catch(function () {});
+  var events = new EventSource('/gta6-counters/api/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) {} };
+})();
+</script>
+</body>
+</html>
