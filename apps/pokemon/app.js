@@ -17,47 +17,6 @@ export const CLASSIC_CHASE_CARDS = [
   { id: "classic-716210", sourceId: "classic:716210", setId: "30th-celebration", name: "Magikarp", image: "https://public.getcollectr.com/public-assets/products/product_716210.jpg?optimizer=image&format=webp&width=1200&quality=80&strip=metadata", number: "203/193", rarity: "Classic Collection", finish: "Holofoil", price: "$581.14", priceValue: 581.14, kind: "chase", visible: true, source: "Collectr" },
   { id: "classic-714372", sourceId: "classic:714372", setId: "30th-celebration", name: "Charizard", image: "https://public.getcollectr.com/public-assets/products/product_714372.jpg?optimizer=image&format=webp&width=1200&quality=80&strip=metadata", number: "4/102", rarity: "Classic Collection", finish: "Holofoil", price: "$495.00", priceValue: 495, kind: "chase", visible: true, source: "Collectr" }
 ];
-export const RGB_MEW_CARDS = [
-  {
-    id: "featured-rgb-mew-red",
-    setId: "30th-celebration",
-    name: "Mew (Red)",
-    image: "https://billsarchive.com/assets/articles/rgb-mew-red.webp",
-    number: "R/RGB",
-    rarity: "RGB Secret Rare",
-    finish: "Foil",
-    kind: "chase",
-    featured: true,
-    visible: true,
-    source: "30th Celebration RGB"
-  },
-  {
-    id: "featured-rgb-mew-green",
-    setId: "30th-celebration",
-    name: "Mew (Green)",
-    image: "https://billsarchive.com/assets/articles/rgb-mew-green.webp",
-    number: "G/RGB",
-    rarity: "RGB Secret Rare",
-    finish: "Foil",
-    kind: "chase",
-    featured: true,
-    visible: true,
-    source: "30th Celebration RGB"
-  },
-  {
-    id: "featured-rgb-mew-blue",
-    setId: "30th-celebration",
-    name: "Mew (Blue)",
-    image: "https://billsarchive.com/assets/articles/rgb-mew-blue.webp",
-    number: "B/RGB",
-    rarity: "RGB Secret Rare",
-    finish: "Foil",
-    kind: "chase",
-    featured: true,
-    visible: true,
-    source: "30th Celebration RGB"
-  }
-];
 const SETS = {
   "30th-celebration": { id: "30th-celebration", name: "30th Celebration", sourceUrl: CARDMARKET_URL },
   "ascended-heroes": { id: "ascended-heroes", name: "Ascended Heroes", sourceUrl: "" }
@@ -158,17 +117,21 @@ export function parseCollectrCards(html, options = {}) {
   return cards;
 }
 
-export function curateChaseCards(mainCards, classicCards) {
-  const wantedClassicIds = new Set(CLASSIC_CHASE_CARDS.map((card) => card.sourceId));
-  const parsedClassic = new Map(classicCards.map((card) => [card.sourceId, card]));
-  const requiredClassic = CLASSIC_CHASE_CARDS.map((fallback) => parsedClassic.get(fallback.sourceId) || fallback);
-  const eligibleMain = mainCards
-    .filter((card) => !(card.name === "Greninja ex" && /^0?21(?:\/|$)/.test(card.number)))
-    .sort((a, b) => b.priceValue - a.priceValue)
-    .filter((card) => !wantedClassicIds.has(card.sourceId));
-  const mainSlots = Math.max(0, 30 - RGB_MEW_CARDS.length - requiredClassic.length);
-  return [...requiredClassic, ...eligibleMain.slice(0, mainSlots)].sort((a, b) => b.priceValue - a.priceValue);
+export const CHASE_LIST_SIZE = 30;
+
+// The chase list is simply the most expensive cards of 30th Celebration (the main set and its Classic Collection,
+// ranked together by price). Cards removed in the panel (removedSourceIds) stay out, and the next card moves up.
+export function curateChaseCards(mainCards, classicCards, removedSourceIds = new Set()) {
+  const seen = new Set();
+  return [...mainCards, ...classicCards]
+    .filter((card) => card?.sourceId && !removedSourceIds.has(card.sourceId) && !seen.has(card.sourceId) && seen.add(card.sourceId))
+    .sort((a, b) => (Number(b.priceValue) || 0) - (Number(a.priceValue) || 0))
+    .slice(0, CHASE_LIST_SIZE);
 }
+
+// The old hand-added RGB Mews (no price, ids "featured-rgb-mew-*"). Collectr lists the RGB Mews itself now, with a
+// price, so these were duplicates; they are dropped from saved state.
+const isOldFeaturedCard = (card) => /^featured-rgb-mew-/.test(String(card?.id || ""));
 
 function cleanSetId(value) {
   return SETS[value] ? value : "30th-celebration";
@@ -218,7 +181,9 @@ export function createPokemonApp(options = {}) {
   const tcgGraphKey = options.tcgGraphKey ?? process.env.TCGGRAPH_KEY ?? "";
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const refreshIntervalMs = options.refreshIntervalMs ?? 6 * 60 * 60 * 1000;
-  let cards = [...RGB_MEW_CARDS, ...curateChaseCards(seedCards, CLASSIC_CHASE_CARDS)].map((card) => cleanCard(card, card));
+  let cards = curateChaseCards(seedCards, CLASSIC_CHASE_CARDS).map((card) => cleanCard(card, card));
+  // Chase cards deleted in the panel, by sourceId, so a price refresh does not bring them back.
+  let removedSourceIds = new Set();
   let settings = { showPrices: false };
   let lastSync = null;
   let lastSyncError = "";
@@ -237,13 +202,6 @@ export function createPokemonApp(options = {}) {
     return response.status(401).json({ error: "Forkert eller manglende adgangskode." });
   }
 
-  function ensureFeaturedCards() {
-    const missing = RGB_MEW_CARDS.filter((featuredCard) => !cards.some((card) => card.id === featuredCard.id));
-    if (!missing.length) return false;
-    cards = [...missing.map((card) => cleanCard(card, card)), ...cards];
-    return true;
-  }
-
   async function connectDatabase() {
     if ((!context.pool && !process.env.DATABASE_URL) || options.disableDatabase) return;
     const { Pool } = pg;
@@ -260,13 +218,15 @@ export function createPokemonApp(options = {}) {
     `);
     const result = await db.query("SELECT data FROM pokemon_overlay_state WHERE id = $1", [stateId]);
     if (Array.isArray(result.rows[0]?.data?.cards)) {
-      cards = result.rows[0].data.cards.map((card) => cleanCard(card, card));
-      lastSync = result.rows[0].data.lastSync || null;
-      lastSyncSource = result.rows[0].data.lastSyncSource || lastSyncSource;
-      settings.showPrices = result.rows[0].data.settings?.showPrices === true;
-      if (ensureFeaturedCards()) await persist();
+      const saved = result.rows[0].data;
+      const kept = saved.cards.filter((card) => !isOldFeaturedCard(card));
+      cards = kept.map((card) => cleanCard(card, card));
+      removedSourceIds = new Set(Array.isArray(saved.removedSourceIds) ? saved.removedSourceIds.map(String) : []);
+      lastSync = saved.lastSync || null;
+      lastSyncSource = saved.lastSyncSource || lastSyncSource;
+      settings.showPrices = saved.settings?.showPrices === true;
+      if (kept.length !== saved.cards.length) await persist();
     } else {
-      ensureFeaturedCards();
       await persist();
     }
   }
@@ -277,7 +237,7 @@ export function createPokemonApp(options = {}) {
       `INSERT INTO pokemon_overlay_state (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      [stateId, JSON.stringify({ cards, settings, lastSync, lastSyncSource })]
+      [stateId, JSON.stringify({ cards, settings, lastSync, lastSyncSource, removedSourceIds: [...removedSourceIds] })]
     );
   }
 
@@ -298,25 +258,26 @@ export function createPokemonApp(options = {}) {
     }
     const mainCards = parseCollectrCards(await mainResponse.text());
     const classicCards = parseCollectrCards(await classicResponse.text(), { groupId: "24837", idPrefix: "classic", sourcePrefix: "classic:" });
-    const imported = curateChaseCards(mainCards, classicCards);
-    if (imported.length < 27) throw new Error("Den kuraterede top 30 kunne ikke aflæses fra Collectr.");
+    if (mainCards.length < CHASE_LIST_SIZE) throw new Error("Top 30 kunne ikke aflæses fra Collectr.");
+    const imported = curateChaseCards(mainCards, classicCards, removedSourceIds);
     cards = mergeImportedCards(cards, imported);
     lastSync = new Date().toISOString();
     lastSyncSource = "Collectr fallback";
     lastSyncError = "";
     await persist();
-    return imported.length + RGB_MEW_CARDS.length;
+    return imported.length;
   }
 
   async function importShared() {
-    const imported = (sharedChase ? sharedChase() : []).map((card) => ({ ...card }));
-    if (!imported.length) throw new Error("Chase-listen er ikke hentet endnu — prøv igen om lidt.");
+    const shared = (sharedChase ? sharedChase() : []).map((card) => ({ ...card }));
+    if (!shared.length) throw new Error("Chase-listen er ikke hentet endnu — prøv igen om lidt.");
+    const imported = shared.filter((card) => !removedSourceIds.has(card.sourceId));
     cards = mergeImportedCards(cards, imported);
     lastSync = new Date().toISOString();
     lastSyncSource = "Fælles chase list";
     lastSyncError = "";
     await persist();
-    return imported.length + RGB_MEW_CARDS.length;
+    return imported.length;
   }
 
   async function importCardmarket() {
@@ -346,14 +307,14 @@ export function createPokemonApp(options = {}) {
     const classicCards = classicResponse.ok
       ? parseCollectrCards(await classicResponse.text(), { groupId: "24837", idPrefix: "classic", sourcePrefix: "classic:" })
       : CLASSIC_CHASE_CARDS;
-    const imported = curateChaseCards(mainCards, classicCards);
-    if (imported.length < 27) throw new Error("Ingen komplet top 30 kunne aflæses for 30th Celebration.");
+    if (mainCards.length < CHASE_LIST_SIZE) throw new Error("Ingen komplet top 30 kunne aflæses for 30th Celebration.");
+    const imported = curateChaseCards(mainCards, classicCards, removedSourceIds);
     cards = mergeImportedCards(cards, imported);
     lastSync = new Date().toISOString();
     lastSyncSource = "Cardmarket";
     lastSyncError = "";
     await persist();
-    return imported.length + RGB_MEW_CARDS.length;
+    return imported.length;
   }
 
   function payload(setId = "30th-celebration", view = "chase") {
@@ -373,6 +334,7 @@ export function createPokemonApp(options = {}) {
       cardmarketEnabled: Boolean(tcgGraphKey),
       persistentStorage: Boolean(db),
       settings,
+      removedCount: removedSourceIds.size,
       passwordRequired: true,
       sourceUrl: tcgGraphKey ? CARDMARKET_URL : COLLECTR_URL
     };
@@ -437,9 +399,26 @@ export function createPokemonApp(options = {}) {
       const existing = cards.find((card) => card.id === request.params.id);
       if (!existing) return response.status(404).json({ error: "Kortet findes ikke." });
       cards = cards.filter((card) => card.id !== request.params.id);
+      // A deleted chase card stays deleted at the next price refresh; the next most expensive card takes its place then.
+      const refill = existing.kind === "chase" && existing.sourceId;
+      if (refill) removedSourceIds.add(existing.sourceId);
       await persist();
       response.json(payload(existing.setId, existing.kind === "pull" ? "pulls" : "chase"));
+      // Fill the empty place with the next most expensive card now instead of at the next 6-hour refresh.
+      if (refill) importCardmarket().catch((error) => { lastSyncError = error.message; });
     } catch (error) {
+      next(error);
+    }
+  });
+
+  // Brings every deleted chase card back and rebuilds the top 30.
+  router.post("/api/chase/restore", requireAuth, async (_request, response, next) => {
+    try {
+      removedSourceIds = new Set();
+      const imported = await importCardmarket();
+      response.json({ ...payload("30th-celebration", "chase"), imported });
+    } catch (error) {
+      lastSyncError = error.message;
       next(error);
     }
   });

@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CLASSIC_CHASE_CARDS, curateChaseCards, parseCollectrCards, parseTcgGraphCards, RGB_MEW_CARDS } from "../apps/pokemon/app.js";
+import express from "express";
+import { CHASE_LIST_SIZE, createPokemonApp, curateChaseCards, parseCollectrCards, parseTcgGraphCards } from "../apps/pokemon/app.js";
 
 test("parses Collectr's escaped 30th Celebration card payload", () => {
-  const html = String.raw`{\"product_id\":\"696688\",\"catalog_category\":\"3\",\"catalog_group_id\":\"24722\",\"product_name\":\"Mew ex \",\"image_url\":\"https://cdn.example/card.jpg?width=1200\u0026quality=80\",\"card_number\":\"158/128\",\"rarity\":\"Futuristic Rare\",\"product_sub_type\":\"Holofoil\",\"is_card\":true,\"latest_price\":\"1808.2500\"}`;
+  const html = String.raw`{\"product_id\":\"696688\",\"catalog_category\":\"3\",\"catalog_group_id\":\"24722\",\"product_name\":\"Mew ex \",\"image_url\":\"https://cdn.example/card.jpg?width=1200&quality=80\",\"card_number\":\"158/128\",\"rarity\":\"Futuristic Rare\",\"product_sub_type\":\"Holofoil\",\"is_card\":true,\"latest_price\":\"1808.2500\"}`;
   const cards = parseCollectrCards(html);
   assert.equal(cards.length, 1);
   assert.deepEqual(cards[0], {
@@ -61,21 +62,68 @@ test("maps and sorts Cardmarket EUR prices from TCGGraph", () => {
   assert.equal(cards[1].image, "https://cdn.example/pikachu.webp");
 });
 
-test("keeps all three unpriced RGB Mew chase cards as featured cards", () => {
-  assert.deepEqual(RGB_MEW_CARDS.map((card) => card.number), ["R/RGB", "G/RGB", "B/RGB"]);
-  assert.equal(RGB_MEW_CARDS.every((card) => card.kind === "chase" && card.featured && !card.price), true);
-  assert.equal(new Set(RGB_MEW_CARDS.map((card) => card.image)).size, 3);
+test("the chase list is just the 30 most expensive cards, main set and Classic Collection together", () => {
+  const main = Array.from({ length: 40 }, (_, i) => ({ sourceId: String(i), name: `Main ${i}`, priceValue: 100 - i }));
+  const classic = [{ sourceId: "classic:1", name: "Lugia", priceValue: 99.5 }, { sourceId: "classic:2", name: "Dark Tyranitar", priceValue: 1 }];
+  const list = curateChaseCards(main, classic);
+  assert.equal(list.length, CHASE_LIST_SIZE);
+  assert.deepEqual(list.slice(0, 3).map((c) => c.name), ["Main 0", "Lugia", "Main 1"]);
+  assert.ok(!list.some((c) => c.name === "Dark Tyranitar"), "a cheap classic is not forced in");
+  for (let i = 1; i < list.length; i++) assert.ok(list[i - 1].priceValue >= list[i].priceValue);
 });
 
-test("curates 30 cards with the five classics and without regular Greninja ex", () => {
-  const main = Array.from({ length: 30 }, (_, index) => ({
-    sourceId: `main:${index}`,
-    name: index === 0 ? "Greninja ex" : `Main ${index}`,
-    number: index === 0 ? "021/128" : `${index}/128`,
-    priceValue: 1000 - index
-  }));
-  const curated = curateChaseCards(main, CLASSIC_CHASE_CARDS);
-  assert.equal(curated.length + RGB_MEW_CARDS.length, 30);
-  assert.equal(CLASSIC_CHASE_CARDS.every((classic) => curated.some((card) => card.sourceId === classic.sourceId)), true);
-  assert.equal(curated.some((card) => card.name === "Greninja ex" && card.number === "021/128"), false);
+test("removed cards stay out and the next one moves up; duplicates count once", () => {
+  const main = Array.from({ length: 35 }, (_, i) => ({ sourceId: String(i), priceValue: 100 - i }));
+  const list = curateChaseCards([...main, main[0]], [], new Set(["0", "1"]));
+  assert.equal(list.length, CHASE_LIST_SIZE);
+  assert.deepEqual([list[0].sourceId, list.at(-1).sourceId], ["2", "31"]);
+});
+
+// Collectr's escaped page payload for rows of [id, name, number, price].
+function collectrPage(rows, group = "24722") {
+  const q = '\\"';
+  return rows.map(([id, name, number, price]) =>
+    `{${q}product_id${q}:${q}${id}${q},${q}catalog_group_id${q}:${q}${group}${q},${q}product_name${q}:${q}${name}${q},` +
+    `${q}image_url${q}:${q}https://cdn.example/${id}.jpg${q},${q}card_number${q}:${q}${number}${q},${q}rarity${q}:${q}Rare${q},` +
+    `${q}product_sub_type${q}:${q}Holofoil${q},${q}latest_price${q}:${q}${price}${q}}`
+  ).join(",");
+}
+
+test("a deleted chase card stays deleted after a refresh, there are no RGB Mew duplicates, and restore brings it back", async () => {
+  const main = Array.from({ length: 34 }, (_, i) => [String(1000 + i), i === 0 ? "Mew" : `Card ${i}`, i === 0 ? "R/RGB" : `${i}/128`, String(500 - i)]);
+  const classic = [["2000", "Lugia", "149/147", "499.5"]]; // between Mew (500) and Card 1 (499)
+  const fetchImpl = async (url) => new Response(String(url).includes("classic") ? collectrPage(classic, "24837") : collectrPage(main));
+  const router = createPokemonApp({ controlPassword: "pw", fetchImpl, disableDatabase: true, refreshIntervalMs: 1e9 });
+  const app = express();
+  app.use("/pokemon", router);
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/pokemon/api`;
+  const call = async (method, path) => (await fetch(base + path, { method, headers: { "x-pokemon-key": "pw" } })).json();
+  const chase = () => call("GET", "/state?set=30th-celebration&view=chase");
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 150));
+  try {
+    await settle(); // the first import runs on start
+    let s = await chase();
+    assert.equal(s.cards.length, CHASE_LIST_SIZE);
+    assert.ok(!s.cards.some((c) => /^featured-/.test(c.id)), "no hand-added RGB Mews");
+    assert.equal(s.cards.filter((c) => c.number === "R/RGB").length, 1, "the RGB Mew is there once");
+    assert.equal(s.cards[1].name, "Lugia", "classics are ranked by price with the rest");
+
+    const mew = s.cards.find((c) => c.number === "R/RGB");
+    s = await call("DELETE", `/cards/${mew.id}`);
+    assert.equal(s.removedCount, 1);
+    await settle(); // the refill runs after the delete
+    await call("POST", "/import/30th"); // a later price refresh
+    s = await chase();
+    assert.equal(s.cards.length, CHASE_LIST_SIZE, "the next card moved up");
+    assert.ok(!s.cards.some((c) => c.number === "R/RGB"), "the deleted card did not come back");
+
+    s = await call("POST", "/chase/restore");
+    assert.equal(s.removedCount, 0);
+    assert.ok(s.cards.some((c) => c.number === "R/RGB"));
+  } finally {
+    server.closeAllConnections?.();
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
