@@ -137,6 +137,18 @@ function cleanSetId(value) {
   return SETS[value] ? value : "30th-celebration";
 }
 
+// "$1,234.56", "49,99 €" or "49.99" -> 1234.56 / 49.99 / 49.99 (0 when there is no number).
+export function parsePrice(text) {
+  const raw = String(text ?? "").replace(/[^0-9.,]/g, "");
+  if (!raw) return 0;
+  const lastSep = Math.max(raw.lastIndexOf("."), raw.lastIndexOf(","));
+  const decimals = lastSep >= 0 && raw.length - lastSep - 1 <= 2 ? raw.slice(lastSep + 1) : "";
+  const whole = (decimals ? raw.slice(0, lastSep) : raw).replace(/[.,]/g, "");
+  return Number(decimals ? `${whole}.${decimals}` : whole) || 0;
+}
+
+const isoOrNull = (value) => (typeof value === "string" && !Number.isNaN(Date.parse(value)) ? value : null);
+
 function cleanCard(input, existing = {}) {
   const setId = cleanSetId(input?.setId || existing.setId);
   const name = String(input?.name ?? existing.name ?? "").trim().slice(0, 100);
@@ -151,11 +163,38 @@ function cleanCard(input, existing = {}) {
     rarity: String(input?.rarity ?? existing.rarity ?? "").trim().slice(0, 80),
     finish: String(input?.finish ?? existing.finish ?? "").trim().slice(0, 50),
     price: String(input?.price ?? existing.price ?? "").trim().slice(0, 40),
-    priceValue: Number(input?.priceValue ?? existing.priceValue) || 0,
+    priceValue: Number(input?.priceValue ?? existing.priceValue) || parsePrice(input?.price ?? existing.price),
     kind: requestedKind === "chase" ? "chase" : "pull",
     featured: Boolean(input?.featured ?? existing.featured),
     visible: typeof input?.visible === "boolean" ? input.visible : existing.visible !== false,
-    source: existing.source || "Manual"
+    source: existing.source || "Manual",
+    // Hits only: when it was added (for the session stats) and the chase card it was hit from (for the ✓ on the list).
+    addedAt: isoOrNull(existing.addedAt) || isoOrNull(input?.addedAt),
+    fromSourceId: existing.fromSourceId || (typeof input?.fromSourceId === "string" ? input.fromSourceId.slice(0, 80) : null)
+  };
+}
+
+// A chase card counts as hit when a hit was copied from it, or a hit has the same name and number.
+export function markChaseHits(chaseCards, pulls) {
+  const fromIds = new Set(pulls.map((p) => p.fromSourceId).filter(Boolean));
+  const key = (c) => `${String(c.name).trim().toLowerCase()}|${String(c.number).trim().toLowerCase()}`;
+  const byNameNumber = new Set(pulls.filter((p) => p.number).map(key));
+  return chaseCards.map((c) => ({ ...c, hit: fromIds.has(c.sourceId) || (Boolean(c.number) && byNameNumber.has(key(c))) }));
+}
+
+// Packs opened and the hits added since the session started.
+export function sessionStats(session, pulls) {
+  const since = Date.parse(session.startedAt) || 0;
+  const hits = pulls.filter((p) => (Date.parse(p.addedAt) || 0) >= since);
+  const value = hits.reduce((sum, p) => sum + (Number(p.priceValue) || 0), 0);
+  const best = hits.reduce((top, p) => ((Number(p.priceValue) || 0) > (Number(top?.priceValue) || 0) ? p : top), null);
+  return {
+    packs: session.packs,
+    startedAt: session.startedAt,
+    hits: hits.length,
+    value: Math.round(value * 100) / 100,
+    valueText: formatUsd(value),
+    best: best && Number(best.priceValue) > 0 ? { name: best.name, number: best.number, price: best.price || formatUsd(best.priceValue), image: best.image } : null
   };
 }
 
@@ -185,6 +224,9 @@ export function createPokemonApp(options = {}) {
   // Chase cards deleted in the panel, by sourceId, so a price refresh does not bring them back.
   let removedSourceIds = new Set();
   let settings = { showPrices: false };
+  let session = { packs: 0, startedAt: new Date().toISOString() };
+  // The latest hit, so the "Mine hits" overlay can play its reveal once.
+  let lastHit = null;
   let lastSync = null;
   let lastSyncError = "";
   let lastSyncSource = tcgGraphKey ? "Cardmarket" : "Collectr fallback";
@@ -225,6 +267,8 @@ export function createPokemonApp(options = {}) {
       lastSync = saved.lastSync || null;
       lastSyncSource = saved.lastSyncSource || lastSyncSource;
       settings.showPrices = saved.settings?.showPrices === true;
+      if (saved.session && Number.isFinite(saved.session.packs)) session = { packs: Math.max(0, Math.trunc(saved.session.packs)), startedAt: isoOrNull(saved.session.startedAt) || session.startedAt };
+      lastHit = saved.lastHit && typeof saved.lastHit.id === "string" ? { id: saved.lastHit.id, at: isoOrNull(saved.lastHit.at) } : null;
       if (kept.length !== saved.cards.length) await persist();
     } else {
       await persist();
@@ -237,7 +281,7 @@ export function createPokemonApp(options = {}) {
       `INSERT INTO pokemon_overlay_state (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      [stateId, JSON.stringify({ cards, settings, lastSync, lastSyncSource, removedSourceIds: [...removedSourceIds] })]
+      [stateId, JSON.stringify({ cards, settings, lastSync, lastSyncSource, removedSourceIds: [...removedSourceIds], session, lastHit })]
     );
   }
 
@@ -323,8 +367,13 @@ export function createPokemonApp(options = {}) {
     const selected = selectedView === "all"
       ? bySet
       : bySet.filter((card) => card.kind === (selectedView === "pulls" ? "pull" : "chase"));
+    const pulls = cards.filter((card) => card.kind === "pull");
+    const withHits = selectedView === "chase" ? markChaseHits(selected, pulls) : selected;
     return {
-      cards: selected,
+      cards: withHits,
+      chaseHits: selectedView === "chase" ? withHits.filter((c) => c.hit).length : undefined,
+      session: sessionStats(session, pulls),
+      lastHit,
       sets: Object.values(SETS),
       selectedSet: setId === "all" ? "all" : cleanSetId(setId),
       selectedView,
@@ -361,6 +410,10 @@ export function createPokemonApp(options = {}) {
     try {
       const card = cleanCard(request.body);
       if (!card.name) return response.status(400).json({ error: "Kortet skal have et navn." });
+      if (card.kind === "pull") {
+        card.addedAt = card.addedAt || new Date().toISOString();
+        if (!request.body?.silent) lastHit = { id: card.id, at: new Date().toISOString() };
+      }
       cards.push(card);
       await persist();
       response.json(payload(card.setId, card.kind === "pull" ? "pulls" : "chase"));
@@ -423,13 +476,37 @@ export function createPokemonApp(options = {}) {
     }
   });
 
+  router.post("/api/session/pack", requireAuth, async (request, response, next) => {
+    try {
+      session = { ...session, packs: Math.max(0, session.packs + (request.body?.by === -1 ? -1 : 1)) };
+      await persist();
+      response.json(payload("all", "pulls"));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // A new session starts the pack count at 0 and only counts hits from now on (the hits themselves stay).
+  router.post("/api/session/new", requireAuth, async (_request, response, next) => {
+    try {
+      session = { packs: 0, startedAt: new Date().toISOString() };
+      await persist();
+      response.json(payload("all", "pulls"));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post("/api/cards/:id/hit", requireAuth, async (request, response, next) => {
     try {
       const chaseCard = cards.find((card) => card.id === request.params.id && card.kind === "chase");
       if (!chaseCard) return response.status(404).json({ error: "Chase-kortet findes ikke." });
       const pull = cleanCard({ ...chaseCard, id: undefined, sourceId: null, kind: "pull", visible: true }, {});
       pull.source = "Ramt fra chase list";
+      pull.addedAt = new Date().toISOString();
+      pull.fromSourceId = chaseCard.sourceId;
       cards.push(pull);
+      lastHit = { id: pull.id, at: pull.addedAt };
       await persist();
       response.json(payload("all", "pulls"));
     } catch (error) {

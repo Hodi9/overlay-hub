@@ -1,7 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
-import { CHASE_LIST_SIZE, createPokemonApp, curateChaseCards, parseCollectrCards, parseTcgGraphCards } from "../apps/pokemon/app.js";
+import { CHASE_LIST_SIZE, createPokemonApp, curateChaseCards, markChaseHits, parseCollectrCards, parsePrice, parseTcgGraphCards, sessionStats } from "../apps/pokemon/app.js";
+
+test("prices typed by hand become numbers", () => {
+  assert.equal(parsePrice("$1,234.56"), 1234.56);
+  assert.equal(parsePrice("49,99 €"), 49.99);
+  assert.equal(parsePrice("$4,263"), 4263);
+  assert.equal(parsePrice("1.234,50 kr"), 1234.5);
+  assert.equal(parsePrice(""), 0);
+  assert.equal(parsePrice("gratis"), 0);
+});
+
+test("a chase card is hit when a hit came from it or has the same name and number", () => {
+  const chase = [{ sourceId: "1", name: "Mew ex", number: "152/128" }, { sourceId: "2", name: "Lugia", number: "149/147" }, { sourceId: "3", name: "Pikachu ex", number: "150/128" }];
+  const pulls = [{ fromSourceId: "1" }, { name: "lugia ", number: "149/147" }, { name: "Pikachu ex", number: "149/128" }];
+  assert.deepEqual(markChaseHits(chase, pulls).map((c) => c.hit), [true, true, false]);
+});
+
+test("session stats count packs and only the hits since the session started", () => {
+  const session = { packs: 7, startedAt: "2026-11-18T18:00:00Z" };
+  const pulls = [
+    { name: "Old", priceValue: 999, addedAt: "2026-11-17T18:00:00Z" },
+    { name: "Mew ex", number: "152/128", price: "$57.25", priceValue: 57.25, addedAt: "2026-11-18T18:30:00Z" },
+    { name: "Lapras", priceValue: 3.04, addedAt: "2026-11-18T18:40:00Z" },
+    { name: "No date", priceValue: 50 }
+  ];
+  const s = sessionStats(session, pulls);
+  assert.deepEqual([s.packs, s.hits, s.value, s.valueText], [7, 2, 60.29, "$60.29"]);
+  assert.deepEqual([s.best.name, s.best.price], ["Mew ex", "$57.25"]);
+  assert.equal(sessionStats({ packs: 0, startedAt: "2026-11-19T00:00:00Z" }, pulls).best, null);
+});
 
 test("parses Collectr's escaped 30th Celebration card payload", () => {
   const html = String.raw`{\"product_id\":\"696688\",\"catalog_category\":\"3\",\"catalog_group_id\":\"24722\",\"product_name\":\"Mew ex \",\"image_url\":\"https://cdn.example/card.jpg?width=1200&quality=80\",\"card_number\":\"158/128\",\"rarity\":\"Futuristic Rare\",\"product_sub_type\":\"Holofoil\",\"is_card\":true,\"latest_price\":\"1808.2500\"}`;
@@ -122,6 +151,37 @@ test("a deleted chase card stays deleted after a refresh, there are no RGB Mew d
     s = await call("POST", "/chase/restore");
     assert.equal(s.removedCount, 0);
     assert.ok(s.cards.some((c) => c.number === "R/RGB"));
+
+    // "Ramt" on a chase card: it becomes a hit, is marked on the chase list, and is the latest hit for the reveal.
+    const lugia = s.cards.find((c) => c.name === "Lugia");
+    s = await call("POST", `/cards/${lugia.id}/hit`);
+    assert.equal(s.lastHit.id, s.cards.find((c) => c.name === "Lugia").id);
+    assert.deepEqual([s.session.hits, s.session.value, s.session.best.name], [1, 499.5, "Lugia"]);
+    s = await chase();
+    assert.equal(s.chaseHits, 1);
+    assert.equal(s.cards.find((c) => c.name === "Lugia").hit, true);
+
+    // Packs count up and down (never below 0); a new session starts over but keeps the hits.
+    const post = async (path, body) => (await fetch(base + path, { method: "POST", headers: { "x-pokemon-key": "pw", "Content-Type": "application/json" }, body: JSON.stringify(body || {}) })).json();
+    await post("/session/pack", { by: 1 });
+    s = await post("/session/pack", { by: 1 });
+    assert.equal(s.session.packs, 2);
+    await post("/session/pack", { by: -1 });
+    await post("/session/pack", { by: -1 });
+    s = await post("/session/pack", { by: -1 });
+    assert.equal(s.session.packs, 0);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    s = await post("/session/new");
+    assert.deepEqual([s.session.packs, s.session.hits], [0, 0]);
+    assert.equal(s.cards.length, 1, "the hit itself stays");
+
+    // A hand-added hit with a typed price counts in the session; a silent one (browser backup restore) does not play the reveal.
+    const before = s.lastHit;
+    s = await post("/cards", { kind: "pull", name: "Restored", price: "$5", silent: true, addedAt: "2026-01-01T00:00:00Z" });
+    assert.deepEqual(s.lastHit, before);
+    s = await post("/cards", { kind: "pull", name: "Pikachu ex", price: "$38.23" });
+    assert.equal(s.lastHit.id, s.cards.find((c) => c.name === "Pikachu ex").id);
+    assert.deepEqual([s.session.hits, s.session.value], [1, 38.23]);
   } finally {
     server.closeAllConnections?.();
     await new Promise((resolve) => server.close(resolve));
