@@ -56,6 +56,12 @@ services:
         sync: false
       - key: GAESTER_CONTROL_PASSWORD
         sync: false
+      - key: LIVETIMER_CONTROL_PASSWORD
+        sync: false
+      - key: TWITCH_CLIENT_ID
+        sync: false
+      - key: TWITCH_CLIENT_SECRET
+        sync: false
       - key: GEAR_CONTROL_PASSWORD
         sync: false
       - key: TURNERING_CONTROL_PASSWORD

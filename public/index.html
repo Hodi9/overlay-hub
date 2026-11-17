@@ -435,7 +435,10 @@ const OVERLAYS = [
     info: "Understøtter et vilkårligt antal deltagere — tilføj/fjern dem fra kontrolpanelet. Instagram/TikTok-boksene roterer hvert 15. minut, eller udløs dem manuelt med “Vis nu”." },
   { id: "gaester", cat: "stream", tag: "Stream", title: "Gæster", sub: "",
     image: { src: "/img/gaester.jpg", aspect: "617 / 324" },
-    links: [["Overlay", "/gaester/"]], control: "/gaester/control.html" }
+    links: [["Overlay", "/gaester/"]], control: "/gaester/control.html" },
+  { id: "livetimer", cat: "stream", tag: "Stream", title: "Live-timer", sub: "Starter og stopper selv når kanalen går live og offline",
+    links: [["Overlay", "/livetimer/"]], control: "/livetimer/control.html",
+    info: "Serveren tjekker kanalen hvert halve minut. Viser Dage, Timer, Minutter og Sekunder i GTA-skrift uden baggrund. Tiden lægges sammen hen over flere streams, indtil du nulstiller i panelet. <code>?corner=</code> og <code>?scale=</code> virker på overlayet." }
 ];
 
 const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';

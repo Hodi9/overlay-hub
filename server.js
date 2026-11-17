@@ -27,6 +27,7 @@ import { createWalkApp } from "./apps/walk/app.js";
 import { walkMountPath } from "./apps/walk/path.js";
 import { createLondonApp } from "./apps/london/app.js";
 import { createGaesterApp } from "./apps/gaester/app.js";
+import { createLiveTimerApp } from "./apps/livetimer/app.js";
 import { createTurneringApp } from "./apps/turnering/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
 import { collapseLeadingSlashes } from "./collapseLeadingSlashes.js";
@@ -97,7 +98,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
 // Adds ?profile=<channel> to a channel page's own requests and sends its key along (public/_hub/channel.js).
 const CHANNEL_SHIM_TAG = '<script src="/_hub/channel.js"></script>';
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/gta6", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester", "/turnering"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/gta6", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester", "/turnering", "/livetimer"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -198,6 +199,7 @@ app.use("/subathon", createSubathonApp({ channels, pool }));
 app.use("/london", createLondonApp({ pool }));
 // Guests in the studio for a stream (who is here, with name and title): not on the front page, the address is the link.
 app.use("/gaester", createGaesterApp({ pool }));
+app.use("/livetimer", createLiveTimerApp({ pool }));
 
 // Hidden walk-through-Denmark overlay (apps/walk). Same idea: not on the index page,
 // only mounted at the secret address in WALK_PATH, 404 everywhere else.

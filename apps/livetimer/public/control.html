@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live-timer — Kontrolpanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Instrument Serif", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --raised: #1d1d21;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --lime: #c9f36b;
+    --green: #72c99b;
+    --soft: #192923;
+    --danger: #e0707a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 16px 72px; background: var(--bg); color: var(--ink); font: 400 15px/1.4 "Schibsted Grotesk", system-ui, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: var(--lime); }
+  code { font: 500 12px var(--mono); background: var(--raised); padding: 1px 5px; border-radius: 3px; }
+
+  .label { margin: 0 0 10px; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0 0 8px; font: 400 clamp(40px, 9vw, 56px)/.95 var(--display); letter-spacing: -.02em; }
+  h1 em { font-style: italic; color: var(--lime); }
+  .lede { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+  section { margin-bottom: 26px; }
+
+  input[type="text"], input[type="password"] {
+    width: 100%; min-width: 0; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); outline: none;
+  }
+  input:focus { border-color: var(--green); }
+  button {
+    font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    padding: 10px 12px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--lime); border-color: var(--lime); color: var(--bg); }
+  button.danger:hover { color: var(--danger); border-color: var(--danger); }
+  button[aria-pressed="true"] { background: var(--soft); border-color: var(--green); color: var(--lime); }
+
+  .box { padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .line > input { flex: 1 1 200px; }
+  .hint { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+
+  .now { display: grid; gap: 6px; padding: 18px; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 4px; }
+  .now.running { border-left-color: var(--lime); background: var(--soft); }
+  .now .state { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .now.running .state { color: var(--lime); }
+  .now .time { font: 600 clamp(44px, 12vw, 64px)/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .now .meta { font-size: 13px; color: var(--muted); }
+  .now .meta.error { color: var(--danger); }
+
+
+  .status { min-height: 1.2em; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .status.error { color: var(--danger); }
+  ul.tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+  ul.tips li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="label">Kontrolpanel</p>
+  <h1>Live-<em>timer</em></h1>
+  <p class="lede">Tæller op mens kanalen er live og står stille mens den er offline. Tiden lægges sammen hen over flere streams, indtil du nulstiller. <a href="./" target="_blank">Åbn overlayet</a></p>
+
+  <section>
+    <div class="now" id="now">
+      <span class="state" id="now-state">Henter…</span>
+      <span class="time" id="now-time">0:00:00</span>
+      <span class="meta" id="now-meta"></span>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Adgangskode</p>
+    <div class="box">
+      <div class="line">
+        <input type="password" id="f-key" placeholder="Adgangskode" autocomplete="off">
+        <button class="primary" id="save-key">Gem</button>
+      </div>
+      <div class="status" id="key-status"></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Kanal</p>
+    <div class="box">
+      <p class="hint">Twitch-navnet eller linket. Serveren tjekker kanalen hvert halve minut, så timeren starter og stopper inden for ca. 30 sekunder.</p>
+      <div class="line">
+        <input type="text" id="f-channel" placeholder="fx wendelbolol" autocomplete="off">
+        <button class="primary" id="save-channel">Gem kanal</button>
+        <button id="check-now">Tjek nu</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Timer</p>
+    <div class="box">
+      <p class="hint">"Automatisk" slået fra sætter timeren på pause, også selvom kanalen er live. Nulstil sætter den til 0:00:00 — er kanalen live, tæller den videre fra 0.</p>
+      <div class="line">
+        <button id="toggle-enabled" aria-pressed="true">Automatisk: til</button>
+        <button class="danger" id="reset">Nulstil til 0:00:00</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">I OBS</p>
+    <div class="box">
+      <ul class="tips">
+        <li>Browser source: <code id="overlay-url"></code></li>
+        <li>Overlayet er kun tallene med Dage, Timer, Minutter og Sekunder i GTA-skrift (Pricedown) — ingen baggrund. Skriften skal være installeret på streame-pc'en; ellers bruges Impact.</li>
+        <li><code>?corner=top-right</code>, <code>bottom-left</code> eller <code>bottom-right</code> flytter det (standard: øverst til venstre). <code>?scale=1.5</code> gør det større.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="status" id="global-status"></div>
+</div>
+
+<script>
+(function () {
+  var KEY = 'livetimer-control-key';
+  var $ = function (id) { return document.getElementById(id); };
+  var state = null, offset = 0;
+
+  function getKey() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function setKey(v) { try { localStorage.setItem(KEY, v); } catch (e) {} }
+  $('f-key').value = getKey();
+  $('overlay-url').textContent = location.origin + '/livetimer/';
+
+  function say(msg, error) {
+    var el = $('global-status');
+    el.textContent = msg || '';
+    el.className = 'status' + (error ? ' error' : '');
+  }
+
+  function api(method, url, body) {
+    return fetch('/livetimer/api/' + url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'x-livetimer-key': getKey() },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (data) {
+        if (r.status === 401) { say('Forkert eller manglende adgangskode.', true); throw new Error('401'); }
+        if (!r.ok) { say(data.error || 'Noget gik galt — prøv igen.', true); throw new Error('fail'); }
+        say('');
+        render(data);
+        return data;
+      });
+    });
+  }
+
+  function format(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    return h + ':' + (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function tick() {
+    if (!state) return;
+    var now = Date.now() + offset;
+    $('now-time').textContent = format(state.accumulatedMs + (state.liveSince ? Math.max(0, now - Date.parse(state.liveSince)) : 0));
+  }
+
+  function render(next) {
+    var first = !state;
+    state = next;
+    offset = Date.parse(next.serverNow) - Date.now();
+    var running = Boolean(next.liveSince);
+    $('now').classList.toggle('running', running);
+    $('now-state').textContent = running
+      ? 'Kører — ' + next.channel + ' er live'
+      : (next.live ? 'På pause — ' + next.channel + ' er live, men automatisk er slået fra' : 'Står stille — ' + next.channel + ' er offline');
+    var meta = $('now-meta');
+    if (next.lastError) {
+      meta.textContent = 'Seneste tjek fejlede: ' + next.lastError + ' Timeren fortsætter som før, indtil et tjek lykkes.';
+      meta.className = 'meta error';
+    } else {
+      meta.textContent = next.lastCheckAt
+        ? 'Sidst tjekket ' + new Date(next.lastCheckAt).toLocaleTimeString('da-DK') + ' via ' + (next.source === 'twitch' ? 'Twitch API' : next.source === 'decapi' ? 'decapi.me' : next.source)
+        : 'Ikke tjekket endnu.';
+      meta.className = 'meta';
+    }
+    var toggle = $('toggle-enabled');
+    toggle.setAttribute('aria-pressed', String(next.enabled));
+    toggle.textContent = 'Automatisk: ' + (next.enabled ? 'til' : 'fra');
+    if (first || document.activeElement !== $('f-channel')) $('f-channel').value = next.channel;
+    tick();
+  }
+
+  $('save-key').onclick = function () {
+    setKey($('f-key').value.trim());
+    fetch('/livetimer/api/login', { method: 'POST', headers: { 'x-livetimer-key': getKey() } }).then(function (r) {
+      $('key-status').textContent = r.ok ? 'Koden virker og er gemt på denne enhed.' : 'Koden er forkert.';
+      $('key-status').className = 'status' + (r.ok ? '' : ' error');
+    });
+  };
+  $('f-key').onkeydown = function (e) { if (e.key === 'Enter') $('save-key').click(); };
+  $('save-channel').onclick = function () { api('PATCH', 'settings', { channel: $('f-channel').value }); };
+  $('f-channel').onkeydown = function (e) { if (e.key === 'Enter') $('save-channel').click(); };
+  $('check-now').onclick = function () { api('POST', 'check'); };
+  $('toggle-enabled').onclick = function () { api('PATCH', 'settings', { enabled: !state.enabled }); };
+  $('reset').onclick = function () { if (confirm('Nulstil timeren til 0:00:00?')) api('POST', 'reset'); };
+
+  setInterval(tick, 250);
+  fetch('/livetimer/api/state').then(function (r) { return r.json(); }).then(render).catch(function () {});
+  var events = new EventSource('/livetimer/api/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) {} };
+})();
+</script>
+</body>
+</html>

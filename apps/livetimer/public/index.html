@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<title>Live-timer — Overlay</title>
+<style>
+  /* GTA's logo font, Pricedown (Typodermic, a paid font). It is NOT hosted here, since web embedding needs its own
+     license: it is taken from the PC the browser source runs on, so install it on the streaming PC. Without it, Impact. */
+  @font-face {
+    font-family: "Pricedown";
+    src: local("Pricedown"), local("Pricedown Bl"), local("Pricedown-Black"), local("Pricedown Black");
+    font-display: block;
+  }
+  * { box-sizing: border-box; }
+  /* Just the numbers and their names, no box behind. ?corner=top-left|top-right|bottom-left|bottom-right places it,
+     ?scale= sizes it, ?bg=black is for previewing outside OBS. */
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  body.bg-preview { background: #3a3f47; }
+
+  .timer {
+    --gap: 48px;
+    position: absolute; top: var(--gap); left: var(--gap); font-size: 16px;
+    display: flex; gap: 1.1em; align-items: flex-start;
+    font-family: "Pricedown", Impact, "Arial Black", sans-serif; color: #fff;
+    /* The black outline GTA puts around its white text, plus a soft shadow so it reads on bright scenes. */
+    -webkit-text-stroke: .09em #000; paint-order: stroke fill;
+    filter: drop-shadow(0 .12em .18em rgba(0, 0, 0, .6));
+    opacity: 0; transition: opacity .4s ease;
+  }
+  .timer.bottom { top: auto; bottom: var(--gap); }
+  .timer.right { left: auto; right: var(--gap); }
+  .timer.on { opacity: 1; }
+
+  .unit { display: flex; flex-direction: column; align-items: center; }
+  /* Pricedown's digits are not all the same width; a minimum width keeps the row from twitching every second. */
+  .num { min-width: 1.2em; text-align: center; font-size: 4.5em; line-height: .9; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+  .name { margin-top: .15em; font-size: 1.35em; line-height: 1; letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<div class="timer" id="timer">
+  <div class="unit"><span class="num" id="d">0</span><span class="name">Dage</span></div>
+  <div class="unit"><span class="num" id="h">00</span><span class="name">Timer</span></div>
+  <div class="unit"><span class="num" id="m">00</span><span class="name">Minutter</span></div>
+  <div class="unit"><span class="num" id="s">00</span><span class="name">Sekunder</span></div>
+</div>
+
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var timer = document.getElementById('timer');
+  if (params.get('bg') === 'black') document.body.classList.add('bg-preview');
+  var corner = params.get('corner') || '';
+  if (/bottom/.test(corner)) timer.classList.add('bottom');
+  if (/right/.test(corner)) timer.classList.add('right');
+  var scale = parseFloat(params.get('scale'));
+  if (scale >= 0.3 && scale <= 5) timer.style.fontSize = (16 * scale) + 'px';
+
+  var els = { d: document.getElementById('d'), h: document.getElementById('h'), m: document.getElementById('m'), s: document.getElementById('s') };
+  var state = null;
+  var offset = 0; // server clock minus this machine's clock, so the time is right even if the OBS PC's clock is off
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+
+  function tick() {
+    if (!state) return;
+    var now = Date.now() + offset;
+    var ms = state.accumulatedMs + (state.liveSince ? Math.max(0, now - Date.parse(state.liveSince)) : 0);
+    var total = Math.floor(ms / 1000);
+    els.d.textContent = String(Math.floor(total / 86400));
+    els.h.textContent = pad(Math.floor((total % 86400) / 3600));
+    els.m.textContent = pad(Math.floor((total % 3600) / 60));
+    els.s.textContent = pad(total % 60);
+  }
+
+  function render(next) {
+    state = next;
+    offset = Date.parse(next.serverNow) - Date.now();
+    tick();
+    // Wait for the font so the numbers don't jump from the stand-in to Pricedown on screen.
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () { timer.classList.add('on'); });
+  }
+
+  setInterval(tick, 250);
+  fetch('/livetimer/api/state').then(function (r) { return r.json(); }).then(render).catch(function () {});
+  var events = new EventSource('/livetimer/api/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) {} };
+})();
+</script>
+</body>
+</html>
