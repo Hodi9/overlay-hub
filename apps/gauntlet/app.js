@@ -63,7 +63,7 @@ function cleanRun(input, existing) {
     resets: Math.min(9999, Math.max(0, Math.round(toNumber(input?.resets, existing.resets)))),
     showResets: typeof input?.showResets === "boolean" ? input.showResets : existing.showResets,
     current: typeof input?.current === "string" ? input.current.slice(0, 80) : existing.current || "",
-    cover: typeof input?.cover === "boolean" ? input.cover : Boolean(existing.cover),
+    champions: typeof input?.champions === "boolean" ? input.champions : Boolean(existing.champions),
     best: typeof input?.best === "string" ? input.best.slice(0, 80) : existing.best || "",
     showBest: typeof input?.showBest === "boolean" ? input.showBest : existing.showBest !== false,
     bestCount: Math.min(999, Math.max(0, Math.round(toNumber(input?.bestCount, existing.bestCount || 0))))
@@ -79,10 +79,11 @@ export function createGauntletApp(context = {}) {
   let games = defaultGames();
   // How many times the run has been reset (a lost game sends everyone back to the start), whether the
   // overlay shows that number, and which game is being played now (its id; the overlay puts a frame around it).
-  // "cover" hides everything on both overlays; the main one shows only the line "Får jeg løn?" instead.
+  // "champions" is the win: every game is completed, so the overlay shows the box "Gaming Gauntlet Champions"
+  // and the games jiggle. It is switched on and off by hand in the panel, and a reset switches it off.
   // "best" is the record: the id of the game furthest down the list that the run has reached so far, and
   // "bestCount" how many times it got there. Both are set by hand in the panel; no game picked means no record shown.
-  let run = { resets: 0, showResets: true, current: "", cover: false, best: "", bestCount: 0, showBest: true };
+  let run = { resets: 0, showResets: true, current: "", champions: false, best: "", bestCount: 0, showBest: true };
 
   // A fingerprint of the overlay pages. It goes out with every state, and an overlay that is open in OBS
   // reloads itself when it changes, so a new version shows without anyone refreshing the browser source.
@@ -181,7 +182,7 @@ export function createGauntletApp(context = {}) {
   }
 
   function payload() {
-    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), cover: run.cover, best: games.some((g) => g.id === run.best) ? run.best : "", bestCount: run.bestCount, showBest: run.showBest, version, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
+    return { games, resets: run.resets, showResets: run.showResets, current: currentId(), champions: run.champions, best: games.some((g) => g.id === run.best) ? run.best : "", bestCount: run.bestCount, showBest: run.showBest, version, updatedAt: new Date().toISOString(), passwordRequired: isChannel || Boolean(controlPassword) };
   }
 
   function broadcast() {
@@ -256,12 +257,12 @@ export function createGauntletApp(context = {}) {
   });
 
   // A lost game: the run starts over. One more reset on the counter, every check mark is taken off, and the
-  // first game is the one being played again.
+  // first game is the one being played again. A celebration that was on is over.
   // Deaths are kept; they count for the whole event.
   router.post("/api/reset", requireAuth, async (_request, response, next) => {
     try {
       games = games.map((g) => ({ ...g, done: false, count: 0 }));
-      run = { ...run, resets: run.resets + 1, current: (games.find(playable) || { id: "" }).id };
+      run = { ...run, resets: run.resets + 1, champions: false, current: (games.find(playable) || { id: "" }).id };
       await commit();
       response.json(payload());
     } catch (error) {
@@ -269,7 +270,7 @@ export function createGauntletApp(context = {}) {
     }
   });
 
-  // Correct the reset counter by hand, show/hide it on the overlay, cover the whole overlay, or set the record.
+  // Correct the reset counter by hand, show/hide it on the overlay, start or stop the celebration, or set the record.
   router.patch("/api/run", requireAuth, async (request, response, next) => {
     try {
       const picked = typeof request.body?.best === "string" && request.body.best !== run.best;

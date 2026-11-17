@@ -54,13 +54,13 @@
   .best-row label{font-family:'Rajdhani',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;font-size:0.8rem;color:var(--text-dim);}
   .best-row select{font-family:'IBM Plex Sans',sans-serif;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:8px 10px;font-size:0.9rem;flex:1;min-width:160px;}
 
-  .cover{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
-  .cover p{flex:1;min-width:200px;margin:0;font-size:0.88rem;color:var(--text-dim);}
-  .cover p b{color:var(--text);}
-  .cover-btn{padding:12px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font-size:0.92rem;flex:none;}
-  .cover-btn:hover{background:var(--line);}
-  .cover-btn[aria-pressed="true"]{background:rgba(255,210,63,0.14);border-color:var(--now);color:var(--now);}
-  .box.covered{border-color:var(--now);}
+  .champ{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+  .champ p{flex:1;min-width:200px;margin:0;font-size:0.88rem;color:var(--text-dim);}
+  .champ p b{color:var(--text);}
+  .champ-btn{padding:12px 16px;border-radius:9px;border:1px solid var(--now);background:rgba(255,210,63,0.14);color:var(--now);font-size:0.92rem;flex:none;}
+  .champ-btn:hover{background:rgba(255,210,63,0.24);}
+  .champ-btn[aria-pressed="true"]{background:var(--now);color:#1c1500;}
+  .box.celebrating{border-color:var(--now);}
 
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
   .row{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);border-left:3px solid transparent;flex-wrap:wrap;}
@@ -148,11 +148,11 @@
   </section>
 
   <section>
-    <p class="section-label">Skjul alt</p>
-    <div class="box" id="cover-box">
-      <div class="cover">
-        <p id="cover-text"></p>
-        <button type="button" class="cover-btn" id="cover-btn" aria-pressed="false"></button>
+    <p class="section-label">Sejr</p>
+    <div class="box" id="champ-box">
+      <div class="champ">
+        <p id="champ-text"></p>
+        <button type="button" class="champ-btn" id="champ-btn" aria-pressed="false"></button>
       </div>
     </div>
   </section>
@@ -191,7 +191,7 @@
   var saveTokenBtn = document.getElementById('save-token-btn');
   var tokenStatus = document.getElementById('token-status');
   var globalStatus = document.getElementById('global-status');
-  var state = { games: [], resets: 0, showResets: true, current: '', cover: false, best: '', bestCount: 0 };
+  var state = { games: [], resets: 0, showResets: true, current: '', champions: false, best: '', bestCount: 0 };
   var bestList = null; // what the record's list of games was built from, so it is only rebuilt when the games change
   var pending = null;  // a state that arrived while a button was being pressed
   var holding = false; // a pointer is down: rebuilding the rows now would swallow the click
@@ -301,13 +301,15 @@
     show.setAttribute('aria-pressed', String(state.showResets !== false));
     show.textContent = state.showResets !== false ? 'Vises på overlayet' : 'Skjult på overlayet';
     document.getElementById('auth').hidden = state.passwordRequired === false;
-    var covered = state.cover === true;
-    document.getElementById('cover-box').classList.toggle('covered', covered);
-    document.getElementById('cover-btn').setAttribute('aria-pressed', String(covered));
-    document.getElementById('cover-btn').textContent = covered ? 'Vis gauntleten igen' : 'Skjul alt';
-    document.getElementById('cover-text').innerHTML = covered
-      ? '<b>Alt er skjult lige nu.</b> Overlayet viser kun teksten »Får jeg løn?«, og dødstælleren er tom.'
-      : 'Fjerner spil, resets og dødstæller fra skærmen og skriver i stedet »Får jeg løn?« på overlayet. Intet bliver slettet.';
+    var won = state.champions === true;
+    var shown = state.games.filter(function(g){ return g.visible !== false; });
+    var cleared = shown.filter(function(g){ return g.done; }).length;
+    document.getElementById('champ-box').classList.toggle('celebrating', won);
+    document.getElementById('champ-btn').setAttribute('aria-pressed', String(won));
+    document.getElementById('champ-btn').textContent = won ? 'Stop fejringen' : 'Fejr sejren';
+    document.getElementById('champ-text').innerHTML = won
+      ? '<b>Fejringen kører.</b> Overlayet viser guldboksen »Gaming Gauntlet Champions«, og spillene ryster. Den stopper, når du trykker her eller på Reset.'
+      : 'Tryk, når hele gauntleten er gennemført: så kommer guldboksen »Gaming Gauntlet Champions« frem over spillene, og de ryster. <b>' + cleared + ' af ' + shown.length + ' spil</b> er gennemført lige nu.';
 
     var bestSelect = document.getElementById('best-game');
     var listKey = state.games.map(function(g){ return g.id + ':' + g.name; }).join('|');
@@ -365,7 +367,7 @@
   document.getElementById('best-minus').addEventListener('click', function(){ send('/run', 'PATCH', { bestCount: Math.max(1, (state.bestCount || 0) - 1) }); });
   document.getElementById('best-plus').addEventListener('click', function(){ send('/run', 'PATCH', { bestCount: (state.bestCount || 0) + 1 }); });
 
-  document.getElementById('cover-btn').addEventListener('click', function(){ send('/run', 'PATCH', { cover: state.cover !== true }); });
+  document.getElementById('champ-btn').addEventListener('click', function(){ send('/run', 'PATCH', { champions: state.champions !== true }); });
 
   fetch(API + '/state').then(function(r){ return r.json(); }).then(render).catch(function(){ setGlobalStatus('Kunne ikke hente spillene.', 'status-msg error'); });
   var events = new EventSource(API + '/events');

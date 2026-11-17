@@ -35,8 +35,7 @@
 (function(){
   function render(state){
     // Same order as the badges on the main overlay, so each counter stays next to its game.
-    // While the overlay is covered ("Får jeg løn?"), the counters are hidden too.
-    var sorted = state.cover ? [] : (state.games || []).filter(function(g){ return g.visible !== false; });
+    var sorted = (state.games || []).filter(function(g){ return g.visible !== false; });
 
     var deathsEl = document.getElementById('deaths');
     deathsEl.innerHTML = '';

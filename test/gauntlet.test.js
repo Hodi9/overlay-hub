@@ -43,14 +43,17 @@ test("completing the game being played moves the frame on, and a reset counts up
     ({ data } = await call("/run", "PATCH", { resets: -5, showResets: false, current: "findes-ikke" }));
     assert.deepEqual([data.resets, data.showResets, data.current], [0, false, first.id]);
 
-    // The cover ("Får jeg løn?") is off until it is switched on, and a reset or another change leaves it alone.
-    assert.equal(data.cover, false);
-    ({ data } = await call("/run", "PATCH", { cover: true }));
-    assert.equal(data.cover, true);
+    // The win ("Gaming Gauntlet Champions") is off until it is switched on; another change leaves it alone, a reset ends it.
+    assert.deepEqual([data.champions, "cover" in data], [false, false]);
+    ({ data } = await call("/run", "PATCH", { champions: true }));
+    assert.equal(data.champions, true);
+    ({ data } = await call("/run", "PATCH", { showResets: false }));
+    assert.equal(data.champions, true);
+    ({ data } = await call("/run", "PATCH", { champions: false }));
+    assert.equal(data.champions, false);
+    ({ data } = await call("/run", "PATCH", { champions: true }));
     ({ data } = await call("/reset", "POST", {}));
-    assert.deepEqual([data.cover, data.games.length], [true, 7]);
-    ({ data } = await call("/run", "PATCH", { cover: false }));
-    assert.equal(data.cover, false);
+    assert.deepEqual([data.champions, data.games.length], [false, 7]);
 
     // The record: no game until one is picked; a newly picked game starts at one time, and a reset leaves it alone.
     assert.deepEqual([data.best, data.bestCount], ["", 0]);
