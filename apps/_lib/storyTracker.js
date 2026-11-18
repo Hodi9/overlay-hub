@@ -78,6 +78,8 @@ export function createStoryTrackerApp(options) {
   const controlPassword = process.env[`${envPrefix}_CONTROL_PASSWORD`] || "";
   const trackerKey = process.env[`${envPrefix}_TRACKER_KEY`] || "";
   const controlHeader = `x-${envPrefix.toLowerCase()}-key`;
+  // Optional: the Twitch channel the main profile belongs to, so a stream reader can't update it from another stream.
+  const mainTwitch = String(process.env[`${envPrefix}_TWITCH_CHANNEL`] || "").trim().toLowerCase();
 
   let db = null;
   const profiles = new Map(); // profileId -> { chapters, currentIndex, lastCapture }
@@ -325,6 +327,15 @@ export function createStoryTrackerApp(options) {
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
 
+      // A stream reader says which Twitch stream the text came from; it must be this profile's own channel.
+      const source = typeof request.body?.source === "string" ? request.body.source.trim().toLowerCase().slice(0, 25) : "";
+      if (source) {
+        const owner = state.isChannel ? String(channels.publicRecord(profileId)?.twitch || "").toLowerCase() : profileId === DEFAULT_PROFILE ? mainTwitch : "";
+        if (owner && owner !== source) {
+          return response.status(409).json({ error: `Teksten kom fra #${source}, men denne tracker hører til #${owner}.` });
+        }
+      }
+
       const capturedNormalized = normalize(text);
       // Linear games: only the next few missions. Open-world games: any mission not ticked off yet.
       const rangeStart = nonLinear ? 0 : Math.max(0, state.currentIndex);
@@ -342,9 +353,12 @@ export function createStoryTrackerApp(options) {
       }
 
       const matched = bestScore >= MATCH_THRESHOLD;
-      state.lastCapture = { text, matched, atISO: new Date().toISOString() };
+      state.lastCapture = { text, matched, atISO: new Date().toISOString(), ...(source ? { source } : {}) };
 
       if (matched && bestIndex !== state.currentIndex) {
+        // Open-world: a new mission title means the one being played before it is done.
+        const previous = state.chapters[state.currentIndex];
+        if (nonLinear && previous) state.done.add(previous.id);
         state.currentIndex = bestIndex;
         await commit(profileId, state);
       } else {

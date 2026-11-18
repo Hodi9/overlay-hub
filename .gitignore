@@ -9,3 +9,8 @@ apps/mafia1/tracker/mafia1-tracker-config.json
 apps/mafia2/tracker/mafia2-tracker-config.json
 apps/mafia3/tracker/mafia3-tracker-config.json
 apps/*/tracker/calibration-screenshot.png
+
+# GTA VI stream reader: local keys, captures and log
+apps/gta6/reader/config.json
+apps/gta6/reader/captures/
+apps/gta6/reader/reader.log

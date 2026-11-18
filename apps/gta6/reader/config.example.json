@@ -1,0 +1,19 @@
+{
+  "panelUrl": "https://dreamglow.xyz",
+  "dryRun": true,
+  "intervalSeconds": 2,
+  "streams": [
+    {
+      "twitch": "wendelbolol",
+      "profile": null,
+      "apiKey": "",
+      "region": { "x": 0.6, "y": 0.83, "w": 0.4, "h": 0.16 }
+    },
+    {
+      "twitch": "marcelo",
+      "profile": "yzauvd3667fn",
+      "apiKey": "",
+      "region": { "x": 0.6, "y": 0.83, "w": 0.4, "h": 0.16 }
+    }
+  ]
+}

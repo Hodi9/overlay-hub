@@ -87,3 +87,66 @@ test("GTA VI missions are ticked off in any order; playing now moves on to the n
     assert.deepEqual([s.started, s.progress.completed, s.done.length], [false, 0, 0]);
   });
 });
+
+test("a stream reader's text sets playing now, ticks the mission before it, and must come from the channel's own stream", async () => {
+  const channels = {
+    has: (id) => id === "marcelochan",
+    authorize: (_id, request) => request.headers.authorization === "Bearer tracker-key",
+    publicRecord: (id) => (id === "marcelochan" ? { id, twitch: "marcelo" } : null)
+  };
+  const app = express();
+  app.use("/gta6", createGta6App({ channels }));
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/gta6/api`;
+  const send = async (text, source, key = "tracker-key") => {
+    const r = await fetch(`${base}/tracker?profile=marcelochan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ text, source })
+    });
+    return { status: r.status, body: await r.json() };
+  };
+  const state = async () => (await fetch(`${base}/state?profile=marcelochan`)).json();
+  try {
+    assert.equal((await send("Gone Fishing", "marcelo", "wrong")).status, 401);
+    assert.equal((await send("Gone Fishing", "wendelbolol")).status, 409, "text from another stream is refused");
+
+    assert.equal((await send("Gone Fishing", "marcelo")).body.matched, true);
+    let s = await state();
+    assert.deepEqual([s.current.day, s.progress.completed, s.lastCapture.source], ["Gone Fishing", 0, "marcelo"]);
+
+    // Reading the mission already shown (e.g. the overlay's own text) changes nothing.
+    await send("Gone Fishing", "marcelo");
+    s = await state();
+    assert.deepEqual([s.current.day, s.progress.completed], ["Gone Fishing", 0]);
+
+    // A new title: Gone Fishing is ticked, Lab Fees is playing now.
+    await send("Lab Fees", "marcelo");
+    s = await state();
+    assert.deepEqual([s.current.day, s.progress.completed], ["Lab Fees", 1]);
+    assert.ok(s.done.includes(s.chapters[1].id));
+  } finally {
+    server.closeAllConnections?.();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("the stream reader only accepts whole mission names and skips the one playing and the ticked ones", async () => {
+  const { findMission, normalize } = await import("../apps/gta6/reader/reader.mjs");
+  const chapters = DEFAULT_MISSIONS.map((m, i) => ({ ...m, id: `m${i}` }));
+  const none = new Set();
+  assert.equal(normalize("What's in the Bag?"), "whats in the bag");
+  assert.equal(findMission(["GEAR UP"], chapters, none)?.chapter.day, "Gear Up");
+  assert.equal(findMission(["Whats in the Bag"], chapters, none)?.chapter.day, "What's in the Bag?");
+  assert.equal(findMission(["STEAL THE ZORRUSO", "FOR RANDY"], chapters, none)?.chapter.day, "Steal the Zorrusso for Randy", "a wrapped title, one OCR slip");
+  assert.equal(findMission(["UP"], chapters, none), null, "part of a name never counts");
+  assert.equal(findMission(["ZOOM"], chapters, none), null);
+  assert.equal(findMission(["Tyrone."], chapters, none), null, "a subtitle ending in a full stop");
+  assert.equal(findMission(["tyrone"], chapters, none), null, "a subtitle cut off mid-sentence");
+  assert.equal(findMission(["TYRONE"], chapters, none)?.chapter.day, "Tyrone");
+  assert.equal(findMission(["Hey Arnold!"], chapters, none)?.chapter.day, "Hey Arnold!");
+  assert.equal(findMission(["[Spoiler]"], chapters, none), null);
+  assert.equal(findMission(["CHAPTER 1: JUST LIKE PARADISE"], chapters, none), null, "the overlay's chapter line");
+  assert.equal(findMission(["GONE FISHING"], chapters, new Set(["m1"])), null, "the mission already playing (the overlay's own line)");
+});
