@@ -62,6 +62,43 @@ test("the old saved name Dødsfald becomes Deaths once; a name set back later is
   assert.equal(again.counters[0].label, "Dødsfald");
 });
 
+test("hub channels each get their own counters, saved apart, and need that channel's key", async () => {
+  const keys = { aaa: "key-a", bbb: "key-b" };
+  const channels = {
+    has: (id) => id in keys,
+    authorize: (id, request) => request.headers["x-channel-key"] === keys[id]
+  };
+  const router = createGta6CountersApp({ channels, chat: null });
+  const app = express();
+  app.use("/gta6-counters", router);
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/gta6-counters/api`;
+  const call = async (method, path, profile, key, body) => {
+    const headers = { "Content-Type": "application/json" };
+    if (key) headers["x-channel-key"] = key;
+    const r = await fetch(`${base}/${path}${profile ? `${path.includes("?") ? "&" : "?"}profile=${profile}` : ""}`, { method, headers, body: body && JSON.stringify(body) });
+    return { status: r.status, body: await r.json() };
+  };
+  try {
+    const a = (await call("GET", "state", "aaa")).body;
+    assert.equal(a.hubChannel, true);
+    assert.equal(a.passwordRequired, false);
+    const deathsA = a.counters[0].id;
+    assert.equal((await call("POST", `counters/${deathsA}/bump`, "aaa", "key-b", { by: 1 })).status, 401, "another channel's key");
+    assert.equal((await call("POST", `counters/${deathsA}/bump`, "aaa", null, { by: 1 })).status, 401, "no key");
+    assert.equal((await call("POST", `counters/${deathsA}/bump`, "aaa", "key-a", { by: 1 })).body.counters[0].count, 1);
+    assert.equal((await call("GET", "state", "bbb")).body.counters[0].count, 0, "channel b is untouched");
+    assert.equal((await call("GET", "state")).body.counters[0].count, 0, "the main counters are untouched");
+    assert.equal((await call("GET", "state", "zzz")).status, 404);
+    router.hubInstance("aaa").onChat("!death 12", "Mod");
+    assert.equal((await call("GET", "state", "aaa")).body.counters[0].count, 12);
+  } finally {
+    server.closeAllConnections?.();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("reorder and restore keep things sane", () => {
   const counters = defaultState().counters;
   assert.deepEqual(reorder(counters, [counters[2].id]).map((c) => c.label), ["Brage Lucia", "Deaths", "Stripklub"]);
@@ -112,6 +149,20 @@ test("the panel API counts, edits, adds, deletes; chat counts with a cooldown", 
     router.onChat("!strip", "ModTwo"); // another counter has its own cooldown
     s = (await call("GET", "state")).body;
     assert.deepEqual([s.counters[0].count, s.counters[1].count], [3, 8]);
+
+    // "!death 50" sets the counter, with no cooldown; a word after the command still just adds 1.
+    router.onChat("!death 50", "ModOne");
+    s = (await call("GET", "state")).body;
+    assert.equal(s.counters[0].count, 50);
+    assert.deepEqual([s.lastChange.set, s.lastChange.username], [50, "ModOne"]);
+    router.onChat("!death 0", "ModOne");
+    s = (await call("GET", "state")).body;
+    assert.equal(s.counters[0].count, 0);
+    clock += CHAT_COOLDOWN_MS;
+    router.onChat("!death lol", "ModOne");
+    s = (await call("GET", "state")).body;
+    assert.equal(s.counters[0].count, 1);
+    router.onChat("!death 3", "ModOne");
 
     assert.equal((await call("POST", "counters", { label: "", command: "!x" })).status, 400);
     s = (await call("POST", "counters", { label: "Politijagter", command: "politi" })).body;

@@ -72,6 +72,12 @@ export function counterForCommand(counters, message) {
   return counters.find((c) => c.command && c.command === word) || null;
 }
 
+// "!death 50" → 50 (set the counter); "!death" or "!death lol" → null (add 1).
+export function chatAmount(message) {
+  const second = String(message ?? "").trim().split(/\s+/)[1];
+  return second && /^\d{1,6}$/.test(second) ? clampCount(Number(second)) : null;
+}
+
 export function reorder(counters, ids) {
   const byId = new Map(counters.map((c) => [c.id, c]));
   const ordered = [...new Set(Array.isArray(ids) ? ids : [])].map((id) => byId.get(id)).filter(Boolean);

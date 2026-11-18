@@ -201,7 +201,7 @@ app.use("/london", createLondonApp({ pool }));
 // Guests in the studio for a stream (who is here, with name and title): not on the front page, the address is the link.
 app.use("/gaester", createGaesterApp({ pool }));
 app.use("/livetimer", createLiveTimerApp({ pool }));
-app.use("/gta6-counters", createGta6CountersApp({ pool }));
+app.use("/gta6-counters", createGta6CountersApp({ channels, pool }));
 
 // Hidden walk-through-Denmark overlay (apps/walk). Same idea: not on the index page,
 // only mounted at the secret address in WALK_PATH, 404 everywhere else.

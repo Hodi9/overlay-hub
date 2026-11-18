@@ -82,7 +82,7 @@
   <h1>GTA VI-<em>tællere</em></h1>
   <p class="lede">Tryk + og − her, eller lad mods tælle op med en kommando i chatten. <a href="./" target="_blank">Åbn overlayet</a></p>
 
-  <section>
+  <section id="key-section">
     <p class="label">Adgangskode</p>
     <div class="box">
       <div class="line">
@@ -114,6 +114,7 @@
     <p class="label">Chat-kommandoer</p>
     <div class="box">
       <p class="hint">Twitch-kanalen hvor kommandoerne læses. Kun streameren og mods kan tælle op, og samme tæller tæller kun én gang inden for 5 sekunder (så to mods ikke tæller samme død to gange). Lad feltet stå tomt for at slå chatten fra.</p>
+      <p class="hint">Fx <code>!death</code> lægger 1 til. <code>!death 50</code> sætter tælleren til 50.</p>
       <div class="line">
         <input type="text" id="f-channel" placeholder="fx wendelbolol" autocomplete="off">
         <button class="primary" id="save-channel">Gem kanal</button>
@@ -241,13 +242,15 @@
       next.counters.forEach(function (c, i) { list.appendChild(counterCard(c, i, next.counters)); });
     }
     if (first || document.activeElement !== $('f-channel')) $('f-channel').value = next.channel;
+    // On a hub channel the channel's own key is used (sent by /_hub/channel.js), so no password box.
+    $('key-section').hidden = Boolean(next.hubChannel) || !next.passwordRequired;
     $('chat-status').textContent = next.channel
       ? (next.chatChannel === next.channel ? 'Lytter i #' + next.channel + "'s chat." : 'Forbinder til #' + next.channel + '…')
       : 'Chat er slået fra — kun knapperne her tæller.';
     var lc = next.lastChange;
     if (lc) {
       var c = next.counters.find(function (x) { return x.id === lc.id; });
-      $('last-change').textContent = 'Seneste: ' + (lc.by > 0 ? '+1 ' : '−1 ') + (c ? c.label : '(slettet)') +
+      $('last-change').textContent = 'Seneste: ' + (lc.set != null ? (c ? c.label : '(slettet)') + ' sat til ' + lc.set : (lc.by > 0 ? '+1 ' : '−1 ') + (c ? c.label : '(slettet)')) +
         (lc.via === 'chat' ? ' fra ' + lc.username + ' i chatten' : ' fra panelet') + ' kl. ' + new Date(lc.at).toLocaleTimeString('da-DK');
     }
   }
