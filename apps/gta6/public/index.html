@@ -21,7 +21,7 @@
   .label{margin-top:4px;font-size:0.875rem;font-weight:600;text-transform:uppercase;letter-spacing:0.16em;color:rgba(255,255,255,.75);}
 
   .bar-rail{margin-top:12px;height:16px;width:100%;border-radius:3px;border:2px solid #fff;padding:3px;}
-  .bar-fill{height:100%;border-radius:1px;border-right:2px solid #fff;background:rgba(255,255,255,.2);width:0%;transition:width .7s ease;}
+  .bar-fill{height:100%;border-radius:1px;background:var(--accent);width:0%;transition:width .7s ease;}
 
   .count{margin-top:12px;font-size:2.25rem;font-weight:700;text-transform:uppercase;letter-spacing:-0.025em;line-height:1;color:#fff;font-variant-numeric:tabular-nums;}
   .section{margin-top:4px;font-size:1.25rem;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,.85);min-height:1.5em;}
@@ -33,11 +33,10 @@
   .idle{font-size:1.25rem;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:0.1em;}
 
   /* Placement: ?corner=top-right / bottom-left / bottom-right (or ?side=right) moves it; ?align=left/right sets
-     the text (default: the same side as the corner). Right-aligned text mirrors the bar so it fills from the right. */
+     the text (default: the same side as the corner). The bar always fills from the left. */
   body.right{justify-content:flex-end;}
   body.bottom{align-items:flex-end;}
   .tracker.align-right{text-align:right;}
-  .tracker.align-right .bar-fill{margin-left:auto;border-right:none;border-left:2px solid #fff;}
   .tracker.align-right .current{flex-direction:row-reverse;}
 </style>
 </head>
