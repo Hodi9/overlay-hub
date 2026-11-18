@@ -139,7 +139,7 @@ export function createStoryTrackerApp(options) {
   }
 
   function defaultProfileState() {
-    return { chapters: defaultChapters.map((c) => cleanChapter(c)), currentIndex: -1, lastCapture: null, done: new Set() };
+    return { chapters: defaultChapters.map((c) => cleanChapter(c)), currentIndex: -1, lastCapture: null, done: new Set(), readerEnabled: true };
   }
 
   // Ticks only count for missions that are still on the list.
@@ -173,7 +173,8 @@ export function createStoryTrackerApp(options) {
               chapters: saved.chapters.map((c) => cleanChapter(c)),
               currentIndex: Number.isInteger(saved.currentIndex) ? saved.currentIndex : -1,
               lastCapture: null,
-              done: new Set(Array.isArray(saved.done) ? saved.done.filter((id) => typeof id === "string") : [])
+              done: new Set(Array.isArray(saved.done) ? saved.done.filter((id) => typeof id === "string") : []),
+              readerEnabled: saved.readerEnabled !== false
             };
           }
         } catch (error) {
@@ -199,7 +200,7 @@ export function createStoryTrackerApp(options) {
       `INSERT INTO ${dbTable} (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      [dbRowId(profileId), JSON.stringify({ chapters: state.chapters, currentIndex: state.currentIndex, ...(nonLinear ? { done: [...state.done] } : {}) })]
+      [dbRowId(profileId), JSON.stringify({ chapters: state.chapters, currentIndex: state.currentIndex, readerEnabled: state.readerEnabled !== false, ...(nonLinear ? { done: [...state.done] } : {}) })]
     );
   }
 
@@ -216,6 +217,7 @@ export function createStoryTrackerApp(options) {
       progress: { completed, total },
       percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
+      readerEnabled: state.readerEnabled !== false,
       passwordRequired: state.isChannel || Boolean(controlPassword),
       trackerConfigured: state.isChannel || Boolean(trackerKey),
       updatedAt: new Date().toISOString()
@@ -238,6 +240,7 @@ export function createStoryTrackerApp(options) {
       progress: { completed, total },
       percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
+      readerEnabled: state.readerEnabled !== false,
       passwordRequired: state.isChannel || Boolean(controlPassword),
       trackerConfigured: state.isChannel || Boolean(trackerKey),
       updatedAt: new Date().toISOString()
@@ -326,6 +329,11 @@ export function createStoryTrackerApp(options) {
 
       const profileId = profileFromRequest(request);
       const state = await ensureProfile(profileId);
+
+      // Kill switch: "Automatisk læsning: fra" in the panel refuses everything an automatic reader sends.
+      if (state.readerEnabled === false) {
+        return response.status(423).json({ error: "Automatisk læsning er slået fra i panelet.", disabled: true });
+      }
 
       // A stream reader says which Twitch stream the text came from; it must be this profile's own channel.
       const source = typeof request.body?.source === "string" ? request.body.source.trim().toLowerCase().slice(0, 25) : "";
@@ -423,6 +431,20 @@ export function createStoryTrackerApp(options) {
       }
     });
   }
+
+  // Panel switch for automatic reading (OCR script or stream reader) of this profile.
+  router.patch("/api/reader", requireControlAuth, async (request, response, next) => {
+    try {
+      if (typeof request.body?.enabled !== "boolean") return response.status(400).json({ error: "enabled skal være true eller false." });
+      const profileId = profileFromRequest(request);
+      const state = await ensureProfile(profileId);
+      state.readerEnabled = request.body.enabled;
+      await commit(profileId, state);
+      response.json(payload(state));
+    } catch (error) {
+      next(error);
+    }
+  });
 
   router.put("/api/chapters", requireControlAuth, async (request, response, next) => {
     try {

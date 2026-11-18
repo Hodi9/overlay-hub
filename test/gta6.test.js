@@ -126,6 +126,18 @@ test("a stream reader's text sets playing now, ticks the mission before it, and 
     s = await state();
     assert.deepEqual([s.current.day, s.progress.completed], ["Lab Fees", 1]);
     assert.ok(s.done.includes(s.chapters[1].id));
+
+    // Kill switch: switched off in the panel, everything the reader sends is refused until it is on again.
+    const owner = (enabled) => fetch(`${base}/reader?profile=marcelochan`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: "Bearer tracker-key" }, body: JSON.stringify({ enabled }) });
+    const off = await owner(false);
+    assert.equal(off.status, 200);
+    assert.equal((await off.json()).readerEnabled, false);
+    const refused = await send("Just a Scratch", "marcelo");
+    assert.deepEqual([refused.status, refused.body.disabled], [423, true]);
+    assert.equal((await state()).current.day, "Lab Fees", "nothing changed while off");
+    await owner(true);
+    await send("Just a Scratch", "marcelo");
+    assert.equal((await state()).current.day, "Just a Scratch");
   } finally {
     server.closeAllConnections?.();
     await new Promise((resolve) => server.close(resolve));

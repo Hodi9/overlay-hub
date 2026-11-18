@@ -160,6 +160,7 @@ async function sendMission(stream, mission) {
     body: JSON.stringify({ text: mission.day, source: stream.twitch, profile: stream.profile || undefined })
   });
   const body = await res.json().catch(() => ({}));
+  if (res.status === 423) return { matched: false, disabled: true };
   if (!res.ok) throw new Error(body.error || `tracker svarede ${res.status}`);
   return body;
 }
@@ -213,12 +214,16 @@ function runStream(stream, ocr) {
       }
       pending = null;
       lastChangeAt = now;
+      if (state.readerEnabled === false) {
+        log(name, `Så "${hit.chapter.day}", men automatisk læsning er slået fra i panelet — sender intet.`);
+        return;
+      }
       if (dryRun) {
         log(name, `PRØVE: ville sætte "${hit.chapter.day}" som spiller nu på ${stream.profile ? `kanal ${stream.profile}` : "hovedtrackeren"} (sender intet).`);
         return;
       }
       const result = await sendMission(stream, hit.chapter);
-      log(name, result.matched ? `Sat: "${hit.chapter.day}" spiller nu.` : `Serveren matchede ikke "${hit.chapter.day}".`);
+      log(name, result.disabled ? `Afvist: automatisk læsning er slået fra i panelet.` : result.matched ? `Sat: "${hit.chapter.day}" spiller nu.` : `Serveren matchede ikke "${hit.chapter.day}".`);
       await refreshState();
     } catch (error) {
       log(name, `Fejl: ${error.message}`);

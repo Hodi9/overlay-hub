@@ -126,9 +126,13 @@
   </section>
 
   <section>
-    <p class="section-label">Automatisk tracker (OCR)</p>
+    <p class="section-label">Automatisk læsning</p>
     <div class="box">
       <p class="hint" id="tracker-hint">Tjekker status...</p>
+      <div class="field-row" style="margin-bottom:12px;">
+        <button class="btn" id="reader-toggle">Automatisk læsning: til</button>
+        <span class="hint" id="reader-note" style="margin:0;"></span>
+      </div>
       <div class="capture-box">
         <span>Seneste tekst genkendt af trackeren:</span>
         <span id="capture-tag" class="capture-tag">—</span>
@@ -296,9 +300,14 @@
     latest = state;
 
     var trackerHint = document.getElementById('tracker-hint');
-    trackerHint.innerHTML = state.trackerConfigured
-      ? 'Server-nøglen er sat. Der er ikke noget OCR-script til GTA VI endnu — det giver først mening når de rigtige missionsnavne er indsat.'
-      : 'Ingen automatisk tracker endnu. Den kan laves når de rigtige missionsnavne kendes (kræver <code>GTA6_TRACKER_KEY</code> på serveren).';
+    trackerHint.innerHTML = 'Mission-læseren ser streamen og sætter missionen fra titlen nederst til højre som "Spiller nu" (den forrige får flueben). Slå den fra her, hvis den laver fejl — så afviser serveren alt, den sender, også selvom den stadig kører.' +
+      (state.trackerConfigured ? '' : ' <em>(Tracker-nøglen <code>GTA6_TRACKER_KEY</code> er ikke sat på serveren endnu.)</em>');
+
+    var readerOn = state.readerEnabled !== false;
+    var readerToggle = document.getElementById('reader-toggle');
+    readerToggle.textContent = 'Automatisk læsning: ' + (readerOn ? 'til' : 'fra');
+    readerToggle.className = readerOn ? 'btn' : 'btn danger';
+    document.getElementById('reader-note').textContent = readerOn ? '' : 'Slået fra — kun panelet ændrer missioner.';
 
     var captureTag = document.getElementById('capture-tag');
     var captureText = document.getElementById('capture-text');
@@ -306,7 +315,7 @@
     if (state.lastCapture){
       captureTag.textContent = state.lastCapture.matched ? 'Matchet' : 'Ingen match';
       captureTag.className = 'capture-tag ' + (state.lastCapture.matched ? 'matched' : 'unmatched');
-      captureText.textContent = '"' + state.lastCapture.text + '" (' + new Date(state.lastCapture.atISO).toLocaleTimeString('da-DK') + ')';
+      captureText.textContent = '"' + state.lastCapture.text + '" (' + (state.lastCapture.source ? 'fra #' + state.lastCapture.source + ', ' : '') + new Date(state.lastCapture.atISO).toLocaleTimeString('da-DK') + ')';
       quickAdd.style.display = state.lastCapture.matched ? 'none' : 'block';
     } else {
       captureTag.textContent = '—';
@@ -435,6 +444,13 @@
     if (!latest) return;
     if (!confirm('Marker hele spillet som gennemført (100%)?')) return;
     apiCall('/gta6/api/current' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ index: latest.chapters.length }) })
+      .then(render);
+  });
+
+  document.getElementById('reader-toggle').addEventListener('click', function(){
+    if (!latest) return;
+    var turnOn = latest.readerEnabled === false;
+    apiCall('/gta6/api/reader' + qs, { method:'PATCH', headers: authHeaders({'Content-Type':'application/json'}), body: JSON.stringify({ enabled: turnOn }) })
       .then(render);
   });
 
