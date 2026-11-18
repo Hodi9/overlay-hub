@@ -31,6 +31,14 @@
   .current .text{text-shadow:0 2px 8px rgba(0,0,0,.9);}
 
   .idle{font-size:1.25rem;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:0.1em;}
+
+  /* Placement: ?corner=top-right / bottom-left / bottom-right (or ?side=right) moves it; ?align=left/right sets
+     the text (default: the same side as the corner). Right-aligned text mirrors the bar so it fills from the right. */
+  body.right{justify-content:flex-end;}
+  body.bottom{align-items:flex-end;}
+  .tracker.align-right{text-align:right;}
+  .tracker.align-right .bar-fill{margin-left:auto;border-right:none;border-left:2px solid #fff;}
+  .tracker.align-right .current{flex-direction:row-reverse;}
 </style>
 </head>
 <body>
@@ -52,6 +60,13 @@
   var box = document.getElementById('tracker');
   var content = document.getElementById('content');
 
+  var corner = (params.get('corner') || '').toLowerCase();
+  var right = params.get('side') === 'right' || /right/.test(corner);
+  if (right) document.body.classList.add('right');
+  if (/bottom/.test(corner)) document.body.classList.add('bottom');
+  var align = params.get('align') === 'left' ? 'left' : params.get('align') === 'right' ? 'right' : (right ? 'right' : 'left');
+  if (align === 'right') box.classList.add('align-right');
+
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
@@ -64,7 +79,9 @@
     var total = chapters.length;
     var idx = typeof state.currentIndex === 'number' ? state.currentIndex : -1;
 
-    if (idx < 0){
+    // Open-world mode: started once a mission is ticked off or being played.
+    var notStarted = state.nonLinear ? !state.started : idx < 0;
+    if (notStarted){
       content.innerHTML = '<div class="idle">Ikke startet endnu</div>';
       return;
     }

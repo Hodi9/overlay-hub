@@ -1,0 +1,89 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import express from "express";
+
+delete process.env.GTA6_CONTROL_PASSWORD;
+
+const { DEFAULT_MISSIONS, isPlaceholderList } = await import("../apps/gta6/missions.js");
+const { createGta6App } = await import("../apps/gta6/app.js");
+
+test("the GTA VI list has 91 missions in five chapters, all short enough for the overlay", () => {
+  assert.equal(DEFAULT_MISSIONS.length, 91);
+  const perChapter = {};
+  for (const m of DEFAULT_MISSIONS) perChapter[m.location] = (perChapter[m.location] || 0) + 1;
+  assert.deepEqual(Object.values(perChapter), [22, 11, 26, 25, 7]);
+  assert.equal(DEFAULT_MISSIONS[0].day, "Prologue");
+  assert.equal(DEFAULT_MISSIONS.at(-1).location, "Chapter 5: Top of the World, Ma");
+  assert.ok(DEFAULT_MISSIONS.every((m) => m.day.length <= 60 && m.location.length <= 60));
+});
+
+test("only the old Mission N / Chapter N placeholder list counts as stale", () => {
+  assert.equal(isPlaceholderList([{ day: "Mission 1", location: "Chapter 1" }, { day: "Mission 2", location: "Chapter 1" }]), true);
+  assert.equal(isPlaceholderList([{ day: "Mission 1", location: "Chapter 1" }, { day: "Gone Fishing", location: "Chapter 1" }]), false);
+  assert.equal(isPlaceholderList(DEFAULT_MISSIONS), false);
+  assert.equal(isPlaceholderList([]), false);
+});
+
+async function withApp(options, run) {
+  const app = express();
+  app.use("/gta6", createGta6App(options));
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const base = `http://127.0.0.1:${server.address().port}/gta6/api`;
+  const call = async (method, path, body) => {
+    const r = await fetch(`${base}/${path}`, { method, headers: { "Content-Type": "application/json" }, body: body && JSON.stringify(body) });
+    return { status: r.status, body: await r.json() };
+  };
+  try {
+    return await run(call);
+  } finally {
+    server.closeAllConnections?.();
+    await new Promise((resolve) => server.close(resolve));
+  }
+}
+
+const savedPool = (data) => ({ query: async (sql) => (/^\s*SELECT/i.test(sql) ? { rows: [{ data }] } : { rows: [] }) });
+
+test("a saved placeholder list is replaced by the real missions; a real saved list and its ticks are kept", async () => {
+  const placeholder = Array.from({ length: 100 }, (_, i) => ({ day: `Mission ${i + 1}`, location: `Chapter ${Math.floor(i / 20) + 1}` }));
+  const swapped = await withApp({ pool: savedPool({ chapters: placeholder, currentIndex: -1 }) }, async (call) => (await call("GET", "state")).body);
+  assert.equal(swapped.chapters.length, 91);
+  assert.equal(swapped.chapters[0].day, "Prologue");
+  assert.equal(swapped.progress.completed, 0);
+
+  const own = [{ id: "a", day: "Gone Fishing", location: "Chapter 1: Just Like Paradise" }, { id: "b", day: "Gear Up", location: "Chapter 1: Just Like Paradise" }];
+  const kept = await withApp({ pool: savedPool({ chapters: own, currentIndex: 0, done: ["b", "gone-from-list"] }) }, async (call) => (await call("GET", "state")).body);
+  assert.deepEqual(kept.chapters.map((c) => c.day), ["Gone Fishing", "Gear Up"]);
+  assert.deepEqual([kept.progress.completed, kept.done, kept.current.day], [1, ["b"], "Gone Fishing"]);
+});
+
+test("GTA VI missions are ticked off in any order; playing now moves on to the next open one", async () => {
+  await withApp({}, async (call) => {
+    let s = (await call("GET", "state")).body;
+    assert.deepEqual([s.nonLinear, s.started, s.progress.completed, s.progress.total], [true, false, 0, 91]);
+    const id = (i) => s.chapters[i].id;
+
+    // Play mission 3 first, then tick off 3 and 1 (mission 2 is skipped for now).
+    s = (await call("PATCH", "current", { index: 2 })).body;
+    assert.deepEqual([s.started, s.current.day, s.progress.completed], [true, "Gear Up", 0]);
+    s = (await call("PATCH", "done", { id: id(2), done: true })).body;
+    assert.equal(s.current.day, "Just a Scratch", "moves to the next open mission");
+    s = (await call("PATCH", "done", { id: id(0), done: true })).body;
+    assert.deepEqual([s.progress.completed, s.percent], [2, 2.2]);
+    assert.equal(s.current.day, "Just a Scratch", "ticking another mission does not move playing now");
+
+    // Un-tick, and a whole chapter at once.
+    s = (await call("PATCH", "done", { id: id(0), done: false })).body;
+    assert.equal(s.progress.completed, 1);
+    s = (await call("PATCH", "done", { ids: s.chapters.slice(0, 22).map((c) => c.id), done: true })).body;
+    assert.equal(s.progress.completed, 22);
+    assert.equal(s.current.location, "Chapter 2: Paradise Lost");
+    assert.equal((await call("PATCH", "done", { id: "nope", done: true })).status, 400);
+
+    // Finished = every mission ticked; reset clears the ticks.
+    s = (await call("PATCH", "current", { index: 91 })).body;
+    assert.deepEqual([s.finished, s.progress.completed, s.current], [true, 91, null]);
+    s = (await call("POST", "reset")).body;
+    assert.deepEqual([s.started, s.progress.completed, s.done.length], [false, 0, 0]);
+  });
+});

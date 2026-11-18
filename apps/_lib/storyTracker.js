@@ -65,9 +65,14 @@ function sanitizeProfileId(raw) {
  * @param {object} [options.channels] - channel registry (apps/_lib/channels.js). A ?profile= that is a registered
  *   channel is protected by that channel's own keys instead of the shared env password/tracker key.
  * @param {object} [options.pool] - shared pg pool; a private one is created from DATABASE_URL when omitted
+ * @param {boolean} [options.nonLinear] - missions can be done in any order (open-world games): each one is ticked
+ *   off on its own (state.done, a Set of chapter ids), progress is the number ticked, and currentIndex only says
+ *   which mission is being played now. Without it, progress is the position of currentIndex (linear games).
+ * @param {(chapters: object[]) => boolean} [options.isStaleList] - true for a saved list that should be replaced
+ *   by defaultChapters on load (an outdated seed list)
  */
 export function createStoryTrackerApp(options) {
-  const { publicDir, envPrefix, dbTable, defaultChapters, cleanChapter, matchText, channels = null, pool = null } = options;
+  const { publicDir, envPrefix, dbTable, defaultChapters, cleanChapter, matchText, channels = null, pool = null, nonLinear = false } = options;
 
   const router = express.Router();
   const controlPassword = process.env[`${envPrefix}_CONTROL_PASSWORD`] || "";
@@ -132,7 +137,22 @@ export function createStoryTrackerApp(options) {
   }
 
   function defaultProfileState() {
-    return { chapters: defaultChapters.map((c) => cleanChapter(c)), currentIndex: -1, lastCapture: null };
+    return { chapters: defaultChapters.map((c) => cleanChapter(c)), currentIndex: -1, lastCapture: null, done: new Set() };
+  }
+
+  // Ticks only count for missions that are still on the list.
+  function doneCount(state) {
+    return state.chapters.filter((c) => state.done.has(c.id)).length;
+  }
+
+  // The next mission not ticked off after index "from" in list order, then from the top; -1 when all are done.
+  function nextOpenIndex(state, from) {
+    const n = state.chapters.length;
+    for (let step = 1; step <= n; step++) {
+      const i = (from + step) % n;
+      if (!state.done.has(state.chapters[i].id)) return i;
+    }
+    return -1;
   }
 
   async function ensureProfile(profileId) {
@@ -145,11 +165,13 @@ export function createStoryTrackerApp(options) {
         try {
           const result = await db.query(`SELECT data FROM ${dbTable} WHERE id = $1`, [dbRowId(profileId)]);
           const saved = result.rows[0]?.data;
-          if (saved && Array.isArray(saved.chapters) && saved.chapters.length) {
+          // isStaleList lets an app swap an outdated seed list for its new defaults.
+          if (saved && Array.isArray(saved.chapters) && saved.chapters.length && !(options.isStaleList && options.isStaleList(saved.chapters))) {
             state = {
               chapters: saved.chapters.map((c) => cleanChapter(c)),
               currentIndex: Number.isInteger(saved.currentIndex) ? saved.currentIndex : -1,
-              lastCapture: null
+              lastCapture: null,
+              done: new Set(Array.isArray(saved.done) ? saved.done.filter((id) => typeof id === "string") : [])
             };
           }
         } catch (error) {
@@ -175,11 +197,12 @@ export function createStoryTrackerApp(options) {
       `INSERT INTO ${dbTable} (id, data, updated_at)
        VALUES ($1, $2::jsonb, NOW())
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-      [dbRowId(profileId), JSON.stringify({ chapters: state.chapters, currentIndex: state.currentIndex })]
+      [dbRowId(profileId), JSON.stringify({ chapters: state.chapters, currentIndex: state.currentIndex, ...(nonLinear ? { done: [...state.done] } : {}) })]
     );
   }
 
   function payload(state) {
+    if (nonLinear) return nonLinearPayload(state);
     const total = state.chapters.length;
     const finished = state.currentIndex >= total;
     const completed = finished ? total : Math.max(0, state.currentIndex);
@@ -187,6 +210,28 @@ export function createStoryTrackerApp(options) {
       chapters: state.chapters,
       currentIndex: state.currentIndex,
       current: state.currentIndex >= 0 && state.currentIndex < total ? state.chapters[state.currentIndex] : null,
+      finished,
+      progress: { completed, total },
+      percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
+      lastCapture: state.lastCapture,
+      passwordRequired: state.isChannel || Boolean(controlPassword),
+      trackerConfigured: state.isChannel || Boolean(trackerKey),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  function nonLinearPayload(state) {
+    const total = state.chapters.length;
+    const completed = doneCount(state);
+    const finished = total > 0 && completed === total;
+    const playing = state.currentIndex >= 0 && state.currentIndex < total ? state.chapters[state.currentIndex] : null;
+    return {
+      nonLinear: true,
+      chapters: state.chapters,
+      done: state.chapters.filter((c) => state.done.has(c.id)).map((c) => c.id),
+      currentIndex: playing ? state.currentIndex : -1,
+      current: finished ? null : playing,
+      started: completed > 0 || Boolean(playing),
       finished,
       progress: { completed, total },
       percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
@@ -218,8 +263,10 @@ export function createStoryTrackerApp(options) {
   // ?demo=<tal>: intet startet endnu → vis et tilfældigt gennemført trin (kun i svaret, intet gemmes).
   function demoView(state, request) {
     const fraction = demoFraction(request);
-    if (fraction === null || state.currentIndex >= 0) return state;
-    return { ...state, currentIndex: demoStep(state.chapters.length, fraction) };
+    if (fraction === null || state.currentIndex >= 0 || (nonLinear && doneCount(state) > 0)) return state;
+    const step = demoStep(state.chapters.length, fraction);
+    if (!nonLinear) return { ...state, currentIndex: step };
+    return { ...state, currentIndex: step, done: new Set(state.chapters.slice(0, step).map((c) => c.id)) };
   }
 
   router.get("/api/state", async (request, response, next) => {
@@ -279,12 +326,14 @@ export function createStoryTrackerApp(options) {
       const state = await ensureProfile(profileId);
 
       const capturedNormalized = normalize(text);
-      const rangeStart = Math.max(0, state.currentIndex);
-      const rangeEnd = Math.min(state.chapters.length - 1, state.currentIndex + LOOKAHEAD);
+      // Linear games: only the next few missions. Open-world games: any mission not ticked off yet.
+      const rangeStart = nonLinear ? 0 : Math.max(0, state.currentIndex);
+      const rangeEnd = nonLinear ? state.chapters.length - 1 : Math.min(state.chapters.length - 1, state.currentIndex + LOOKAHEAD);
 
       let bestIndex = -1;
       let bestScore = 0;
       for (let i = rangeStart; i <= rangeEnd; i++) {
+        if (nonLinear && state.done.has(state.chapters[i].id)) continue;
         const score = scoreMatch(capturedNormalized, normalize(matchText(state.chapters[i])));
         if (score > bestScore) {
           bestScore = score;
@@ -306,7 +355,7 @@ export function createStoryTrackerApp(options) {
         ok: true,
         matched,
         matchedChapter: matched ? state.chapters[bestIndex] : null,
-        progress: { completed: Math.max(0, state.currentIndex), total: state.chapters.length }
+        progress: { completed: nonLinear ? doneCount(state) : Math.max(0, state.currentIndex), total: state.chapters.length }
       });
     } catch (error) {
       next(error);
@@ -321,13 +370,45 @@ export function createStoryTrackerApp(options) {
       if (!Number.isInteger(index) || index < -1 || index > state.chapters.length) {
         return response.status(400).json({ error: "index er ugyldigt." });
       }
-      state.currentIndex = index;
+      if (nonLinear && index === state.chapters.length) {
+        // "Finished": every mission ticked off.
+        state.done = new Set(state.chapters.map((c) => c.id));
+        state.currentIndex = -1;
+      } else {
+        state.currentIndex = index;
+      }
       await commit(profileId, state);
       response.json(payload(state));
     } catch (error) {
       next(error);
     }
   });
+
+  // Open-world games: tick missions off (or back on) in any order. Body: { id } or { ids: [] }, plus done: true/false.
+  // Ticking off the mission being played moves "playing now" to the next open mission in list order.
+  if (nonLinear) {
+    router.patch("/api/done", requireControlAuth, async (request, response, next) => {
+      try {
+        const profileId = profileFromRequest(request);
+        const state = await ensureProfile(profileId);
+        const ids = Array.isArray(request.body?.ids) ? request.body.ids : [request.body?.id];
+        const known = new Set(state.chapters.map((c) => c.id));
+        const valid = ids.filter((id) => typeof id === "string" && known.has(id));
+        if (!valid.length) return response.status(400).json({ error: "Ukendt mission." });
+        const done = request.body?.done !== false;
+        for (const id of valid) {
+          if (done) state.done.add(id);
+          else state.done.delete(id);
+        }
+        const playing = state.chapters[state.currentIndex];
+        if (done && playing && state.done.has(playing.id)) state.currentIndex = nextOpenIndex(state, state.currentIndex);
+        await commit(profileId, state);
+        response.json(payload(state));
+      } catch (error) {
+        next(error);
+      }
+    });
+  }
 
   router.put("/api/chapters", requireControlAuth, async (request, response, next) => {
     try {
@@ -337,6 +418,11 @@ export function createStoryTrackerApp(options) {
       if (!list || !list.length) return response.status(400).json({ error: "chapters skal være en ikke-tom liste." });
       state.chapters = list.map((c) => cleanChapter(c));
       if (state.currentIndex > state.chapters.length) state.currentIndex = state.chapters.length;
+      if (nonLinear) {
+        const ids = new Set(state.chapters.map((c) => c.id));
+        state.done = new Set([...state.done].filter((id) => ids.has(id)));
+        if (state.currentIndex >= state.chapters.length) state.currentIndex = -1;
+      }
       await commit(profileId, state);
       response.json(payload(state));
     } catch (error) {
@@ -350,6 +436,7 @@ export function createStoryTrackerApp(options) {
       const state = await ensureProfile(profileId);
       state.currentIndex = -1;
       state.lastCapture = null;
+      state.done = new Set();
       await commit(profileId, state);
       response.json(payload(state));
     } catch (error) {
