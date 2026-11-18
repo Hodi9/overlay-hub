@@ -11,7 +11,7 @@ const { CHAT_COOLDOWN_MS, createGta6CountersApp } = await import("../apps/gta6co
 test("starts with the three GTA VI counters at 0 and chat off", () => {
   const s = defaultState();
   assert.deepEqual(s.counters.map((c) => [c.label, c.command, c.count, c.visible]), [
-    ["Dødsfald", "!death", 0, true],
+    ["Deaths", "!death", 0, true],
     ["Stripklub", "!strip", 0, true],
     ["Brage Lucia", "!lucia", 0, true]
   ]);
@@ -46,17 +46,25 @@ test("editing ignores bad fields and rejects bad commands", () => {
 
 test("a chat message matches a counter by its first word only", () => {
   const counters = defaultState().counters;
-  assert.equal(counterForCommand(counters, "!death")?.label, "Dødsfald");
-  assert.equal(counterForCommand(counters, "!DEATH lol")?.label, "Dødsfald");
+  assert.equal(counterForCommand(counters, "!death")?.label, "Deaths");
+  assert.equal(counterForCommand(counters, "!DEATH lol")?.label, "Deaths");
   assert.equal(counterForCommand(counters, "he said !death"), null);
   assert.equal(counterForCommand(counters, "!deaths"), null);
   assert.ok(commandTaken(counters, "!strip"));
   assert.ok(!commandTaken(counters, "!strip", counters[1].id));
 });
 
+test("the old saved name Dødsfald becomes Deaths once; a name set back later is kept", () => {
+  const old = restore({ channel: "", counters: [{ id: "a", label: "Dødsfald", count: 7, command: "!death" }, { id: "b", label: "Stripklub" }] });
+  assert.deepEqual(old.counters.map((c) => [c.label, c.count]), [["Deaths", 7], ["Stripklub", 0]]);
+  assert.equal(old.deathsRenamed, true);
+  const again = restore({ ...old, counters: [{ ...old.counters[0], label: "Dødsfald" }] });
+  assert.equal(again.counters[0].label, "Dødsfald");
+});
+
 test("reorder and restore keep things sane", () => {
   const counters = defaultState().counters;
-  assert.deepEqual(reorder(counters, [counters[2].id]).map((c) => c.label), ["Brage Lucia", "Dødsfald", "Stripklub"]);
+  assert.deepEqual(reorder(counters, [counters[2].id]).map((c) => c.label), ["Brage Lucia", "Deaths", "Stripklub"]);
   assert.equal(restore(null).counters.length, 3);
   const r = restore({ channel: "bad name", counters: [{ id: "a", label: "X", count: 4 }, { id: "a", label: "dupe" }] });
   assert.deepEqual([r.channel, r.counters.length, r.counters[0].count], ["", 1, 4]);

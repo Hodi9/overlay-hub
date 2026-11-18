@@ -8,7 +8,7 @@ const CHANNEL_RE = /^[a-z0-9_]{2,25}$/;
 const COMMAND_RE = /^![a-z0-9æøå_]{1,24}$/;
 
 export const DEFAULT_COUNTERS = [
-  { label: "Dødsfald", command: "!death" },
+  { label: "Deaths", command: "!death" },
   { label: "Stripklub", command: "!strip" },
   { label: "Brage Lucia", command: "!lucia" }
 ];
@@ -40,7 +40,7 @@ export function makeCounter(input = {}, id = crypto.randomUUID()) {
 }
 
 export function defaultState() {
-  return { channel: "", counters: DEFAULT_COUNTERS.map((c) => makeCounter(c)) };
+  return { channel: "", counters: DEFAULT_COUNTERS.map((c) => makeCounter(c)), deathsRenamed: true };
 }
 
 // Merges a panel edit into a counter. Invalid fields are ignored; returns { counter } or { error }.
@@ -84,5 +84,7 @@ export function restore(saved) {
   const seen = new Set();
   const counters = saved.counters.slice(0, MAX_COUNTERS).map((c) => makeCounter(c, typeof c?.id === "string" && c.id ? c.id : undefined))
     .filter((c) => !seen.has(c.id) && seen.add(c.id));
-  return { channel: cleanChannel(saved.channel) || "", counters };
+  // One-time rename (2026-11-18): the old default "Dødsfald" became "Deaths". A name changed back later is kept.
+  if (!saved.deathsRenamed) for (const c of counters) if (c.label === "Dødsfald") c.label = "Deaths";
+  return { channel: cleanChannel(saved.channel) || "", counters, deathsRenamed: true };
 }
