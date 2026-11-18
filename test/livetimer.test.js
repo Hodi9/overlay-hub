@@ -5,7 +5,7 @@ import express from "express";
 delete process.env.LIVETIMER_CONTROL_PASSWORD;
 delete process.env.LIVETIMER_CHANNEL;
 
-const { DEFAULT_STATE, applyStatus, cleanChannel, elapsedMs, parseDecapiUptime, recordError, reset, restore, setEnabled } = await import("../apps/livetimer/logic.js");
+const { DEFAULT_STATE, LOG_LIMIT, adjust, applyStatus, cleanChannel, elapsedMs, parseDecapiUptime, parseDuration, recordError, reset, restore, setElapsed, setEnabled } = await import("../apps/livetimer/logic.js");
 const { createStatusChecker } = await import("../apps/livetimer/twitchStatus.js");
 const { createLiveTimerApp } = await import("../apps/livetimer/app.js");
 
@@ -95,6 +95,51 @@ test("restore falls back to safe defaults", () => {
   assert.deepEqual([s.channel, s.accumulatedMs, s.accent, s.enabled], [DEFAULT_STATE.channel, 0, "lime", true]);
 });
 
+test("typed times are read as t:mm:ss, h:mm or days + t:mm:ss", () => {
+  assert.equal(parseDuration("1:02:03"), 3723000);
+  assert.equal(parseDuration(" 30:00:00 "), 30 * 3600000);
+  assert.equal(parseDuration("12:30"), 12 * 3600000 + 30 * 60000);
+  assert.equal(parseDuration("2d 3:04:05"), (2 * 86400 + 3 * 3600 + 4 * 60 + 5) * 1000);
+  assert.equal(parseDuration("1 dag 0:00:00"), 86400000);
+  assert.equal(parseDuration("1:60:00"), null);
+  assert.equal(parseDuration("abc"), null);
+  assert.equal(parseDuration(""), null);
+});
+
+test("a correction sets the time; a running timer keeps running from it; nudges never go below 0", () => {
+  let s = applyStatus(restore({}), live(0), at(10)); // running, 10 min
+  s = setElapsed(s, 3600000, at(10));
+  assert.equal(elapsedMs(s, at(15)), 3600000 + min(5));
+  s = adjust(s, -min(10), at(15));
+  assert.equal(elapsedMs(s, at(15)), 3600000 - min(5));
+  let off = setElapsed(restore({}), min(3), at(0));
+  off = adjust(off, -min(10), at(1));
+  assert.equal(elapsedMs(off, at(99)), 0);
+  assert.equal(off.liveSince, null);
+});
+
+test("the log records starts, stops, pauses, resets and corrections with the time shown then", () => {
+  let s = restore({});
+  s = applyStatus(s, live(0), at(1));
+  s = applyStatus(s, live(0), at(60));
+  s = applyStatus(s, OFF, at(61));
+  s = setEnabled(s, false, at(70));
+  s = setEnabled(s, true, at(71));
+  s = setElapsed(s, min(90), at(72));
+  s = reset(s, at(73));
+  assert.deepEqual(s.log.map((e) => e.type), ["reset", "correct", "auto-on", "auto-off", "stop", "start"]);
+  const [r, c, , , stop, start] = s.log;
+  assert.equal(start.elapsedMs, 0);
+  assert.equal(stop.elapsedMs, min(60));
+  assert.equal(stop.at, new Date(at(60)).toISOString());
+  assert.equal(stop.channel, "wendelbolol");
+  assert.deepEqual([c.fromMs, c.elapsedMs], [min(60), min(90)]);
+  assert.deepEqual([r.fromMs, r.elapsedMs], [min(90), 0]);
+  for (let i = 0; i < LOG_LIMIT + 5; i++) s = adjust(s, 1000, at(80));
+  assert.equal(s.log.length, LOG_LIMIT);
+  assert.equal(restore({ log: [{ type: "stop", at: "x", elapsedMs: 1 }, null, { type: "stop", at: new Date(T0).toISOString(), elapsedMs: 5 }] }).log.length, 1);
+});
+
 test("the status checker reads decapi without keys and Helix with keys", async () => {
   const decapi = createStatusChecker({ clientId: "", clientSecret: "", fetchImpl: async (url) => {
     assert.match(String(url), /^https:\/\/decapi\.me\/twitch\/uptime\/wendelbolol\?/);
@@ -143,6 +188,16 @@ test("the app follows checks, and the panel can change channel, pause and reset"
     assert.match((await fetch(`${base}/settings`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel: "x y" }) })).status.toString(), /400/);
     s = await call("POST", "reset");
     assert.equal(s.accumulatedMs, 0);
+    s = await call("POST", "correct", { time: "12:34:56" });
+    assert.equal(s.accumulatedMs, (12 * 3600 + 34 * 60 + 56) * 1000);
+    s = await call("POST", "correct", { deltaMs: -60000 });
+    assert.equal(s.accumulatedMs, (12 * 3600 + 33 * 60 + 56) * 1000);
+    s = await call("POST", "correct", { elapsedMs: 5000 });
+    assert.equal(s.accumulatedMs, 5000);
+    assert.equal(s.log[0].type, "correct");
+    assert.ok(s.log.some((e) => e.type === "channel" && e.channel === "someoneelse"));
+    const bad = await fetch(`${base}/correct`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ time: "nope" }) });
+    assert.equal(bad.status, 400);
     s = await call("PATCH", "settings", { label: "Stream time", accent: "pink" });
     assert.deepEqual([s.label, s.accent], ["Stream time", "pink"]);
   } finally {

@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { applyStatus, cleanChannel, cleanSettings, pause, recordError, reset, restore, setEnabled } from "./logic.js";
+import { adjust, applyStatus, cleanChannel, cleanSettings, logChannel, MAX_ELAPSED_MS, parseDuration, pause, recordError, reset, restore, setElapsed, setEnabled } from "./logic.js";
 import { createStatusChecker } from "./twitchStatus.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -117,7 +117,7 @@ export function createLiveTimerApp({ pool = null, checkStatus = null, pollMs = 3
       if (!channel) return res.status(400).json({ error: "Det ligner ikke et Twitch-navn." });
       if (channel !== next.channel) {
         // A new channel pauses the timer (time already counted stays) until the new channel is seen live.
-        next = { ...pause(next, now()), channel, live: false, lastSeenLiveAt: null, lastError: null };
+        next = logChannel({ ...pause(next, now()), channel, live: false, lastSeenLiveAt: null, lastError: null }, channel, now());
       }
     }
     const result = commit(next);
@@ -126,6 +126,20 @@ export function createLiveTimerApp({ pool = null, checkStatus = null, pollMs = 3
   });
 
   router.post("/api/reset", requireAuth, (_req, res) => res.json(commit(reset(state, now()))));
+
+  // Correct the time: { elapsedMs } or { time: "1:02:03" } sets it, { deltaMs } moves it up or down.
+  router.post("/api/correct", requireAuth, (req, res) => {
+    const body = req.body || {};
+    if (Number.isFinite(body.deltaMs)) {
+      if (Math.abs(body.deltaMs) > MAX_ELAPSED_MS) return res.status(400).json({ error: "Det er for meget på én gang." });
+      return res.json(commit(adjust(state, body.deltaMs, now())));
+    }
+    const target = Number.isFinite(body.elapsedMs) ? body.elapsedMs : parseDuration(body.time);
+    if (target === null || !Number.isFinite(target) || target < 0 || target > MAX_ELAPSED_MS) {
+      return res.status(400).json({ error: "Skriv tiden som t:mm:ss, fx 12:34:56 (eller 2d 3:04:05)." });
+    }
+    res.json(commit(setElapsed(state, target, now())));
+  });
 
   router.use((error, _req, res, next) => {
     if (res.headersSent) return next(error);

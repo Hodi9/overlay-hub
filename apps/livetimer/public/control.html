@@ -68,6 +68,18 @@
   .status.error { color: var(--danger); }
   ul.tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
   ul.tips li { margin: 4px 0; }
+
+  .nudges button { flex: 1 1 auto; }
+  ol.log { list-style: none; margin: 0; padding: 0; }
+  ol.log li { display: grid; grid-template-columns: 112px 1fr auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  ol.log li:first-child { border-top: 0; padding-top: 0; }
+  ol.log li.empty { display: block; color: var(--muted); font-size: 13px; }
+  ol.log .when { font: 500 12px/1.3 var(--mono); color: var(--muted); }
+  ol.log .what b { font: 600 14px var(--mono); font-variant-numeric: tabular-nums; }
+  ol.log .what small { display: block; color: var(--muted); font-size: 12px; }
+  ol.log .stop .what b, ol.log .reset .what b { color: var(--lime); }
+  ol.log button { padding: 7px 9px; }
+  @media (max-width: 480px) { ol.log li { grid-template-columns: 1fr auto; } ol.log .when { grid-column: 1 / -1; } }
 </style>
 </head>
 <body>
@@ -115,6 +127,34 @@
         <button id="toggle-enabled" aria-pressed="true">Automatisk: til</button>
         <button class="danger" id="reset">Nulstil til 0:00:00</button>
       </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Ret timeren</p>
+    <div class="box">
+      <p class="hint">Skriv den tid timeren skal vise, som <code>t:mm:ss</code> (fx <code>12:34:56</code>, <code>30:00:00</code> eller <code>2d 3:04:05</code>). Kører den, tæller den videre derfra.</p>
+      <div class="line">
+        <input type="text" id="f-time" placeholder="fx 12:34:56" autocomplete="off" inputmode="numeric">
+        <button class="primary" id="set-time">Sæt tid</button>
+      </div>
+      <p class="hint" style="margin-top:14px">Eller skub den lidt:</p>
+      <div class="line nudges">
+        <button data-delta="-3600000">−1 t</button>
+        <button data-delta="-600000">−10 min</button>
+        <button data-delta="-60000">−1 min</button>
+        <button data-delta="60000">+1 min</button>
+        <button data-delta="600000">+10 min</button>
+        <button data-delta="3600000">+1 t</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Log</p>
+    <div class="box">
+      <p class="hint">Hvad timeren har lavet, nyeste øverst (de seneste 50). "Gendan" sætter timeren tilbage til den tid.</p>
+      <ol class="log" id="log"><li class="empty">Intet endnu.</li></ol>
     </div>
   </section>
 
@@ -200,7 +240,55 @@
     toggle.setAttribute('aria-pressed', String(next.enabled));
     toggle.textContent = 'Automatisk: ' + (next.enabled ? 'til' : 'fra');
     if (first || document.activeElement !== $('f-channel')) $('f-channel').value = next.channel;
+    renderLog(next.log || []);
     tick();
+  }
+
+  function longFormat(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000)), d = Math.floor(s / 86400);
+    var rest = format((s % 86400) * 1000);
+    return d ? d + 'd ' + rest : rest;
+  }
+
+  var lastLogKey = '';
+  function renderLog(log) {
+    var key = JSON.stringify(log);
+    if (key === lastLogKey) return;
+    lastLogKey = key;
+    var list = $('log');
+    list.textContent = '';
+    if (!log.length) { list.innerHTML = '<li class="empty">Intet endnu.</li>'; return; }
+    log.forEach(function (e) {
+      var t = longFormat(e.elapsedMs), from = e.fromMs != null ? longFormat(e.fromMs) : '';
+      var what = {
+        start: ['Startede ved ', t, (e.channel || '') + ' gik live'],
+        stop: ['Stoppede på ', t, (e.channel || '') + ' gik offline'],
+        'auto-off': ['Sat på pause ved ', t, 'Automatisk slået fra'],
+        'auto-on': ['Automatisk slået til ved ', t, 'Starter når kanalen er live'],
+        channel: ['Skiftede kanal ved ', t, 'Ny kanal: ' + (e.channel || '')],
+        reset: ['Nulstillet fra ', from, 'Timeren stod på ' + from],
+        correct: ['Rettet til ', t, 'Fra ' + from]
+      }[e.type] || [e.type + ' ', t, ''];
+      var restoreMs = e.type === 'reset' || e.type === 'correct' ? e.fromMs : e.elapsedMs;
+      var li = document.createElement('li');
+      li.className = e.type;
+      var when = document.createElement('span');
+      when.className = 'when';
+      when.textContent = new Date(e.at).toLocaleString('da-DK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      var body = document.createElement('span');
+      body.className = 'what';
+      body.appendChild(document.createTextNode(what[0]));
+      var b = document.createElement('b'); b.textContent = what[1]; body.appendChild(b);
+      if (what[2]) { var sm = document.createElement('small'); sm.textContent = what[2]; body.appendChild(sm); }
+      var btn = document.createElement('button');
+      btn.textContent = 'Gendan';
+      btn.title = 'Sæt timeren til ' + longFormat(restoreMs);
+      btn.onclick = function () {
+        if (confirm('Sæt timeren til ' + longFormat(restoreMs) + '?')) api('POST', 'correct', { elapsedMs: restoreMs });
+      };
+      li.appendChild(when); li.appendChild(body); li.appendChild(btn);
+      list.appendChild(li);
+    });
   }
 
   $('save-key').onclick = function () {
@@ -216,6 +304,15 @@
   $('check-now').onclick = function () { api('POST', 'check'); };
   $('toggle-enabled').onclick = function () { api('PATCH', 'settings', { enabled: !state.enabled }); };
   $('reset').onclick = function () { if (confirm('Nulstil timeren til 0:00:00?')) api('POST', 'reset'); };
+  $('set-time').onclick = function () {
+    var v = $('f-time').value.trim();
+    if (!v) return;
+    api('POST', 'correct', { time: v }).then(function () { $('f-time').value = ''; }).catch(function () {});
+  };
+  $('f-time').onkeydown = function (e) { if (e.key === 'Enter') $('set-time').click(); };
+  Array.prototype.forEach.call(document.querySelectorAll('.nudges button'), function (btn) {
+    btn.onclick = function () { api('POST', 'correct', { deltaMs: Number(btn.getAttribute('data-delta')) }).catch(function () {}); };
+  });
 
   setInterval(tick, 250);
   fetch('/livetimer/api/state').then(function (r) { return r.json(); }).then(render).catch(function () {});
