@@ -72,6 +72,15 @@ test("completing the game being played moves the frame on, and a reset counts up
     assert.equal(data.best, "");
     ({ data } = await call("/run", "PATCH", { best: "" }));
     assert.deepEqual([data.best, data.bestCount], ["", 0]);
+
+    // A new event: everything goes back to zero, but the games and their visibility stay.
+    await call(`/games/${first.id}`, "PATCH", { deaths: 9, done: true });
+    await call("/run", "PATCH", { resets: 12, champions: true, best: third.id });
+    ({ data } = await call("/reset-all", "POST", {}));
+    assert.deepEqual(
+      [data.resets, data.champions, data.best, data.bestCount, data.games.some((g) => g.deaths || g.done), data.games.length, data.games[1].visible, data.current],
+      [0, false, "", 0, false, 7, false, first.id]
+    );
   } finally {
     await close();
   }

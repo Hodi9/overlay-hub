@@ -270,6 +270,28 @@ export function createGauntletApp(context = {}) {
     }
   });
 
+  // A new event: everything back to zero, so the overlay can be used for someone else. Resets, deaths, check marks,
+  // the record and the celebration are cleared; the games, their order, colours and visibility stay. The old numbers
+  // are kept in their own database row first (`<stateId>:archive:<time>`), so nothing is lost by pressing it.
+  router.post("/api/reset-all", requireAuth, async (_request, response, next) => {
+    try {
+      const savedAt = new Date().toISOString();
+      if (db) {
+        await db.query(
+          `INSERT INTO gauntlet_state (id, data, updated_at) VALUES ($1, $2::jsonb, NOW())
+           ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+          [`${stateId}:archive:${savedAt}`, JSON.stringify({ savedAt, games, run })]
+        );
+      }
+      games = games.map((g) => ({ ...g, done: false, count: 0, deaths: 0 }));
+      run = { ...run, resets: 0, champions: false, best: "", bestCount: 0, current: (games.find(playable) || { id: "" }).id };
+      await commit();
+      response.json(payload());
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Correct the reset counter by hand, show/hide it on the overlay, start or stop the celebration, or set the record.
   router.patch("/api/run", requireAuth, async (request, response, next) => {
     try {

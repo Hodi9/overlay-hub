@@ -130,6 +130,16 @@
   </section>
 
   <section>
+    <p class="section-label">Nyt event</p>
+    <div class="box">
+      <div class="champ">
+        <p>Sætter <b>alt til nul</b> til et nyt hold: resets, dødstal, flueben, PR og fejringen. Spillene, rækkefølgen og farverne bliver. De gamle tal gemmes først i databasen.</p>
+        <button type="button" class="reset-btn" id="reset-all-btn">Nulstil alt</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
     <p class="section-label">Bedste PR</p>
     <div class="box">
       <div class="best-row">
@@ -357,6 +367,10 @@
   document.getElementById('reset-btn').addEventListener('click', function(){
     var done = state.games.filter(function(g){ return g.done; }).length;
     if (confirm('Tæl en reset og fjern ' + (done === 1 ? 'fluebenet' : 'alle ' + done + ' flueben') + '?')) send('/reset', 'POST', {});
+  });
+  document.getElementById('reset-all-btn').addEventListener('click', function(){
+    var deaths = state.games.reduce(function(sum, g){ return sum + (g.deaths || 0); }, 0);
+    if (confirm('Nulstil alt til et nyt event? ' + (state.resets || 0) + ' resets og ' + deaths + ' dødsfald sættes til 0.')) send('/reset-all', 'POST', {});
   });
   document.getElementById('resets-minus').addEventListener('click', function(){ send('/run', 'PATCH', { resets: Math.max(0, (state.resets || 0) - 1) }); });
   document.getElementById('resets-plus').addEventListener('click', function(){ send('/run', 'PATCH', { resets: (state.resets || 0) + 1 }); });
