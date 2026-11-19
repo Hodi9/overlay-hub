@@ -27,4 +27,4 @@ Kører på en Windows-pc med ffmpeg og Node; tekstgenkendelsen er Windows' egen.
   `GTA6_TWITCH_CHANNEL` for hovedtrackeren).
 - Kun hele missionsnavne tæller. Missionen der allerede spiller og afkrydsede missioner ignoreres, så overlayets
   egen "GONE FISHING"-linje kan aldrig ændre noget. Linjer der ligner undertekster ignoreres.
-- En titel skal læses to gange i træk, og efter en ændring venter den stream 60 sekunder.
+- En titel der passer (næsten) præcist tæller med det samme; en usikker skal læses to gange. Efter en ændring venter den stream 60 sekunder.

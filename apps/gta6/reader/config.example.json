@@ -1,7 +1,7 @@
 {
   "panelUrl": "https://dreamglow.xyz",
   "dryRun": true,
-  "intervalSeconds": 2,
+  "intervalSeconds": 1,
   "streams": [
     {
       "twitch": "wendelbolol",

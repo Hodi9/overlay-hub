@@ -11,7 +11,7 @@
 // - only the bottom-right crop is read (config "region"), not the area where the overlays sit
 // - only a whole mission name counts (no partial words); the mission already playing and missions already ticked
 //   off are ignored, so the overlay's own "GONE FISHING" line can never change anything
-// - a title must be read twice in a row, and after a change that stream waits 60 s before the next one
+// - a near-exact title counts at once, a less certain one must be read twice; after a change that stream waits 60 s
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -22,6 +22,7 @@ const CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko"; // Twitch's public web-playe
 const CONFIRM_MS = 12000; // the second reading of the same title must come within this
 const COOLDOWN_MS = 60000; // after a change, no further change on that stream for this long
 const MIN_SIMILARITY = 0.85;
+const SURE_SIMILARITY = 0.95; // this close to a whole mission name, one reading is enough
 const MAX_SAVED_CROPS = 300;
 
 // Set from config.json when run (not when tests import the matching functions).
@@ -208,7 +209,10 @@ function runStream(stream, ocr) {
 
       const now = Date.now();
       if (now - lastChangeAt < COOLDOWN_MS) return;
-      if (!pending || pending.id !== hit.chapter.id || now - pending.at > CONFIRM_MS) {
+      // A near-exact reading of a whole mission name counts at once (title cards can be on screen for only
+      // ~2 s); a less certain one must be read twice.
+      const sure = hit.score >= SURE_SIMILARITY;
+      if (!sure && (!pending || pending.id !== hit.chapter.id || now - pending.at > CONFIRM_MS)) {
         pending = { id: hit.chapter.id, at: now };
         return;
       }
