@@ -20,6 +20,11 @@ function Await($WinRtTask, $ResultType) {
 [Windows.Graphics.Imaging.BitmapDecoder, Windows.Graphics.Imaging, ContentType=WindowsRuntime] | Out-Null
 [Windows.Storage.Streams.InMemoryRandomAccessStream, Windows.Storage.Streams, ContentType=WindowsRuntime] | Out-Null
 
+# Keep the PC from sleeping while the reader runs (the screen may still turn off), like a video player does.
+# It only lasts as long as this process; nothing in Windows' settings is changed.
+Add-Type -Namespace Gta6Reader -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);'
+[Gta6Reader.Power]::SetThreadExecutionState([uint32]"0x80000001") | Out-Null  # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+
 $engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new("en"))
 if (-not $engine) { $engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages() }
 if (-not $engine) { [Console]::Out.WriteLine('{"error":"No OCR language pack on this PC"}'); exit 1 }
