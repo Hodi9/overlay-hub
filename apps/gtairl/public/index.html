@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="da">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,75 +8,57 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap">
 <style>
-  :root{ --accent:#ff5fa2; --scale:1; }
+  :root{ --accent:#ff5fa2; --scale:1; --muted:rgba(255,255,255,.62); }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
-  body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-start;height:100vh;padding:40px;color:#fff;}
+  body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-start;height:100vh;padding:28px;color:#fff;text-transform:uppercase;}
   body.bg-preview{background:#5d6b74 linear-gradient(160deg,#8aa0ad,#3c4850);}
   body.right{justify-content:flex-end;}
   body.bottom{align-items:flex-end;}
 
-  /* IRL video is often bright, so the text sits on a soft dark backing instead of straight on the picture. */
-  .card{position:relative;width:460px;padding:22px 24px 20px;background:linear-gradient(180deg,rgba(8,8,10,.72),rgba(8,8,10,.58));
-    border-left:4px solid var(--accent);opacity:0;transform:scale(var(--scale));transform-origin:top left;transition:opacity .4s ease;}
+  /* A small, quiet box: progress on one line, the mission, one line under it, and what comes next. */
+  .card{width:260px;padding:10px 12px 11px;background:rgba(10,10,12,.5);border-radius:3px;
+    opacity:0;transform:scale(var(--scale));transform-origin:top left;transition:opacity .4s ease;}
   .card.ready{opacity:1;}
   .card.empty{display:none;}
   body.right .card{transform-origin:top right;}
   body.bottom .card{transform-origin:bottom left;}
   body.bottom.right .card{transform-origin:bottom right;}
-  .card *{text-shadow:0 2px 8px rgba(0,0,0,.6);}
+  .card *{text-shadow:0 1px 4px rgba(0,0,0,.5);}
 
-  .title{font-size:.9rem;font-weight:600;text-transform:uppercase;letter-spacing:.22em;color:var(--accent);}
-  .head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-top:2px;}
-  .count{font-size:2.25rem;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;}
-  .count small{font-size:1.1rem;font-weight:600;letter-spacing:.12em;color:rgba(255,255,255,.75);margin-left:6px;}
-  .percent{font-size:1.25rem;font-weight:600;letter-spacing:.04em;color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums;}
+  .top{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;letter-spacing:.18em;}
+  .top .title{color:var(--accent);}
+  .top .count{color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.1em;}
+  .bar{margin:6px 0 9px;height:2px;background:rgba(255,255,255,.18);}
+  .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .7s ease;}
 
-  .bar-rail{margin-top:10px;height:16px;width:100%;border-radius:3px;border:2px solid #fff;padding:3px;}
-  .bar-fill{height:100%;border-radius:1px;background:var(--accent);width:0%;transition:width .7s ease;}
+  .kicker{font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--muted);}
+  .name{margin-top:1px;font-size:19px;font-weight:700;letter-spacing:.01em;line-height:1.1;}
+  .sub{margin-top:2px;font-size:11px;font-weight:500;letter-spacing:.08em;line-height:1.3;color:rgba(255,255,255,.8);}
+  .next{margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.12);font-size:11px;font-weight:500;letter-spacing:.08em;line-height:1.3;color:var(--muted);}
+  .next b{font-weight:600;color:var(--accent);letter-spacing:.16em;margin-right:6px;}
+  .done{font-size:14px;font-weight:600;letter-spacing:.1em;color:var(--accent);}
 
-  .label{margin-top:18px;font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.16em;color:rgba(255,255,255,.7);}
-  .label b{color:var(--accent);font-weight:600;}
-  .now{margin-top:4px;display:flex;align-items:flex-start;gap:12px;font-size:2rem;font-weight:700;text-transform:uppercase;letter-spacing:-.01em;line-height:1.05;}
-  .now .bullet{flex:none;margin-top:.32em;width:12px;height:12px;transform:rotate(45deg);background:var(--accent);}
-  /* Where and what for the current mission: small label, then the value. */
-  .facts{margin-top:8px;padding-left:24px;display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:3px;align-items:baseline;text-transform:uppercase;}
-  .facts dt{font-size:.75rem;font-weight:600;letter-spacing:.16em;color:var(--accent);}
-  .facts dd{margin:0;font-size:1.1rem;font-weight:500;letter-spacing:.05em;line-height:1.2;color:rgba(255,255,255,.9);}
-  .next .sub{display:block;font-size:.85rem;color:rgba(255,255,255,.6);letter-spacing:.08em;}
-  .next{margin-top:4px;padding-left:24px;font-size:1.25rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;line-height:1.15;color:rgba(255,255,255,.88);}
-  .done-msg{margin-top:16px;font-size:1.5rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);}
+  /* The whole list (the panel's "Hele listen"): one short line per mission. */
+  .list{list-style:none;margin:0;padding:0;display:grid;gap:4px;}
+  .list li{display:grid;grid-template-columns:10px 1fr;column-gap:6px;align-items:baseline;font-size:12px;font-weight:500;letter-spacing:.05em;line-height:1.25;color:rgba(255,255,255,.78);}
+  .list .mark{width:5px;height:5px;transform:rotate(45deg) translateY(-1px);border:1px solid rgba(255,255,255,.6);justify-self:center;}
+  .list li.is-done{color:rgba(255,255,255,.4);}
+  .list li.is-done .text{text-decoration:line-through;text-decoration-color:var(--accent);}
+  .list li.is-done .mark{background:var(--accent);border-color:var(--accent);}
+  .list li.is-now{font-size:14px;font-weight:700;color:#fff;}
+  .list li.is-now .mark{width:6px;height:6px;border:none;background:var(--accent);}
+  .list li.is-now .sub{grid-column:2;margin-top:0;font-size:10.5px;}
 
-  /* The whole list (the panel's "Vis hele listen"). */
-  .list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:7px;}
-  .list li{display:grid;grid-template-columns:18px 1fr auto;align-items:baseline;gap:10px;font-size:1.15rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;line-height:1.15;color:rgba(255,255,255,.85);}
-  .list .mark{width:9px;height:9px;transform:rotate(45deg);border:2px solid rgba(255,255,255,.75);justify-self:center;align-self:center;}
-  .list .sub{display:block;font-size:.72em;font-weight:500;letter-spacing:.08em;color:rgba(255,255,255,.6);text-decoration:none;}
-  .list li.is-done .sub{display:none;}
-  .list .kind{font-size:.75rem;font-weight:600;letter-spacing:.14em;color:rgba(255,255,255,.55);}
-  .list li.is-done{color:rgba(255,255,255,.45);}
-  .list li.is-done .text{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--accent);}
-  .list li.is-done .mark{border-color:var(--accent);background:var(--accent);opacity:.7;}
-  .list li.is-now{font-size:1.5rem;font-weight:700;color:#fff;}
-  .list li.is-now .mark{width:12px;height:12px;border:none;background:var(--accent);}
-  .list li.is-now .kind{color:var(--accent);}
-
-
-  .card.align-right{text-align:right;border-left:none;border-right:4px solid var(--accent);}
-  .card.align-right .head{flex-direction:row-reverse;}
-  .card.align-right .now{flex-direction:row-reverse;}
-  .card.align-right .next{padding-left:0;padding-right:24px;}
-  .card.align-right .facts{padding-left:0;padding-right:24px;grid-template-columns:1fr auto;}
-  .card.align-right .facts dt{order:2;}
-  .card.align-right .list li{grid-template-columns:auto 1fr 18px;}
-  .card.align-right .list .kind{order:-1;}
-  .card.align-right .list .mark{order:3;}
+  .card.align-right{text-align:right;}
+  .card.align-right .top{flex-direction:row-reverse;}
+  .card.align-right .list li{grid-template-columns:1fr 10px;}
+  .card.align-right .list .mark{order:2;}
+  .card.align-right .list li.is-now .sub{grid-column:1;}
 </style>
 </head>
 <body>
-<div class="card" id="card">
-  <div id="content"></div>
-</div>
+<div class="card" id="card"><div id="content"></div></div>
 
 <script>
 (function(){
@@ -92,13 +74,12 @@
   if (right) { document.body.classList.add('right'); card.classList.add('align-right'); }
   if (/bottom/.test(corner)) document.body.classList.add('bottom');
 
-  var KIND = { mission: 'Mission', place: 'Location', activity: 'Activity' };
+  var KIND = { mission: 'Mission', place: 'Sted', activity: 'Aktivitet' };
   // ?demo shows a made-up list when nothing has been typed in yet (it never touches the saved list).
   var DEMO = [
-    { id: 'd1', kind: 'mission', text: 'Double or nothing', place: 'The arcade', activity: 'Coin flip', done: true },
-    { id: 'd2', kind: 'mission', text: 'The big heist', place: 'City centre', activity: 'Find the hidden prize', done: false },
-    { id: 'd3', kind: 'mission', text: 'Night shift', place: '', activity: 'Chat picks the next stop', done: false },
-    { id: 'd4', kind: 'place', text: 'Nyhavn', place: '', activity: '', done: false }
+    { id: 'd1', kind: 'mission', text: 'Double or nothing', place: 'Arkaden', activity: 'Plat eller krone', done: true },
+    { id: 'd2', kind: 'mission', text: 'Det store kup', place: 'Indre by', activity: 'Find skatten', done: false },
+    { id: 'd3', kind: 'mission', text: 'Nattevagt', place: '', activity: 'Chatten vælger', done: false }
   ];
 
   function escapeHtml(s){
@@ -114,16 +95,9 @@
     goals.forEach(function(g){ if (g.kind === 'mission') { n++; if (g.id === goal.id) at = n; } });
     return 'Mission ' + at;
   }
-  // "CPH Concept · Coinflip" under a mission's name in the list and for the next mission.
-  function sub(goal){
-    var bits = [goal.place, goal.activity].filter(Boolean).map(escapeHtml);
-    return bits.length ? '<span class="sub">' + bits.join(' · ') + '</span>' : '';
-  }
-  function facts(goal){
-    var rows = '';
-    if (goal.place) rows += '<dt>Location</dt><dd>' + escapeHtml(goal.place) + '</dd>';
-    if (goal.activity) rows += '<dt>Activity</dt><dd>' + escapeHtml(goal.activity) + '</dd>';
-    return rows ? '<dl class="facts">' + rows + '</dl>' : '';
+  // Place and activity on one line: "CPH Concept · Coinflip".
+  function where(goal){
+    return [goal.place, goal.activity].filter(Boolean).map(escapeHtml).join(' · ');
   }
 
   function summary(goals){
@@ -132,7 +106,6 @@
     return { done: done, total: goals.length, percent: goals.length ? Math.round(done / goals.length * 1000) / 10 : 0,
       current: open[0] || null, next: open[1] || null, finished: goals.length > 0 && !open.length };
   }
-
 
   function render(state){
     var plan = state.plan || {};
@@ -145,24 +118,23 @@
     if (!goals.length) { content.innerHTML = ''; return; }
 
     var html =
-      '<div class="title">' + escapeHtml(plan.title || 'GTA IRL') + '</div>' +
-      '<div class="head"><div class="count">' + p.done + ' / ' + p.total + '<small>' + (goals.every(function(g){ return g.kind === 'mission'; }) ? 'Missions' : 'Complete') + '</small></div>' +
-      '<div class="percent">' + p.percent.toFixed(1) + '%</div></div>' +
-      '<div class="bar-rail"><div class="bar-fill" style="width:' + p.percent + '%"></div></div>';
+      '<div class="top"><span class="title">' + escapeHtml(plan.title || 'GTA IRL') + '</span><span class="count">' + p.done + ' / ' + p.total + '</span></div>' +
+      '<div class="bar"><i style="width:' + p.percent + '%"></i></div>';
 
     if (plan.showAll) {
       html += '<ul class="list">' + goals.map(function(g){
-        var cls = g.done ? 'is-done' : (p.current && g.id === p.current.id ? 'is-now' : '');
-        return '<li class="' + cls + '"><span class="mark"></span><span class="text">' + escapeHtml(g.text) + sub(g) + '</span><span class="kind">' + kindLabel(goals, g) + '</span></li>';
+        var now = p.current && g.id === p.current.id;
+        var line = now && where(g) ? '<span class="sub">' + where(g) + '</span>' : '';
+        return '<li class="' + (g.done ? 'is-done' : now ? 'is-now' : '') + '"><span class="mark"></span><span class="text">' + escapeHtml(g.text) + '</span>' + line + '</li>';
       }).join('') + '</ul>';
-      if (p.finished) html += '<div class="done-msg">All goals complete</div>';
+      if (p.finished) html += '<div class="done" style="margin-top:8px">Alle missioner klaret</div>';
     } else if (p.finished) {
-      html += '<div class="done-msg">All goals complete</div>';
+      html += '<div class="done">Alle missioner klaret</div>';
     } else {
-      html += '<div class="label"><b>Current</b> · ' + kindLabel(goals, p.current) + '</div>' +
-        '<div class="now"><span class="bullet"></span><span>' + escapeHtml(p.current.text) + '</span></div>' +
-        facts(p.current);
-      if (p.next) html += '<div class="label">Next · ' + kindLabel(goals, p.next) + '</div><div class="next">' + escapeHtml(p.next.text) + sub(p.next) + '</div>';
+      html += '<div class="kicker">' + kindLabel(goals, p.current) + '</div>' +
+        '<div class="name">' + escapeHtml(p.current.text) + '</div>' +
+        (where(p.current) ? '<div class="sub">' + where(p.current) + '</div>' : '');
+      if (p.next) html += '<div class="next"><b>Næste</b>' + escapeHtml(p.next.text) + '</div>';
     }
     content.innerHTML = html;
   }
