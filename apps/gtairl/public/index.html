@@ -8,79 +8,47 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap">
 <style>
-  :root{ --accent:#ff5fa2; --scale:1; --muted:rgba(255,255,255,.62); }
+  :root{ --accent:#ff5fa2; --scale:1; }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
   body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-start;height:100vh;padding:28px;color:#fff;text-transform:uppercase;}
   body.bg-preview{background:#5d6b74 linear-gradient(160deg,#8aa0ad,#3c4850);}
-  body.right{justify-content:flex-end;}
+  body.right{justify-content:flex-end;text-align:right;}
   body.bottom{align-items:flex-end;}
 
-  /* A small, quiet box: progress on one line, the mission, one line under it, and what comes next. */
-  .card{width:260px;padding:10px 12px 11px;background:rgba(10,10,12,.5);border-radius:3px;
-    opacity:0;transform:scale(var(--scale));transform-origin:top left;transition:opacity .4s ease;}
-  .card.ready{opacity:1;}
-  .card.empty{display:none;}
-  body.right .card{transform-origin:top right;}
-  body.bottom .card{transform-origin:bottom left;}
-  body.bottom.right .card{transform-origin:bottom right;}
-  .card *{text-shadow:0 1px 4px rgba(0,0,0,.5);}
+  /* Only the current mission, on one or two lines, straight on the picture (no box). */
+  .mission{opacity:0;transform:scale(var(--scale));transform-origin:top left;transition:opacity .4s ease;}
+  .mission.ready{opacity:1;}
+  body.right .mission{transform-origin:top right;}
+  body.bottom .mission{transform-origin:bottom left;}
+  body.bottom.right .mission{transform-origin:bottom right;}
+  .mission *{text-shadow:0 1px 2px rgba(0,0,0,.9),0 2px 10px rgba(0,0,0,.6);}
 
-  .top{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;letter-spacing:.18em;}
-  .top .title{color:var(--accent);}
-  .top .count{color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.1em;}
-  .bar{margin:6px 0 9px;height:2px;background:rgba(255,255,255,.18);}
-  .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .7s ease;}
-
-  .kicker{font-size:10px;font-weight:600;letter-spacing:.2em;color:var(--muted);}
-  .name{margin-top:1px;font-size:19px;font-weight:700;letter-spacing:.01em;line-height:1.1;}
-  .sub{margin-top:2px;font-size:11px;font-weight:500;letter-spacing:.08em;line-height:1.3;color:rgba(255,255,255,.8);}
-  .next{margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,.12);font-size:11px;font-weight:500;letter-spacing:.08em;line-height:1.3;color:var(--muted);}
-  .next b{font-weight:600;color:var(--accent);letter-spacing:.16em;margin-right:6px;}
-  .done{font-size:14px;font-weight:600;letter-spacing:.1em;color:var(--accent);}
-
-  /* The whole list (the panel's "Hele listen"): one short line per mission. */
-  .list{list-style:none;margin:0;padding:0;display:grid;gap:4px;}
-  .list li{display:grid;grid-template-columns:10px 1fr;column-gap:6px;align-items:baseline;font-size:12px;font-weight:500;letter-spacing:.05em;line-height:1.25;color:rgba(255,255,255,.78);}
-  .list .mark{width:5px;height:5px;transform:rotate(45deg) translateY(-1px);border:1px solid rgba(255,255,255,.6);justify-self:center;}
-  .list li.is-done{color:rgba(255,255,255,.4);}
-  .list li.is-done .text{text-decoration:line-through;text-decoration-color:var(--accent);}
-  .list li.is-done .mark{background:var(--accent);border-color:var(--accent);}
-  .list li.is-now{font-size:14px;font-weight:700;color:#fff;}
-  .list li.is-now .mark{width:6px;height:6px;border:none;background:var(--accent);}
-  .list li.is-now .sub{grid-column:2;margin-top:0;font-size:10.5px;}
-
-  .card.align-right{text-align:right;}
-  .card.align-right .top{flex-direction:row-reverse;}
-  .card.align-right .list li{grid-template-columns:1fr 10px;}
-  .card.align-right .list .mark{order:2;}
-  .card.align-right .list li.is-now .sub{grid-column:1;}
+  .line1{display:flex;align-items:baseline;gap:8px;white-space:nowrap;}
+  body.right .line1{justify-content:flex-end;}
+  .label{font-size:12px;font-weight:600;letter-spacing:.2em;color:var(--accent);}
+  .name{font-size:20px;font-weight:700;letter-spacing:.02em;line-height:1.15;}
+  .line2{margin-top:1px;font-size:12px;font-weight:500;letter-spacing:.08em;color:rgba(255,255,255,.88);}
 </style>
 </head>
 <body>
-<div class="card" id="card"><div id="content"></div></div>
+<div class="mission" id="mission"></div>
 
 <script>
 (function(){
   var params = new URLSearchParams(location.search);
   if (params.get('bg') === 'black' || params.get('bg') === 'preview') document.body.classList.add('bg-preview');
   var demo = params.has('demo');
-  var card = document.getElementById('card');
-  var content = document.getElementById('content');
+  var box = document.getElementById('mission');
 
-  // Placement: ?corner=top-right / bottom-left / bottom-right (or ?side=right); the text follows the side.
+  // Placement: ?corner=top-right / bottom-left / bottom-right (or ?side=right).
   var corner = (params.get('corner') || '').toLowerCase();
-  var right = params.get('side') === 'right' || /right/.test(corner);
-  if (right) { document.body.classList.add('right'); card.classList.add('align-right'); }
+  if (params.get('side') === 'right' || /right/.test(corner)) document.body.classList.add('right');
   if (/bottom/.test(corner)) document.body.classList.add('bottom');
 
   var KIND = { mission: 'Mission', place: 'Sted', activity: 'Aktivitet' };
-  // ?demo shows a made-up list when nothing has been typed in yet (it never touches the saved list).
-  var DEMO = [
-    { id: 'd1', kind: 'mission', text: 'Double or nothing', place: 'Arkaden', activity: 'Plat eller krone', done: true },
-    { id: 'd2', kind: 'mission', text: 'Det store kup', place: 'Indre by', activity: 'Find skatten', done: false },
-    { id: 'd3', kind: 'mission', text: 'Nattevagt', place: '', activity: 'Chatten vælger', done: false }
-  ];
+  // ?demo shows a made-up mission when nothing has been typed in yet (it never touches the saved list).
+  var DEMO = [{ id: 'd1', kind: 'mission', text: 'Det store kup', place: 'Indre by', activity: 'Find skatten', done: false }];
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, function(c){
@@ -95,48 +63,21 @@
     goals.forEach(function(g){ if (g.kind === 'mission') { n++; if (g.id === goal.id) at = n; } });
     return 'Mission ' + at;
   }
-  // Place and activity on one line: "CPH Concept · Coinflip".
-  function where(goal){
-    return [goal.place, goal.activity].filter(Boolean).map(escapeHtml).join(' · ');
-  }
-
-  function summary(goals){
-    var open = goals.filter(function(g){ return !g.done; });
-    var done = goals.length - open.length;
-    return { done: done, total: goals.length, percent: goals.length ? Math.round(done / goals.length * 1000) / 10 : 0,
-      current: open[0] || null, next: open[1] || null, finished: goals.length > 0 && !open.length };
-  }
 
   function render(state){
     var plan = state.plan || {};
     var goals = state.goals || [];
     if (!goals.length && demo) goals = DEMO;
-    var p = goals === state.goals && state.progress ? state.progress : summary(goals);
     document.documentElement.style.setProperty('--scale', plan.scale || 1);
-    card.classList.add('ready');
-    card.classList.toggle('empty', !goals.length);
-    if (!goals.length) { content.innerHTML = ''; return; }
-
-    var html =
-      '<div class="top"><span class="title">' + escapeHtml(plan.title || 'GTA IRL') + '</span><span class="count">' + p.done + ' / ' + p.total + '</span></div>' +
-      '<div class="bar"><i style="width:' + p.percent + '%"></i></div>';
-
-    if (plan.showAll) {
-      html += '<ul class="list">' + goals.map(function(g){
-        var now = p.current && g.id === p.current.id;
-        var line = now && where(g) ? '<span class="sub">' + where(g) + '</span>' : '';
-        return '<li class="' + (g.done ? 'is-done' : now ? 'is-now' : '') + '"><span class="mark"></span><span class="text">' + escapeHtml(g.text) + '</span>' + line + '</li>';
-      }).join('') + '</ul>';
-      if (p.finished) html += '<div class="done" style="margin-top:8px">Alle missioner klaret</div>';
-    } else if (p.finished) {
-      html += '<div class="done">Alle missioner klaret</div>';
-    } else {
-      html += '<div class="kicker">' + kindLabel(goals, p.current) + '</div>' +
-        '<div class="name">' + escapeHtml(p.current.text) + '</div>' +
-        (where(p.current) ? '<div class="sub">' + where(p.current) + '</div>' : '');
-      if (p.next) html += '<div class="next"><b>Næste</b>' + escapeHtml(p.next.text) + '</div>';
-    }
-    content.innerHTML = html;
+    box.classList.add('ready');
+    var open = goals.filter(function(g){ return !g.done; });
+    if (!goals.length) { box.innerHTML = ''; return; }
+    if (!open.length) { box.innerHTML = '<div class="line1"><span class="name">Alle missioner klaret</span></div>'; return; }
+    var now = open[0];
+    var where = [now.place, now.activity].filter(Boolean).map(escapeHtml).join(' · ');
+    box.innerHTML =
+      '<div class="line1"><span class="label">' + kindLabel(goals, now) + '</span><span class="name">' + escapeHtml(now.text) + '</span></div>' +
+      (where ? '<div class="line2">' + where + '</div>' : '');
   }
 
   fetch('/gta-irl/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});

@@ -98,7 +98,7 @@
   <header>
     <p class="label">Dreamglow · Overlay</p>
     <h1>GTA <em>IRL</em></h1>
-    <p class="lede">Sæt Ankers missioner ind, og tryk <b>Klaret</b>, når en er klaret — så kommer <b>Mission passed</b> på skærmen. Tre browser sources i OBS (1920 × 1080): <a href="/gta-irl/" target="_blank">listen</a>, <a href="/gta-irl/alerts.html" target="_blank">Mission passed / Wasted</a> og <a href="/gta-irl/wanted.html" target="_blank">wanted level</a>.</p>
+    <p class="lede">Sæt Ankers missioner ind, og tryk <b>Klaret</b>, når en er klaret — så kommer <b>Mission passed</b> på skærmen. Tre browser sources i OBS (1920 × 1080): <a href="/gta-irl/" target="_blank">nuværende mission</a>, <a href="/gta-irl/alerts.html" target="_blank">Mission passed / Wasted</a> og <a href="/gta-irl/wanted.html" target="_blank">wanted level</a>.</p>
   </header>
 
   <section id="auth" hidden>
@@ -140,13 +140,6 @@
     <div class="line wanted" id="wanted"></div>
   </section>
 
-  <section>
-    <p class="label">På overlayet</p>
-    <div class="line">
-      <button type="button" id="view-focus" aria-pressed="true">Nuværende + næste</button>
-      <button type="button" id="view-all" aria-pressed="false">Hele listen</button>
-    </div>
-  </section>
 
   <section>
     <p class="label">Tilføj til listen</p>
@@ -281,8 +274,6 @@
     $('now-next').textContent = p.next ? 'Næste: ' + p.next.text : (p.current ? 'Det er det sidste mål' : '');
     $('complete').disabled = !p.current;
     $('undo').disabled = !p.done;
-    $('view-focus').setAttribute('aria-pressed', String(!state.plan.showAll));
-    $('view-all').setAttribute('aria-pressed', String(state.plan.showAll));
     var wanted = state.plan.wanted || 0;
     $('wanted-label').textContent = wanted ? wanted + (wanted === 1 ? ' stjerne' : ' stjerner') : '0 stjerner (skjult)';
     document.querySelectorAll('#wanted button').forEach(function (button) { button.setAttribute('aria-pressed', String(Number(button.dataset.level) === wanted)); });
@@ -319,14 +310,12 @@
   $('fx-passed').addEventListener('click', function () { act('/alert', 'POST', { type: 'passed' }); });
   $('fx-wasted').addEventListener('click', function () { act('/alert', 'POST', { type: 'wasted' }); });
   // Wanted level: ☆☆★★★ is 3. 0 hides the stars on the overlay.
-  [0, 1, 2, 3, 4, 5].forEach(function (level) {
+  [0, 1, 2, 3, 4, 5, 6].forEach(function (level) {
     var label = level ? '★'.repeat(level) : '0';
     $('wanted').appendChild(el('button', { type: 'button', text: label, 'data-level': String(level), title: level + ' stjerner', 'aria-pressed': 'false', on: { click: function () { act('/plan', 'PATCH', { wanted: level }); } } }));
   });
   $('complete').addEventListener('click', function () { act('/complete', 'POST'); });
   $('undo').addEventListener('click', function () { act('/undo', 'POST'); });
-  $('view-focus').addEventListener('click', function () { act('/plan', 'PATCH', { showAll: false }); });
-  $('view-all').addEventListener('click', function () { act('/plan', 'PATCH', { showAll: true }); });
   $('reset').addEventListener('click', function () { if (confirm('Fjern alle flueben? Listen bliver stående.')) act('/reset', 'POST'); });
   $('clear').addEventListener('click', function () { if (confirm('Slet hele listen? Det kan ikke fortrydes.')) act('/clear', 'POST'); });
 

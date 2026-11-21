@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 // A mission has a name ("Double or nothing") and optionally a place ("CPH Concept") and an activity ("Coinflip").
 export const KINDS = ["mission", "place", "activity"];
 export const MAX_GOALS = 60;
-export const WANTED_MAX = 5;
+export const WANTED_MAX = 6;
 
 const clip = (value, max) => String(value ?? "").trim().slice(0, max);
 
@@ -14,7 +14,7 @@ export const SCALE_MIN = 0.6;
 export const SCALE_MAX = 2;
 
 // showAll: the whole list on the overlay instead of only the current and the next goal.
-// wanted: the wanted level, 0 to 5 stars (0 hides the stars).
+// wanted: the wanted level, 0 to 6 stars (0 hides the stars).
 export const DEFAULT_PLAN = { title: "GTA IRL", showAll: false, scale: 1, wanted: 0 };
 
 export function cleanPlan(input, existing = DEFAULT_PLAN) {

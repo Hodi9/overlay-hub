@@ -121,7 +121,8 @@ test("the plan: title, whole list or not, and size", () => {
   assert.deepEqual(cleanPlan({}), { title: "GTA IRL", showAll: false, scale: 1, wanted: 0 });
   const before = { title: "Copenhagen", showAll: true, scale: 1.3, wanted: 3 };
   assert.deepEqual(cleanPlan({ showAll: "ja", scale: "stor", wanted: "mange" }, before), before);
-  assert.equal(cleanPlan({ wanted: 9 }).wanted, 5);
+  assert.equal(cleanPlan({ wanted: 6 }).wanted, 6);
+  assert.equal(cleanPlan({ wanted: 9 }).wanted, 6);
   assert.equal(cleanPlan({ wanted: -2 }).wanted, 0);
   assert.equal(cleanPlan({ wanted: 2.5 }, before).wanted, 3);
   assert.equal(cleanPlan({ title: "x" }, { title: "a", showAll: false, scale: 1 }).wanted, 0); // saved before the stars existed
