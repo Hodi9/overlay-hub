@@ -67,6 +67,11 @@
   .bar i { display: block; height: 100%; width: 0; background: var(--pink); transition: width .4s ease; }
 
   .goals { display: grid; gap: 6px; }
+  .goal .fields { display: grid; gap: 4px; min-width: 0; }
+  .goal .detail-input { font-size: 13px; padding: 6px 10px; color: var(--muted); }
+  .wanted button { min-width: 64px; font-size: 14px; letter-spacing: 0; }
+  .effects .line button { padding: 14px 16px; }
+  button.wasted:hover { color: #ff6b74; border-color: #ff6b74; }
   .goal { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 8px; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 4px; }
   .goal.current { border-left-color: var(--pink); }
   .goal.done { opacity: .6; }
@@ -92,7 +97,7 @@
   <header>
     <p class="label">Dreamglow · Overlay</p>
     <h1>GTA <em>IRL</em></h1>
-    <p class="lede">Skriv Ankers liste ind (steder og aktiviteter), og tryk <b>Klaret</b>, når et mål er nået. <a href="/gta-irl/" target="_blank">Overlayet</a> viser det nuværende og det næste mål — eller hele listen, hvis du slår den til nedenfor. Adressen skal i OBS som browser source (1920 × 1080).</p>
+    <p class="lede">Sæt Ankers missioner ind, og tryk <b>Klaret</b>, når en er klaret — så kommer <b>Mission passed</b> på skærmen. Tre browser sources i OBS (1920 × 1080): <a href="/gta-irl/" target="_blank">listen</a>, <a href="/gta-irl/alerts.html" target="_blank">Mission passed / Wasted</a> og <a href="/gta-irl/wanted.html" target="_blank">wanted level</a>.</p>
   </header>
 
   <section id="auth" hidden>
@@ -118,6 +123,22 @@
     </div>
   </section>
 
+  <section class="effects">
+    <p class="label">På skærmen</p>
+    <div class="box stack">
+      <div class="line">
+        <button type="button" id="fx-passed">Mission passed</button>
+        <button type="button" class="wasted" id="fx-wasted">Wasted</button>
+      </div>
+      <p class="hint">Mission passed kommer også af sig selv, når du trykker Klaret.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Wanted level · <span id="wanted-label">0 stjerner</span></p>
+    <div class="line wanted" id="wanted"></div>
+  </section>
+
   <section>
     <p class="label">På overlayet</p>
     <div class="line">
@@ -131,10 +152,11 @@
     <form class="box stack" id="quick" autocomplete="off">
       <textarea id="q-text" placeholder="Ét mål pr. linje — du kan sætte hele Ankers liste ind på én gang" maxlength="4000"></textarea>
       <div class="line">
-        <button type="submit" class="primary" data-kind="place">Tilføj som steder</button>
-        <button type="button" id="add-activity" data-kind="activity">Tilføj som aktiviteter</button>
+        <button type="submit" class="primary">Tilføj som missioner</button>
+        <button type="button" id="add-place">Som steder</button>
+        <button type="button" id="add-activity">Som aktiviteter</button>
       </div>
-      <p class="hint">Overlayet viser teksten præcis, som du skriver den, så skriv den på engelsk. Du kan skifte mellem Sted og Aktivitet på hver linje bagefter.</p>
+      <p class="hint">Sæt Ankers tekst ind som den er: "MISSION 1:" fjernes (overlayet nummererer selv), og det efter tankestregen bliver den lille linje under titlen. Du kan skifte type på hver linje bagefter.</p>
     </form>
   </section>
 
@@ -174,7 +196,8 @@
 (function () {
   var API = '/gta-irl/api';
   var TOKEN_KEY = 'gtairl-control-token';
-  var KIND = { place: 'Sted', activity: 'Aktivitet' };
+  var KIND = { mission: 'Mission', place: 'Sted', activity: 'Aktivitet' };
+  var NEXT_KIND = { mission: 'place', place: 'activity', activity: 'mission' };
   var state = null;
   var pending = null; // a state that arrived while a field was being edited or a button pressed
   var holding = false; // a pointer is down: rebuilding the list now would swallow the click
@@ -228,13 +251,14 @@
 
   function goalRow(goal, index, count, currentId) {
     var patch = function (data) { return act('/goals/' + encodeURIComponent(goal.id), 'PATCH', data); };
-    var textInput = el('input', { type: 'text', className: 'text-input', value: goal.text, maxLength: 60, 'aria-label': 'Mål', on: { change: function () { if (textInput.value.trim()) patch({ text: textInput.value }); else textInput.value = goal.text; } } });
+    var textInput = el('input', { type: 'text', className: 'text-input', value: goal.text, maxLength: 60, 'aria-label': 'Titel', on: { change: function () { if (textInput.value.trim()) patch({ text: textInput.value }); else textInput.value = goal.text; } } });
+    var detailInput = el('input', { type: 'text', className: 'detail-input', value: goal.detail || '', maxLength: 80, placeholder: 'Lille linje under (valgfri)', 'aria-label': 'Lille linje under titlen', on: { change: function () { patch({ detail: detailInput.value }); } } });
     var tick = el('button', { type: 'button', className: 'tick', text: goal.done ? '✓' : '', 'aria-pressed': String(goal.done), title: goal.done ? 'Klaret — tryk for at fortryde' : 'Sæt flueben', 'aria-label': goal.done ? 'Klaret' : 'Ikke klaret', on: { click: function () { patch({ done: !goal.done }); } } });
     return el('div', { className: 'goal' + (goal.done ? ' done' : '') + (goal.id === currentId ? ' current' : '') }, [
       tick,
-      textInput,
+      el('div', { className: 'fields' }, [textInput, detailInput]),
       el('div', { className: 'tools' }, [
-        el('button', { type: 'button', className: 'kind', text: KIND[goal.kind], title: 'Skift mellem Sted og Aktivitet', on: { click: function () { patch({ kind: goal.kind === 'place' ? 'activity' : 'place' }); } } }),
+        el('button', { type: 'button', className: 'kind', text: KIND[goal.kind], title: 'Skift mellem Mission, Sted og Aktivitet', on: { click: function () { patch({ kind: NEXT_KIND[goal.kind] || 'mission' }); } } }),
         el('button', { type: 'button', text: '↑', title: 'Op', disabled: index === 0, on: { click: function () { moveGoal(goal.id, -1); } } }),
         el('button', { type: 'button', text: '↓', title: 'Ned', disabled: index === count - 1, on: { click: function () { moveGoal(goal.id, 1); } } }),
         el('button', { type: 'button', className: 'danger', text: 'Slet', on: { click: function () { if (confirm('Fjern "' + goal.text + '" fra listen?')) act('/goals/' + encodeURIComponent(goal.id), 'DELETE'); } } })
@@ -251,12 +275,15 @@
     $('auth').hidden = !state.passwordRequired || (Boolean(getToken()) && !rejected);
     $('now-label').textContent = 'Lige nu · ' + p.done + ' af ' + p.total + ' klaret';
     $('bar').style.width = p.percent + '%';
-    $('now-what').textContent = p.finished ? 'Alle mål er klaret' : p.current ? KIND[p.current.kind] + ': ' + p.current.text : 'Listen er tom';
+    $('now-what').textContent = p.finished ? 'Alle mål er klaret' : p.current ? KIND[p.current.kind] + ': ' + p.current.text + (p.current.detail ? ' – ' + p.current.detail : '') : 'Listen er tom';
     $('now-next').textContent = p.next ? 'Næste: ' + p.next.text : (p.current ? 'Det er det sidste mål' : '');
     $('complete').disabled = !p.current;
     $('undo').disabled = !p.done;
     $('view-focus').setAttribute('aria-pressed', String(!state.plan.showAll));
     $('view-all').setAttribute('aria-pressed', String(state.plan.showAll));
+    var wanted = state.plan.wanted || 0;
+    $('wanted-label').textContent = wanted ? wanted + (wanted === 1 ? ' stjerne' : ' stjerner') : '0 stjerner (skjult)';
+    document.querySelectorAll('#wanted button').forEach(function (button) { button.setAttribute('aria-pressed', String(Number(button.dataset.level) === wanted)); });
     $('goals-label').textContent = 'Listen · ' + state.goals.length + ' mål';
     goalsEl.textContent = '';
     if (!state.goals.length) goalsEl.appendChild(el('div', { className: 'empty', text: 'Ingen mål endnu. Sæt Ankers liste ind ovenfor.' }));
@@ -283,9 +310,17 @@
       say('Tilføjet.');
     }).catch(function () {});
   }
-  $('quick').addEventListener('submit', function (event) { event.preventDefault(); add('place'); });
+  $('quick').addEventListener('submit', function (event) { event.preventDefault(); add('mission'); });
+  $('add-place').addEventListener('click', function () { add('place'); });
   $('add-activity').addEventListener('click', function () { add('activity'); });
 
+  $('fx-passed').addEventListener('click', function () { act('/alert', 'POST', { type: 'passed' }); });
+  $('fx-wasted').addEventListener('click', function () { act('/alert', 'POST', { type: 'wasted' }); });
+  // Wanted level: ☆☆★★★ is 3. 0 hides the stars on the overlay.
+  [0, 1, 2, 3, 4, 5].forEach(function (level) {
+    var label = level ? '★'.repeat(level) : '0';
+    $('wanted').appendChild(el('button', { type: 'button', text: label, 'data-level': String(level), title: level + ' stjerner', 'aria-pressed': 'false', on: { click: function () { act('/plan', 'PATCH', { wanted: level }); } } }));
+  });
   $('complete').addEventListener('click', function () { act('/complete', 'POST'); });
   $('undo').addEventListener('click', function () { act('/undo', 'POST'); });
   $('view-focus').addEventListener('click', function () { act('/plan', 'PATCH', { showAll: false }); });

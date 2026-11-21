@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
-import { MAX_GOALS, SCALE_MAX, addGoals, cleanGoal, cleanPlan, completeCurrent, progress, removeGoal, reorder, resetAll, restore, undoLast, updateGoal } from "../apps/gtairl/state.js";
+import { MAX_GOALS, SCALE_MAX, addGoals, cleanGoal, cleanPlan, completeCurrent, missionLabel, newlyDone, parseLine, progress, removeGoal, reorder, resetAll, restore, undoLast, updateGoal } from "../apps/gtairl/state.js";
 import { createGtaIrlApp } from "../apps/gtairl/app.js";
 import { createChannelRegistry, createTenantDispatcher } from "../apps/_lib/channels.js";
 
@@ -10,10 +10,37 @@ const make = (...rows) => rows.map(([text, done = false, kind = "place"]) => cle
 
 test("cleanGoal ignores invalid fields and keeps the old text when the new one is empty", () => {
   const goal = cleanGoal({ text: "  Nyhavn  ", kind: "beach", done: "ja" });
-  assert.deepEqual([goal.text, goal.kind, goal.done], ["Nyhavn", "place", false]);
+  assert.deepEqual([goal.text, goal.kind, goal.done, goal.detail], ["Nyhavn", "mission", false, ""]);
   assert.equal(cleanGoal({ text: "   " }, goal).text, "Nyhavn");
   assert.equal(cleanGoal({ kind: "activity" }, goal).kind, "activity");
   assert.equal(cleanGoal({ text: "x".repeat(200) }).text.length, 60);
+});
+
+test("Anker's list pastes straight in: heading skipped, mission numbers gone, title and detail split at the dash", () => {
+  const list = `MISSIONER
+MISSION 1: DOUBLE OR NOTHING – CPH CONCEPT COINFLIP
+
+MISSION 2: THE OSCAR HEIST – KIDNAP OSCAR
+
+MISSION 3: BALLS OF STEEL – POOL KAMP, CHAT BESTEMMER STRAF
+
+MISSION 4: VIBE CITY NIGHTS – CLUB HOP: MUSEO, ARCH, SØPAVILLONEN
+
+MISSION 5: THE FINAL JOB – CHATTEN BESTEMMER SIDSTE MISSION`;
+  const { goals } = addGoals([], { text: list, kind: "mission" });
+  assert.deepEqual(goals.map((g) => [g.text, g.detail]), [
+    ["DOUBLE OR NOTHING", "CPH CONCEPT COINFLIP"],
+    ["THE OSCAR HEIST", "KIDNAP OSCAR"],
+    ["BALLS OF STEEL", "POOL KAMP, CHAT BESTEMMER STRAF"],
+    ["VIBE CITY NIGHTS", "CLUB HOP: MUSEO, ARCH, SØPAVILLONEN"],
+    ["THE FINAL JOB", "CHATTEN BESTEMMER SIDSTE MISSION"]
+  ]);
+  assert.ok(goals.every((g) => g.kind === "mission"));
+  assert.equal(missionLabel(goals, goals[3].id), "Mission 4");
+  assert.equal(missionLabel(goals, "x"), "");
+  assert.deepEqual(parseLine("Spis-hotdog"), { text: "Spis-hotdog", detail: "" });
+  assert.deepEqual(parseLine("Nyhavn - kanalen"), { text: "Nyhavn", detail: "kanalen" });
+  assert.equal(parseLine("Missions:"), null);
 });
 
 test("a pasted list becomes one goal per line, without bullets or numbers, and stops at the limit", () => {
@@ -50,6 +77,13 @@ test("Klaret ticks off the current goal and Fortryd takes the last tick off agai
   assert.ok(resetAll(twice).every((g) => !g.done));
 });
 
+test("newlyDone finds the goal that was just ticked off", () => {
+  const before = make(["A", true], ["B"], ["C"]);
+  assert.equal(newlyDone(before, completeCurrent(before)).text, "B");
+  assert.equal(newlyDone(before, before), null);
+  assert.equal(newlyDone(before, undoLast(before)), null);
+});
+
 test("updating, removing and reordering goals", () => {
   const goals = make(["A"], ["B"], ["C"]);
   const moved = updateGoal(goals, goals[1].id, { done: true, kind: "activity" });
@@ -61,19 +95,23 @@ test("updating, removing and reordering goals", () => {
 });
 
 test("the plan: title, whole list or not, and size", () => {
-  assert.deepEqual(cleanPlan({}), { title: "GTA IRL", showAll: false, scale: 1 });
-  const before = { title: "Copenhagen", showAll: true, scale: 1.3 };
-  assert.deepEqual(cleanPlan({ showAll: "ja", scale: "stor" }, before), before);
+  assert.deepEqual(cleanPlan({}), { title: "GTA IRL", showAll: false, scale: 1, wanted: 0 });
+  const before = { title: "Copenhagen", showAll: true, scale: 1.3, wanted: 3 };
+  assert.deepEqual(cleanPlan({ showAll: "ja", scale: "stor", wanted: "mange" }, before), before);
+  assert.equal(cleanPlan({ wanted: 9 }).wanted, 5);
+  assert.equal(cleanPlan({ wanted: -2 }).wanted, 0);
+  assert.equal(cleanPlan({ wanted: 2.5 }, before).wanted, 3);
+  assert.equal(cleanPlan({ title: "x" }, { title: "a", showAll: false, scale: 1 }).wanted, 0); // saved before the stars existed
   assert.equal(cleanPlan({ showAll: false }, before).showAll, false);
   assert.equal(cleanPlan({ scale: 9 }).scale, SCALE_MAX);
   assert.equal(cleanPlan({ title: "x".repeat(100) }).title.length, 30);
 });
 
 test("restore reads saved state and shrugs off garbage", () => {
-  assert.deepEqual(restore(null), { plan: { title: "GTA IRL", showAll: false, scale: 1 }, goals: [] });
+  assert.deepEqual(restore(null), { plan: { title: "GTA IRL", showAll: false, scale: 1, wanted: 0 }, goals: [] });
   const saved = restore({ plan: { showAll: true }, goals: [{ id: "1", text: "Nyhavn", done: true }, { id: "2", text: "" }, null, { id: "3", text: "Tivoli", kind: "activity" }] });
   assert.equal(saved.plan.showAll, true);
-  assert.deepEqual(saved.goals.map((g) => [g.id, g.text, g.done, g.kind]), [["1", "Nyhavn", true, "place"], ["3", "Tivoli", false, "activity"]]);
+  assert.deepEqual(saved.goals.map((g) => [g.id, g.text, g.done, g.kind]), [["1", "Nyhavn", true, "mission"], ["3", "Tivoli", false, "activity"]]);
 });
 
 async function serve(mount, fn) {
@@ -158,5 +196,29 @@ test("each channel keeps its own list and needs its own key", async () => {
     const theirs = await json(fetch(`${base}/api/state?profile=${other.id}`));
     assert.deepEqual([texts(mine.goals), texts(theirs.goals), mine.passwordRequired], [["Nyhavn"], [], false]);
     assert.equal((await fetch(`${base}/api/state?profile=aaaaaaaaaaaa`)).status, 404);
+  });
+});
+
+test("ticking off a mission plays Mission passed; the panel can also play it or Wasted, and set the wanted level", async () => {
+  await withApp("", async (base) => {
+    assert.equal((await json(fetch(`${base}/api/state`))).alert, null);
+    await send(`${base}/api/goals`, "POST", { text: "MISSION 1: DOUBLE OR NOTHING – COINFLIP\nMISSION 2: THE OSCAR HEIST – KIDNAP OSCAR" });
+    let state = await json(send(`${base}/api/complete`, "POST"));
+    assert.deepEqual([state.alert.type, state.alert.title, state.alert.label], ["passed", "DOUBLE OR NOTHING", "Mission 1"]);
+    const first = state.alert.id;
+    state = await json(send(`${base}/api/goals/${state.goals[1].id}`, "PATCH", { done: true }));
+    assert.deepEqual([state.alert.title, state.alert.label], ["THE OSCAR HEIST", "Mission 2"]);
+    assert.notEqual(state.alert.id, first);
+    const second = state.alert.id;
+    state = await json(send(`${base}/api/undo`, "POST"));
+    assert.equal(state.alert.id, second, "taking a tick off plays nothing");
+    state = await json(send(`${base}/api/alert`, "POST", { type: "wasted" }));
+    assert.deepEqual([state.alert.type, state.alert.title], ["wasted", ""]);
+    state = await json(send(`${base}/api/alert`, "POST", { type: "passed" }));
+    assert.deepEqual([state.alert.type, state.alert.title, state.progress.done], ["passed", "THE OSCAR HEIST", 1]);
+    assert.equal((await send(`${base}/api/alert`, "POST", { type: "busted" })).status, 400);
+    state = await json(send(`${base}/api/plan`, "PATCH", { wanted: 3 }));
+    assert.equal(state.plan.wanted, 3);
+    for (const page of ["alerts.html", "wanted.html"]) assert.equal((await fetch(`${base}/${page}`)).status, 200, page);
   });
 });

@@ -39,6 +39,8 @@
   .label b{color:var(--accent);font-weight:600;}
   .now{margin-top:4px;display:flex;align-items:flex-start;gap:12px;font-size:2rem;font-weight:700;text-transform:uppercase;letter-spacing:-.01em;line-height:1.05;}
   .now .bullet{flex:none;margin-top:.32em;width:12px;height:12px;transform:rotate(45deg);background:var(--accent);}
+  .detail{margin-top:4px;padding-left:24px;font-size:1.05rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;line-height:1.2;color:rgba(255,255,255,.8);}
+  .next .sub{display:block;font-size:.85rem;color:rgba(255,255,255,.6);letter-spacing:.08em;}
   .next{margin-top:4px;padding-left:24px;font-size:1.25rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;line-height:1.15;color:rgba(255,255,255,.88);}
   .done-msg{margin-top:16px;font-size:1.5rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);}
 
@@ -46,6 +48,8 @@
   .list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:7px;}
   .list li{display:grid;grid-template-columns:18px 1fr auto;align-items:baseline;gap:10px;font-size:1.15rem;font-weight:500;text-transform:uppercase;letter-spacing:.05em;line-height:1.15;color:rgba(255,255,255,.85);}
   .list .mark{width:9px;height:9px;transform:rotate(45deg);border:2px solid rgba(255,255,255,.75);justify-self:center;align-self:center;}
+  .list .sub{display:block;font-size:.72em;font-weight:500;letter-spacing:.08em;color:rgba(255,255,255,.6);text-decoration:none;}
+  .list li.is-done .sub{display:none;}
   .list .kind{font-size:.75rem;font-weight:600;letter-spacing:.14em;color:rgba(255,255,255,.55);}
   .list li.is-done{color:rgba(255,255,255,.45);}
   .list li.is-done .text{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--accent);}
@@ -54,28 +58,18 @@
   .list li.is-now .mark{width:12px;height:12px;border:none;background:var(--accent);}
   .list li.is-now .kind{color:var(--accent);}
 
-  /* A short "Goal complete" when something is ticked off. */
-  .toast{position:absolute;left:-4px;right:0;top:calc(100% + 6px);padding:8px 24px;background:var(--accent);color:#111;font-size:1.1rem;font-weight:700;
-    text-transform:uppercase;letter-spacing:.14em;opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease;pointer-events:none;}
-  .toast *{text-shadow:none;}
-  .toast.show{opacity:1;transform:none;}
-  body.bottom .toast{transform:translateY(-8px);}
-  body.bottom .toast.show{transform:none;}
-  body.bottom .toast{top:auto;bottom:calc(100% + 6px);}
 
   .card.align-right{text-align:right;border-left:none;border-right:4px solid var(--accent);}
   .card.align-right .head{flex-direction:row-reverse;}
   .card.align-right .now{flex-direction:row-reverse;}
-  .card.align-right .next{padding-left:0;padding-right:24px;}
+  .card.align-right .next,.card.align-right .detail{padding-left:0;padding-right:24px;}
   .card.align-right .list li{grid-template-columns:auto 1fr 18px;}
   .card.align-right .list .kind{order:-1;}
   .card.align-right .list .mark{order:3;}
-  .card.align-right .toast{left:0;right:-4px;}
 </style>
 </head>
 <body>
 <div class="card" id="card">
-  <div class="toast" id="toast">Goal complete</div>
   <div id="content"></div>
 </div>
 
@@ -86,7 +80,6 @@
   var demo = params.has('demo');
   var card = document.getElementById('card');
   var content = document.getElementById('content');
-  var toast = document.getElementById('toast');
 
   // Placement: ?corner=top-right / bottom-left / bottom-right (or ?side=right); the text follows the side.
   var corner = (params.get('corner') || '').toLowerCase();
@@ -94,14 +87,13 @@
   if (right) { document.body.classList.add('right'); card.classList.add('align-right'); }
   if (/bottom/.test(corner)) document.body.classList.add('bottom');
 
-  var KIND = { place: 'Location', activity: 'Activity' };
+  var KIND = { mission: 'Mission', place: 'Location', activity: 'Activity' };
   // ?demo shows a made-up list when nothing has been typed in yet (it never touches the saved list).
   var DEMO = [
-    { id: 'd1', kind: 'place', text: 'Nyhavn', done: true },
-    { id: 'd2', kind: 'activity', text: 'Buy a hot dog', done: true },
-    { id: 'd3', kind: 'place', text: 'Rundetaarn', done: false },
-    { id: 'd4', kind: 'activity', text: 'Ask a stranger for directions', done: false },
-    { id: 'd5', kind: 'place', text: 'Tivoli', done: false }
+    { id: 'd1', kind: 'mission', text: 'Double or nothing', detail: 'Coin flip', done: true },
+    { id: 'd2', kind: 'mission', text: 'The big heist', detail: 'Find the hidden prize', done: false },
+    { id: 'd3', kind: 'place', text: 'Nyhavn', detail: '', done: false },
+    { id: 'd4', kind: 'activity', text: 'Buy a hot dog', detail: '', done: false }
   ];
 
   function escapeHtml(s){
@@ -110,6 +102,15 @@
     });
   }
 
+  // "Mission 2" for the second mission; places and activities just say what they are.
+  function kindLabel(goals, goal){
+    if (goal.kind !== 'mission') return KIND[goal.kind] || '';
+    var n = 0, at = 0;
+    goals.forEach(function(g){ if (g.kind === 'mission') { n++; if (g.id === goal.id) at = n; } });
+    return 'Mission ' + at;
+  }
+  function sub(goal){ return goal.detail ? '<span class="sub">' + escapeHtml(goal.detail) + '</span>' : ''; }
+
   function summary(goals){
     var open = goals.filter(function(g){ return !g.done; });
     var done = goals.length - open.length;
@@ -117,13 +118,6 @@
       current: open[0] || null, next: open[1] || null, finished: goals.length > 0 && !open.length };
   }
 
-  var lastDone = null;
-  var toastTimer = null;
-  function celebrate(){
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2600);
-  }
 
   function render(state){
     var plan = state.plan || {};
@@ -133,28 +127,27 @@
     document.documentElement.style.setProperty('--scale', plan.scale || 1);
     card.classList.add('ready');
     card.classList.toggle('empty', !goals.length);
-    if (lastDone !== null && p.done > lastDone) celebrate();
-    lastDone = p.done;
     if (!goals.length) { content.innerHTML = ''; return; }
 
     var html =
       '<div class="title">' + escapeHtml(plan.title || 'GTA IRL') + '</div>' +
-      '<div class="head"><div class="count">' + p.done + ' / ' + p.total + '<small>Complete</small></div>' +
+      '<div class="head"><div class="count">' + p.done + ' / ' + p.total + '<small>' + (goals.every(function(g){ return g.kind === 'mission'; }) ? 'Missions' : 'Complete') + '</small></div>' +
       '<div class="percent">' + p.percent.toFixed(1) + '%</div></div>' +
       '<div class="bar-rail"><div class="bar-fill" style="width:' + p.percent + '%"></div></div>';
 
     if (plan.showAll) {
       html += '<ul class="list">' + goals.map(function(g){
         var cls = g.done ? 'is-done' : (p.current && g.id === p.current.id ? 'is-now' : '');
-        return '<li class="' + cls + '"><span class="mark"></span><span class="text">' + escapeHtml(g.text) + '</span><span class="kind">' + (KIND[g.kind] || '') + '</span></li>';
+        return '<li class="' + cls + '"><span class="mark"></span><span class="text">' + escapeHtml(g.text) + sub(g) + '</span><span class="kind">' + kindLabel(goals, g) + '</span></li>';
       }).join('') + '</ul>';
       if (p.finished) html += '<div class="done-msg">All goals complete</div>';
     } else if (p.finished) {
       html += '<div class="done-msg">All goals complete</div>';
     } else {
-      html += '<div class="label"><b>Current</b> · ' + (KIND[p.current.kind] || '') + '</div>' +
-        '<div class="now"><span class="bullet"></span><span>' + escapeHtml(p.current.text) + '</span></div>';
-      if (p.next) html += '<div class="label">Next · ' + (KIND[p.next.kind] || '') + '</div><div class="next">' + escapeHtml(p.next.text) + '</div>';
+      html += '<div class="label"><b>Current</b> · ' + kindLabel(goals, p.current) + '</div>' +
+        '<div class="now"><span class="bullet"></span><span>' + escapeHtml(p.current.text) + '</span></div>' +
+        (p.current.detail ? '<div class="detail">' + escapeHtml(p.current.detail) + '</div>' : '');
+      if (p.next) html += '<div class="label">Next · ' + kindLabel(goals, p.next) + '</div><div class="next">' + escapeHtml(p.next.text) + sub(p.next) + '</div>';
     }
     content.innerHTML = html;
   }

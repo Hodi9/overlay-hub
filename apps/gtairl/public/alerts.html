@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA IRL Alerts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap">
+<style>
+  :root{ --accent:#ff5fa2; --red:#e2323f; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
+  body{font-family:'Oswald',sans-serif;color:#fff;}
+  body.bg-preview{background:#5d6b74 linear-gradient(160deg,#8aa0ad,#3c4850);}
+
+  .layer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s linear .5s;}
+  .layer.show{opacity:1;visibility:visible;transition:opacity .35s ease,visibility 0s;}
+  .layer *{text-shadow:0 3px 14px rgba(0,0,0,.55);}
+
+  /* Mission passed: a dark band across the screen with the mission and "Respect +" under it. */
+  .passed{align-items:flex-start;padding-top:30vh;}
+  .band{width:100%;padding:3.2vh 0 3.6vh;text-align:center;background:linear-gradient(90deg,transparent,rgba(8,8,10,.72) 20%,rgba(8,8,10,.72) 80%,transparent);}
+  .band .big{white-space:nowrap;font-size:9vh;font-weight:700;text-transform:uppercase;line-height:1;letter-spacing:.04em;}
+  .band .what{margin-top:1.4vh;font-size:2.8vh;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:rgba(255,255,255,.85);min-height:1em;}
+  .band .what b{color:var(--accent);font-weight:600;}
+  .band .respect{margin-top:1.2vh;font-size:4.6vh;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);}
+  .passed.show .big{animation:settle 1s cubic-bezier(.2,.8,.2,1) both;}
+  .passed.show .what{animation:rise .6s .35s ease both;}
+  .passed.show .respect{animation:rise .6s .6s ease both;}
+  @keyframes settle{from{opacity:0;letter-spacing:.32em;}to{opacity:1;letter-spacing:.04em;}}
+  @keyframes rise{from{opacity:0;transform:translateY(1.2vh);}to{opacity:1;transform:none;}}
+
+  /* Wasted: the picture goes dark and grey around a big red word. */
+  .wasted{background:radial-gradient(ellipse at center,rgba(40,40,44,.45) 0%,rgba(20,20,22,.78) 75%);}
+  .wasted .word{font-size:17vh;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--red);}
+  .wasted.show .word{animation:slam 3.5s cubic-bezier(.15,.7,.2,1) both;}
+  @keyframes slam{from{opacity:0;transform:scale(1.25);}12%{opacity:1;}to{opacity:1;transform:scale(1);}}
+</style>
+</head>
+<body>
+<div class="layer passed" id="passed">
+  <div class="band">
+    <div class="big">Mission passed</div>
+    <div class="what" id="passed-what"></div>
+    <div class="respect">Respect +</div>
+  </div>
+</div>
+<div class="layer wasted" id="wasted"><div class="word">Wasted</div></div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  if (params.get('bg') === 'black' || params.get('bg') === 'preview') document.body.classList.add('bg-preview');
+  var layers = { passed: document.getElementById('passed'), wasted: document.getElementById('wasted') };
+  var what = document.getElementById('passed-what');
+  var SHOW_MS = { passed: 5500, wasted: 5000 };
+  var seen = null; // the alert the page found when it opened is not played again
+  var timer = null;
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function play(alert){
+    var layer = layers[alert.type];
+    if (!layer) return;
+    Object.keys(layers).forEach(function(k){ layers[k].classList.remove('show'); });
+    if (alert.type === 'passed') {
+      what.innerHTML = alert.label && alert.title ? '<b>' + escapeHtml(alert.label) + '</b> · ' + escapeHtml(alert.title) : escapeHtml(alert.title || '');
+    }
+    void layer.offsetWidth; // restart the animation when the same alert type comes twice in a row
+    layer.classList.add('show');
+    clearTimeout(timer);
+    timer = setTimeout(function(){ layer.classList.remove('show'); }, SHOW_MS[alert.type]);
+  }
+
+  function render(state){
+    var alert = state.alert;
+    if (seen === null) { seen = alert ? alert.id : ''; return; }
+    if (alert && alert.id !== seen) { seen = alert.id; play(alert); }
+  }
+
+  // ?demo plays both alerts in turn, to see them without changing anything.
+  if (params.has('demo')) {
+    var demo = [{ type: 'passed', label: 'Mission 1', title: 'Double or nothing' }, { type: 'wasted' }], n = 0;
+    var next = function(){ play(demo[n++ % demo.length]); };
+    next();
+    setInterval(next, 7000);
+    return;
+  }
+
+  fetch('/gta-irl/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+  var events = new EventSource('/gta-irl/api/events');
+  events.onmessage = function(event){
+    try { render(JSON.parse(event.data)); } catch(e){}
+  };
+})();
+</script>
+</body>
+</html>

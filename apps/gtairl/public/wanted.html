@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA IRL Wanted Level</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap">
+<style>
+  :root{ --accent:#ff5fa2; --scale:1; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;}
+  body{font-family:'Oswald',sans-serif;display:flex;align-items:flex-start;justify-content:flex-end;height:100vh;padding:40px;color:#fff;}
+  body.bg-preview{background:#5d6b74 linear-gradient(160deg,#8aa0ad,#3c4850);}
+  body.left{justify-content:flex-start;}
+  body.bottom{align-items:flex-end;}
+
+  .wanted{display:flex;flex-direction:column;align-items:flex-end;gap:6px;transform:scale(var(--scale));transform-origin:top right;opacity:0;transition:opacity .5s ease;}
+  .wanted.show{opacity:1;}
+  body.left .wanted{align-items:flex-start;transform-origin:top left;}
+  body.bottom .wanted{transform-origin:bottom right;}
+  body.bottom.left .wanted{transform-origin:bottom left;}
+  .label{font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:.24em;color:rgba(255,255,255,.85);text-shadow:0 2px 8px rgba(0,0,0,.7);}
+  .stars{display:flex;gap:6px;}
+  .stars svg{width:46px;height:46px;overflow:visible;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));}
+  .stars .off polygon{fill:rgba(0,0,0,.25);stroke:rgba(255,255,255,.55);stroke-width:2.5;}
+  .stars .on polygon{fill:#fff;stroke:#111;stroke-width:2.5;}
+  /* The new stars blink for a moment when the level goes up. */
+  .stars .on.fresh{animation:blink .45s steps(1) 8;}
+  @keyframes blink{50%{opacity:.15;}}
+</style>
+</head>
+<body>
+<div class="wanted" id="wanted">
+  <div class="label">Wanted level</div>
+  <div class="stars" id="stars"></div>
+</div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  if (params.get('bg') === 'black' || params.get('bg') === 'preview') document.body.classList.add('bg-preview');
+  // Placement: top right by default (where the game has it); ?corner=top-left / bottom-left / bottom-right moves it.
+  var corner = (params.get('corner') || '').toLowerCase();
+  if (/left/.test(corner)) document.body.classList.add('left');
+  if (/bottom/.test(corner)) document.body.classList.add('bottom');
+  var scale = Number(params.get('scale'));
+  if (scale >= 0.3 && scale <= 4) document.documentElement.style.setProperty('--scale', scale);
+  if (params.get('label') === 'off') document.querySelector('.label').hidden = true;
+
+  var box = document.getElementById('wanted');
+  var stars = document.getElementById('stars');
+  var MAX = 5;
+  var STAR = '<polygon points="23,3 28.6,17.3 44,18.2 32.1,28 36,43 23,34.6 10,43 13.9,28 2,18.2 17.4,17.3"/>';
+  var last = null;
+
+  // Filled stars sit on the right, empty ones on the left: ☆☆★★★ is level 3.
+  function draw(level){
+    level = Math.max(0, Math.min(MAX, level | 0));
+    var html = '';
+    for (var i = 0; i < MAX; i++) {
+      var on = i >= MAX - level;
+      var fresh = on && last !== null && i < MAX - last;
+      html += '<svg viewBox="0 0 46 46" class="' + (on ? 'on' : 'off') + (fresh ? ' fresh' : '') + '">' + STAR + '</svg>';
+    }
+    stars.innerHTML = html;
+    box.classList.toggle('show', level > 0);
+    last = level;
+  }
+
+  // ?demo goes through the levels by itself.
+  if (params.has('demo')) {
+    var n = 0;
+    draw(3);
+    setInterval(function(){ draw([1, 2, 3, 4, 5, 2][n++ % 6]); }, 3000);
+    return;
+  }
+
+  function render(state){
+    var level = state.plan && Number.isInteger(state.plan.wanted) ? state.plan.wanted : 0;
+    if (level !== last) draw(level);
+  }
+  fetch('/gta-irl/api/state').then(function(r){ return r.json(); }).then(render).catch(function(){});
+  var events = new EventSource('/gta-irl/api/events');
+  events.onmessage = function(event){
+    try { render(JSON.parse(event.data)); } catch(e){}
+  };
+})();
+</script>
+</body>
+</html>

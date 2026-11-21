@@ -2,7 +2,9 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { DEFAULT_PLAN, MAX_GOALS, addGoals, cleanPlan, completeCurrent, progress, removeGoal, reorder, resetAll, restore, undoLast, updateGoal } from "./state.js";
+import { DEFAULT_PLAN, MAX_GOALS, addGoals, cleanPlan, completeCurrent, missionLabel, newlyDone, progress, removeGoal, reorder, resetAll, restore, undoLast, updateGoal } from "./state.js";
+
+export const ALERTS = ["passed", "wasted"];
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,6 +23,8 @@ export function createGtaIrlApp(context = {}) {
   const isChannel = Boolean(context.authorizeControl);
   let plan = { ...DEFAULT_PLAN };
   let goals = [];
+  // The last full-screen alert (Mission passed / Wasted). Only kept in memory: an overlay plays an alert it has not seen.
+  let alert = null;
   let db = context.pool || null;
   const listeners = new Set();
 
@@ -41,7 +45,17 @@ export function createGtaIrlApp(context = {}) {
   });
   router.ready = ready;
 
-  const payload = () => ({ plan, goals, progress: progress(goals), passwordRequired: !isChannel && Boolean(controlPassword) });
+  const payload = () => ({ plan, goals, progress: progress(goals), alert, passwordRequired: !isChannel && Boolean(controlPassword) });
+
+  function showAlert(type, goal = null) {
+    alert = { id: crypto.randomUUID(), type, title: goal?.text || "", label: goal ? missionLabel(goals, goal.id) : "", at: Date.now() };
+  }
+  // "Mission passed" plays by itself when a goal is ticked off.
+  function setGoals(next) {
+    const done = newlyDone(goals, next);
+    goals = next;
+    if (done) showAlert("passed", done);
+  }
 
   function commit() {
     db?.query(
@@ -95,7 +109,7 @@ export function createGtaIrlApp(context = {}) {
   router.patch("/api/goals/:id", requireAuth, (req, res) => {
     const next = updateGoal(goals, req.params.id, req.body);
     if (!next) return res.status(404).json({ error: "Målet findes ikke." });
-    goals = next;
+    setGoals(next);
     res.json(commit());
   });
 
@@ -110,7 +124,15 @@ export function createGtaIrlApp(context = {}) {
   });
 
   router.post("/api/complete", requireAuth, (_req, res) => {
-    goals = completeCurrent(goals);
+    setGoals(completeCurrent(goals));
+    res.json(commit());
+  });
+
+  // The buttons in the panel: Mission passed (for the current goal, without ticking it off) or Wasted.
+  router.post("/api/alert", requireAuth, (req, res) => {
+    const type = req.body?.type;
+    if (!ALERTS.includes(type)) return res.status(400).json({ error: "Ukendt effekt." });
+    showAlert(type, type === "passed" ? progress(goals).current : null);
     res.json(commit());
   });
 
