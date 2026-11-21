@@ -68,7 +68,8 @@
 
   .goals { display: grid; gap: 6px; }
   .goal .fields { display: grid; gap: 4px; min-width: 0; }
-  .goal .detail-input { font-size: 13px; padding: 6px 10px; color: var(--muted); }
+  .goal .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .goal .pair input { font-size: 13px; padding: 6px 10px; color: var(--muted); }
   .wanted button { min-width: 64px; font-size: 14px; letter-spacing: 0; }
   .effects .line button { padding: 14px 16px; }
   button.wasted:hover { color: #ff6b74; border-color: #ff6b74; }
@@ -156,7 +157,7 @@
         <button type="button" id="add-place">Som steder</button>
         <button type="button" id="add-activity">Som aktiviteter</button>
       </div>
-      <p class="hint">Sæt Ankers tekst ind som den er: "MISSION 1:" fjernes (overlayet nummererer selv), og det efter tankestregen bliver den lille linje under titlen. Du kan skifte type på hver linje bagefter.</p>
+      <p class="hint">Én mission pr. linje: <b>NAVN – STED – AKTIVITET</b>. Står der kun én tankestreg, bliver resten aktiviteten. "MISSION 1:" fjernes, for overlayet nummererer selv. Sted og aktivitet kan rettes på hver mission bagefter.</p>
     </form>
   </section>
 
@@ -252,11 +253,12 @@
   function goalRow(goal, index, count, currentId) {
     var patch = function (data) { return act('/goals/' + encodeURIComponent(goal.id), 'PATCH', data); };
     var textInput = el('input', { type: 'text', className: 'text-input', value: goal.text, maxLength: 60, 'aria-label': 'Titel', on: { change: function () { if (textInput.value.trim()) patch({ text: textInput.value }); else textInput.value = goal.text; } } });
-    var detailInput = el('input', { type: 'text', className: 'detail-input', value: goal.detail || '', maxLength: 80, placeholder: 'Lille linje under (valgfri)', 'aria-label': 'Lille linje under titlen', on: { change: function () { patch({ detail: detailInput.value }); } } });
+    var placeInput = el('input', { type: 'text', value: goal.place || '', maxLength: 60, placeholder: 'Sted', 'aria-label': 'Sted', on: { change: function () { patch({ place: placeInput.value }); } } });
+    var activityInput = el('input', { type: 'text', value: goal.activity || '', maxLength: 80, placeholder: 'Aktivitet', 'aria-label': 'Aktivitet', on: { change: function () { patch({ activity: activityInput.value }); } } });
     var tick = el('button', { type: 'button', className: 'tick', text: goal.done ? '✓' : '', 'aria-pressed': String(goal.done), title: goal.done ? 'Klaret — tryk for at fortryde' : 'Sæt flueben', 'aria-label': goal.done ? 'Klaret' : 'Ikke klaret', on: { click: function () { patch({ done: !goal.done }); } } });
     return el('div', { className: 'goal' + (goal.done ? ' done' : '') + (goal.id === currentId ? ' current' : '') }, [
       tick,
-      el('div', { className: 'fields' }, [textInput, detailInput]),
+      el('div', { className: 'fields' }, [textInput, el('div', { className: 'pair' }, [placeInput, activityInput])]),
       el('div', { className: 'tools' }, [
         el('button', { type: 'button', className: 'kind', text: KIND[goal.kind], title: 'Skift mellem Mission, Sted og Aktivitet', on: { click: function () { patch({ kind: NEXT_KIND[goal.kind] || 'mission' }); } } }),
         el('button', { type: 'button', text: '↑', title: 'Op', disabled: index === 0, on: { click: function () { moveGoal(goal.id, -1); } } }),
@@ -275,7 +277,7 @@
     $('auth').hidden = !state.passwordRequired || (Boolean(getToken()) && !rejected);
     $('now-label').textContent = 'Lige nu · ' + p.done + ' af ' + p.total + ' klaret';
     $('bar').style.width = p.percent + '%';
-    $('now-what').textContent = p.finished ? 'Alle mål er klaret' : p.current ? KIND[p.current.kind] + ': ' + p.current.text + (p.current.detail ? ' – ' + p.current.detail : '') : 'Listen er tom';
+    $('now-what').textContent = p.finished ? 'Alle mål er klaret' : p.current ? KIND[p.current.kind] + ': ' + p.current.text + [p.current.place, p.current.activity].filter(Boolean).map(function (s) { return ' – ' + s; }).join('') : 'Listen er tom';
     $('now-next').textContent = p.next ? 'Næste: ' + p.next.text : (p.current ? 'Det er det sidste mål' : '');
     $('complete').disabled = !p.current;
     $('undo').disabled = !p.done;

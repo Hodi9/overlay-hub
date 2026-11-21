@@ -39,7 +39,10 @@
   .label b{color:var(--accent);font-weight:600;}
   .now{margin-top:4px;display:flex;align-items:flex-start;gap:12px;font-size:2rem;font-weight:700;text-transform:uppercase;letter-spacing:-.01em;line-height:1.05;}
   .now .bullet{flex:none;margin-top:.32em;width:12px;height:12px;transform:rotate(45deg);background:var(--accent);}
-  .detail{margin-top:4px;padding-left:24px;font-size:1.05rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;line-height:1.2;color:rgba(255,255,255,.8);}
+  /* Where and what for the current mission: small label, then the value. */
+  .facts{margin-top:8px;padding-left:24px;display:grid;grid-template-columns:auto 1fr;column-gap:12px;row-gap:3px;align-items:baseline;text-transform:uppercase;}
+  .facts dt{font-size:.75rem;font-weight:600;letter-spacing:.16em;color:var(--accent);}
+  .facts dd{margin:0;font-size:1.1rem;font-weight:500;letter-spacing:.05em;line-height:1.2;color:rgba(255,255,255,.9);}
   .next .sub{display:block;font-size:.85rem;color:rgba(255,255,255,.6);letter-spacing:.08em;}
   .next{margin-top:4px;padding-left:24px;font-size:1.25rem;font-weight:500;text-transform:uppercase;letter-spacing:.06em;line-height:1.15;color:rgba(255,255,255,.88);}
   .done-msg{margin-top:16px;font-size:1.5rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);}
@@ -62,7 +65,9 @@
   .card.align-right{text-align:right;border-left:none;border-right:4px solid var(--accent);}
   .card.align-right .head{flex-direction:row-reverse;}
   .card.align-right .now{flex-direction:row-reverse;}
-  .card.align-right .next,.card.align-right .detail{padding-left:0;padding-right:24px;}
+  .card.align-right .next{padding-left:0;padding-right:24px;}
+  .card.align-right .facts{padding-left:0;padding-right:24px;grid-template-columns:1fr auto;}
+  .card.align-right .facts dt{order:2;}
   .card.align-right .list li{grid-template-columns:auto 1fr 18px;}
   .card.align-right .list .kind{order:-1;}
   .card.align-right .list .mark{order:3;}
@@ -90,10 +95,10 @@
   var KIND = { mission: 'Mission', place: 'Location', activity: 'Activity' };
   // ?demo shows a made-up list when nothing has been typed in yet (it never touches the saved list).
   var DEMO = [
-    { id: 'd1', kind: 'mission', text: 'Double or nothing', detail: 'Coin flip', done: true },
-    { id: 'd2', kind: 'mission', text: 'The big heist', detail: 'Find the hidden prize', done: false },
-    { id: 'd3', kind: 'place', text: 'Nyhavn', detail: '', done: false },
-    { id: 'd4', kind: 'activity', text: 'Buy a hot dog', detail: '', done: false }
+    { id: 'd1', kind: 'mission', text: 'Double or nothing', place: 'The arcade', activity: 'Coin flip', done: true },
+    { id: 'd2', kind: 'mission', text: 'The big heist', place: 'City centre', activity: 'Find the hidden prize', done: false },
+    { id: 'd3', kind: 'mission', text: 'Night shift', place: '', activity: 'Chat picks the next stop', done: false },
+    { id: 'd4', kind: 'place', text: 'Nyhavn', place: '', activity: '', done: false }
   ];
 
   function escapeHtml(s){
@@ -109,7 +114,17 @@
     goals.forEach(function(g){ if (g.kind === 'mission') { n++; if (g.id === goal.id) at = n; } });
     return 'Mission ' + at;
   }
-  function sub(goal){ return goal.detail ? '<span class="sub">' + escapeHtml(goal.detail) + '</span>' : ''; }
+  // "CPH Concept · Coinflip" under a mission's name in the list and for the next mission.
+  function sub(goal){
+    var bits = [goal.place, goal.activity].filter(Boolean).map(escapeHtml);
+    return bits.length ? '<span class="sub">' + bits.join(' · ') + '</span>' : '';
+  }
+  function facts(goal){
+    var rows = '';
+    if (goal.place) rows += '<dt>Location</dt><dd>' + escapeHtml(goal.place) + '</dd>';
+    if (goal.activity) rows += '<dt>Activity</dt><dd>' + escapeHtml(goal.activity) + '</dd>';
+    return rows ? '<dl class="facts">' + rows + '</dl>' : '';
+  }
 
   function summary(goals){
     var open = goals.filter(function(g){ return !g.done; });
@@ -146,7 +161,7 @@
     } else {
       html += '<div class="label"><b>Current</b> · ' + kindLabel(goals, p.current) + '</div>' +
         '<div class="now"><span class="bullet"></span><span>' + escapeHtml(p.current.text) + '</span></div>' +
-        (p.current.detail ? '<div class="detail">' + escapeHtml(p.current.detail) + '</div>' : '');
+        facts(p.current);
       if (p.next) html += '<div class="label">Next · ' + kindLabel(goals, p.next) + '</div><div class="next">' + escapeHtml(p.next.text) + sub(p.next) + '</div>';
     }
     content.innerHTML = html;

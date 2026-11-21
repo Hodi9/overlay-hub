@@ -10,13 +10,34 @@ const make = (...rows) => rows.map(([text, done = false, kind = "place"]) => cle
 
 test("cleanGoal ignores invalid fields and keeps the old text when the new one is empty", () => {
   const goal = cleanGoal({ text: "  Nyhavn  ", kind: "beach", done: "ja" });
-  assert.deepEqual([goal.text, goal.kind, goal.done, goal.detail], ["Nyhavn", "mission", false, ""]);
+  assert.deepEqual([goal.text, goal.kind, goal.done, goal.place, goal.activity], ["Nyhavn", "mission", false, "", ""]);
+  const placed = cleanGoal({ place: " CPH Concept ", activity: "Coinflip" }, goal);
+  assert.deepEqual([placed.text, placed.place, placed.activity], ["Nyhavn", "CPH Concept", "Coinflip"]);
+  assert.equal(cleanGoal({ text: "Ny" }, placed).place, "CPH Concept"); // renaming keeps the place
   assert.equal(cleanGoal({ text: "   " }, goal).text, "Nyhavn");
   assert.equal(cleanGoal({ kind: "activity" }, goal).kind, "activity");
   assert.equal(cleanGoal({ text: "x".repeat(200) }).text.length, 60);
 });
 
-test("Anker's list pastes straight in: heading skipped, mission numbers gone, title and detail split at the dash", () => {
+test("Anker's missions with name, place and activity: NAME – PLACE – ACTIVITY, or NAME – ACTIVITY", () => {
+  const list = `MISSIONER
+MISSION 1: DOUBLE OR NOTHING – CPH CONCEPT – COINFLIP
+MISSION 2: THE OSCAR HEIST – KIDNAP OSCAR
+MISSION 3: BALLS OF STEEL – POOL KAMP, CHAT BESTEMMER STRAF
+MISSION 4: VIBE CITY NIGHTS – MUSEO, ARCH, SØPAVILLONEN – CLUB HOP
+MISSION 5: THE FINAL JOB – CHATTEN BESTEMMER SIDSTE MISSION`;
+  const { goals } = addGoals([], { text: list, kind: "mission" });
+  assert.deepEqual(goals.map((g) => [g.text, g.place, g.activity]), [
+    ["DOUBLE OR NOTHING", "CPH CONCEPT", "COINFLIP"],
+    ["THE OSCAR HEIST", "", "KIDNAP OSCAR"],
+    ["BALLS OF STEEL", "", "POOL KAMP, CHAT BESTEMMER STRAF"],
+    ["VIBE CITY NIGHTS", "MUSEO, ARCH, SØPAVILLONEN", "CLUB HOP"],
+    ["THE FINAL JOB", "", "CHATTEN BESTEMMER SIDSTE MISSION"]
+  ]);
+  assert.deepEqual(parseLine("A – B – C – D"), { text: "A", place: "B", activity: "C – D" });
+});
+
+test("Anker's list pastes straight in as he wrote it: heading skipped, mission numbers gone, the rest is the activity", () => {
   const list = `MISSIONER
 MISSION 1: DOUBLE OR NOTHING – CPH CONCEPT COINFLIP
 
@@ -28,7 +49,7 @@ MISSION 4: VIBE CITY NIGHTS – CLUB HOP: MUSEO, ARCH, SØPAVILLONEN
 
 MISSION 5: THE FINAL JOB – CHATTEN BESTEMMER SIDSTE MISSION`;
   const { goals } = addGoals([], { text: list, kind: "mission" });
-  assert.deepEqual(goals.map((g) => [g.text, g.detail]), [
+  assert.deepEqual(goals.map((g) => [g.text, g.activity]), [
     ["DOUBLE OR NOTHING", "CPH CONCEPT COINFLIP"],
     ["THE OSCAR HEIST", "KIDNAP OSCAR"],
     ["BALLS OF STEEL", "POOL KAMP, CHAT BESTEMMER STRAF"],
@@ -38,8 +59,10 @@ MISSION 5: THE FINAL JOB – CHATTEN BESTEMMER SIDSTE MISSION`;
   assert.ok(goals.every((g) => g.kind === "mission"));
   assert.equal(missionLabel(goals, goals[3].id), "Mission 4");
   assert.equal(missionLabel(goals, "x"), "");
-  assert.deepEqual(parseLine("Spis-hotdog"), { text: "Spis-hotdog", detail: "" });
-  assert.deepEqual(parseLine("Nyhavn - kanalen"), { text: "Nyhavn", detail: "kanalen" });
+  assert.deepEqual(parseLine("Spis-hotdog"), { text: "Spis-hotdog", place: "", activity: "" });
+  assert.deepEqual(parseLine("Nyhavn - kanalen"), { text: "Nyhavn", place: "", activity: "kanalen" });
+  // A list saved with the old single "detail" line keeps it, as the activity.
+  assert.equal(restore({ goals: [{ id: "1", text: "A", detail: "Coinflip" }] }).goals[0].activity, "Coinflip");
   assert.equal(parseLine("Missions:"), null);
 });
 

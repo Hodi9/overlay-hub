@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 
 // "GTA IRL": missions, places to go and things to do on a real-life stream, ticked off as they are done.
 // The current goal is the first one not done yet, the next goal the one after it; the order is the order of the list.
-// A goal has a title ("Double or nothing") and an optional detail ("CPH Concept coinflip").
+// A mission has a name ("Double or nothing") and optionally a place ("CPH Concept") and an activity ("Coinflip").
 export const KINDS = ["mission", "place", "activity"];
 export const MAX_GOALS = 60;
 export const WANTED_MAX = 5;
@@ -28,7 +28,7 @@ export function cleanPlan(input, existing = DEFAULT_PLAN) {
   };
 }
 
-export const blankGoal = (id = crypto.randomUUID()) => ({ id, kind: "mission", text: "", detail: "", done: false });
+export const blankGoal = (id = crypto.randomUUID()) => ({ id, kind: "mission", text: "", place: "", activity: "", done: false });
 
 // Merges a patch into a goal. Unknown or invalid fields are ignored; an empty title keeps the old one.
 export function cleanGoal(input, existing = blankGoal()) {
@@ -37,23 +37,25 @@ export function cleanGoal(input, existing = blankGoal()) {
     id: existing.id,
     kind: KINDS.includes(input?.kind) ? input.kind : existing.kind,
     text: text || existing.text,
-    detail: typeof input?.detail === "string" ? clip(input.detail, 80) : (existing.detail || ""),
+    place: typeof input?.place === "string" ? clip(input.place, 60) : (existing.place || ""),
+    activity: typeof input?.activity === "string" ? clip(input.activity, 80) : (existing.activity || ""),
     done: typeof input?.done === "boolean" ? input.done : existing.done
   };
 }
 
 // One line of a pasted list, as Anker writes them: "MISSION 1: DOUBLE OR NOTHING – CPH CONCEPT COINFLIP".
-// Bullets, numbers and "Mission 1:" go (the overlay numbers the missions itself), and a dash between words splits
-// the title from the detail. A heading such as "MISSIONER" on its own line is not a goal.
+// Bullets, numbers and "Mission 1:" go (the overlay numbers the missions itself). Dashes between words split the line:
+// "NAME – ACTIVITY" or "NAME – PLACE – ACTIVITY". A heading such as "MISSIONER" on its own line is not a goal.
 export function parseLine(line) {
   const cleaned = String(line ?? "")
     .replace(/^\s*(?:[-*•·]|\d+[.)])\s*/, "")
     .replace(/^\s*mission(?:er)?\s*\d+\s*[:.)\-–—]?\s*/i, "")
     .trim();
   if (!cleaned || /^(missioner|missions?|mål|goals?|liste|list)\s*:?$/i.test(cleaned)) return null;
-  const split = /\s+[–—-]\s+/.exec(cleaned);
-  if (!split) return { text: cleaned, detail: "" };
-  return { text: cleaned.slice(0, split.index).trim(), detail: cleaned.slice(split.index + split[0].length).trim() };
+  const parts = cleaned.split(/\s+[–—-]\s+/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length === 1) return { text: parts[0], place: "", activity: "" };
+  if (parts.length === 2) return { text: parts[0], place: "", activity: parts[1] };
+  return { text: parts[0], place: parts[1], activity: parts.slice(2).join(" – ") };
 }
 
 // Adds one goal, or several at once (one per line of `text`). Empty lines and headings are skipped.
@@ -61,7 +63,7 @@ export function addGoals(goals, input) {
   const parsed = String(input?.text ?? "").split(/\r?\n/).map(parseLine).filter((line) => line && line.text);
   const room = MAX_GOALS - goals.length;
   if (!parsed.length || room <= 0) return null;
-  const added = parsed.slice(0, room).map((line) => cleanGoal({ kind: input?.kind, text: line.text, detail: line.detail, done: false }));
+  const added = parsed.slice(0, room).map((line) => cleanGoal({ kind: input?.kind, text: line.text, place: line.place, activity: line.activity, done: false }));
   return { goals: [...goals, ...added], added };
 }
 
@@ -126,6 +128,7 @@ export function progress(goals) {
 // Reads what was saved in the database, tolerating anything that does not look right.
 export function restore(saved) {
   const goals = (Array.isArray(saved?.goals) ? saved.goals : [])
+    .map((raw) => (raw && typeof raw.detail === "string" && raw.activity === undefined ? { ...raw, activity: raw.detail } : raw)) // saved before place/activity
     .map((raw) => cleanGoal(raw, blankGoal(typeof raw?.id === "string" && raw.id ? raw.id.slice(0, 64) : undefined)))
     .filter((goal) => goal.text)
     .slice(0, MAX_GOALS);
