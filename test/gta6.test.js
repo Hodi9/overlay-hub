@@ -162,3 +162,90 @@ test("the stream reader only accepts whole mission names and skips the one playi
   assert.equal(findMission(["CHAPTER 1: JUST LIKE PARADISE"], chapters, none), null, "the overlay's chapter line");
   assert.equal(findMission(["GONE FISHING"], chapters, new Set(["m1"])), null, "the mission already playing (the overlay's own line)");
 });
+
+test("the three missions hidden before launch have their real names, also in a list saved back then", async () => {
+  const { nameSpoilers } = await import("../apps/gta6/missions.js");
+  const names = DEFAULT_MISSIONS.map((m) => m.day);
+  assert.ok(!names.includes("[Spoiler]"));
+  assert.deepEqual([names[17], names[83], names[90]], ["Don Gone", "Starting From Zero", "The End of the Road"]);
+
+  const old = DEFAULT_MISSIONS.map((m, i) => ({ ...m, id: `m${i}`, day: [17, 83, 90].includes(i) ? "[Spoiler]" : m.day }));
+  const loaded = await withApp({ pool: savedPool({ chapters: old, currentIndex: 18, done: ["m17", "m0"] }) }, async (call) => (await call("GET", "state")).body);
+  assert.deepEqual([loaded.chapters[17].id, loaded.chapters[17].day, loaded.chapters[83].day, loaded.chapters[90].day], ["m17", "Don Gone", "Starting From Zero", "The End of the Road"]);
+  assert.deepEqual([loaded.progress.completed, loaded.current.day], [2, "Recalibration"], "ticks and playing now are kept");
+  assert.equal(nameSpoilers(DEFAULT_MISSIONS), null, "nothing to rename in the current list");
+});
+
+test("a reader's hint is only a suggestion in the panel: it moves nothing, can be dismissed, and goes away once played", async () => {
+  await withApp({}, async (call) => {
+    let s = (await call("GET", "state")).body;
+    const party = s.chapters.find((c) => c.day === "Party Hard");
+    s = (await call("PATCH", "current", { index: s.chapters.findIndex((c) => c.day === "Lawyer Up") })).body;
+    assert.equal(s.hint, null);
+    assert.equal((await call("POST", "hint", { id: party.id, keyword: "Megamundo" })).status, 401, "needs the tracker key");
+  });
+
+  process.env.GTA6_TRACKER_KEY = "reader-key";
+  try {
+    const app = express();
+    app.use("/gta6", createGta6App({}));
+    const server = app.listen(0);
+    await new Promise((resolve) => server.once("listening", resolve));
+    const base = `http://127.0.0.1:${server.address().port}/gta6/api`;
+    const req = async (method, path, body, key) => {
+      const r = await fetch(`${base}/${path}`, { method, headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body: body && JSON.stringify(body) });
+      return { status: r.status, body: await r.json() };
+    };
+    try {
+      let s = (await req("GET", "state")).body;
+      const party = s.chapters.find((c) => c.day === "Party Hard");
+      const lawyer = s.chapters.findIndex((c) => c.day === "Lawyer Up");
+      await req("PATCH", "current", { index: lawyer });
+      assert.equal((await req("POST", "hint", { id: "nope", keyword: "x" }, "reader-key")).status, 400);
+      const sent = await req("POST", "hint", { id: party.id, keyword: "Megamundo" }, "reader-key");
+      assert.equal(sent.status, 200);
+      s = (await req("GET", "state")).body;
+      assert.deepEqual([s.hint.day, s.hint.keyword, s.current.day, s.progress.completed], ["Party Hard", "Megamundo", "Lawyer Up", 0], "nothing moved");
+      s = (await req("DELETE", "hint")).body;
+      assert.equal(s.hint, null, "dismissed");
+      await req("POST", "hint", { id: party.id, keyword: "Megamundo" }, "reader-key");
+      s = (await req("PATCH", "current", { index: s.chapters.indexOf(s.chapters.find((c) => c.id === party.id)) })).body;
+      assert.deepEqual([s.current.day, s.hint], ["Party Hard", null], "confirmed: playing now, hint gone");
+    } finally {
+      server.closeAllConnections?.();
+      await new Promise((resolve) => server.close(resolve));
+    }
+  } finally {
+    delete process.env.GTA6_TRACKER_KEY;
+  }
+});
+
+test("the reader reads the pause menu only with a bare CHAPTER line, keeps unknown titles and makes careful hints", async () => {
+  const { findMenuMission, looksLikeTitle, compileHints, findHint } = await import("../apps/gta6/reader/reader.mjs");
+  const chapters = DEFAULT_MISSIONS.map((m, i) => ({ ...m, id: `m${i}` }));
+  const none = new Set();
+
+  // Pause menu: "CHAPTER 4", the mission, "Last Checkpoint" — with the overlay's death counter in the way.
+  assert.equal(findMenuMission(["CHAPTER 4", "24 Deaths", "HEAVY LIFTING", "Last Checkpoint"], chapters, none).chapter.day, "Heavy Lifting");
+  // The streamer's overlay says "CHAPTER 4: VICE CITY, BABY" with a colon: never taken for the menu.
+  assert.equal(findMenuMission(["CHAPTER 4: VICE CITY, BABY", "HEAVY LIFTING"], chapters, none), null);
+  // Only missions of the chapter shown count.
+  assert.equal(findMenuMission(["CHAPTER 3", "HEAVY LIFTING"], chapters, none), null);
+  assert.equal(findMenuMission(["CHAPTER 4", "HEAVY LIFTING"], chapters, new Set(["m64"])), null, "playing or ticked off: skipped");
+
+  // Unknown titles: capitals like a title card, not a button prompt or a number.
+  assert.equal(looksLikeTitle("CLIMBING THE FOOD CHAIN"), true);
+  assert.equal(looksLikeTitle("DON GONE"), true);
+  for (const ui of ["HOLD HANDS", "SET DESTINATION", "STAFF MEMBER", "PHOTO STUDIO @ SELECT BACK", "1833/1850", "Yo, ask security", "PIGS"]) {
+    assert.equal(looksLikeTitle(ui), false, ui);
+  }
+
+  // Hints: a whole word, a mission not playing or ticked, and only in the chapter being played.
+  const hints = compileHints({ "Party Hard": ["Megamundo"], "Cash Injections": ["Synthol"], "Bird in the Hand": ["Mile Zero Air Station"] });
+  const ch4 = "Chapter 4: Vice City, Baby";
+  assert.equal(findHint(["Valentina | We need you at the Megamundo opening."], hints, chapters, none, ch4).chapter.day, "Party Hard");
+  assert.equal(findHint(["MEGAMUNDOS"], hints, chapters, none, ch4), null, "part of a word does not count");
+  assert.equal(findHint(["Head to Mile Zero Air Station"], hints, chapters, none, ch4), null, "chapter 5 mission while playing chapter 4");
+  assert.equal(findHint(["Synthol"], hints, chapters, new Set(["m68"]), ch4), null, "already ticked off");
+  assert.equal(findHint(["Megamundo"], hints, chapters, none, null), null, "no mission playing: no guess");
+});

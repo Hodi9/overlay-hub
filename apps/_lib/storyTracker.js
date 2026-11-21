@@ -176,6 +176,9 @@ export function createStoryTrackerApp(options) {
               done: new Set(Array.isArray(saved.done) ? saved.done.filter((id) => typeof id === "string") : []),
               readerEnabled: saved.readerEnabled !== false
             };
+            // migrateChapters lets an app rename missions in a saved list without losing ids or ticks.
+            const migrated = options.migrateChapters ? options.migrateChapters(state.chapters) : null;
+            if (Array.isArray(migrated)) state.chapters = migrated.map((c) => cleanChapter(c));
           }
         } catch (error) {
           console.error(`${envPrefix} profile "${profileId}" load failed; using defaults.`, error);
@@ -202,6 +205,24 @@ export function createStoryTrackerApp(options) {
        ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
       [dbRowId(profileId), JSON.stringify({ chapters: state.chapters, currentIndex: state.currentIndex, readerEnabled: state.readerEnabled !== false, ...(nonLinear ? { done: [...state.done] } : {}) })]
     );
+  }
+
+  // A reader's guess from words on screen ("Ajax Gym"): shown in the panel to confirm by hand, never applied by itself.
+  // It goes away after HINT_MS, or once that mission is playing or ticked off.
+  const HINT_MS = 20 * 60 * 1000;
+  function activeHint(state) {
+    const hint = state.hint;
+    if (!hint || Date.now() - Date.parse(hint.atISO) > HINT_MS) return null;
+    const index = state.chapters.findIndex((c) => c.id === hint.id);
+    if (index < 0 || index === state.currentIndex || state.done.has(hint.id)) return null;
+    return { ...hint, index, day: state.chapters[index].day };
+  }
+
+  // The Twitch stream a reader's text came from must be this profile's own channel; returns the owner on a mismatch.
+  function sourceMismatch(state, profileId, source) {
+    if (!source) return null;
+    const owner = state.isChannel ? String(channels.publicRecord(profileId)?.twitch || "").toLowerCase() : profileId === DEFAULT_PROFILE ? mainTwitch : "";
+    return owner && owner !== source ? owner : null;
   }
 
   function payload(state) {
@@ -240,6 +261,7 @@ export function createStoryTrackerApp(options) {
       progress: { completed, total },
       percent: total ? Math.round((completed / total) * 1000) / 10 : 0,
       lastCapture: state.lastCapture,
+      hint: activeHint(state),
       readerEnabled: state.readerEnabled !== false,
       passwordRequired: state.isChannel || Boolean(controlPassword),
       trackerConfigured: state.isChannel || Boolean(trackerKey),
@@ -337,12 +359,8 @@ export function createStoryTrackerApp(options) {
 
       // A stream reader says which Twitch stream the text came from; it must be this profile's own channel.
       const source = typeof request.body?.source === "string" ? request.body.source.trim().toLowerCase().slice(0, 25) : "";
-      if (source) {
-        const owner = state.isChannel ? String(channels.publicRecord(profileId)?.twitch || "").toLowerCase() : profileId === DEFAULT_PROFILE ? mainTwitch : "";
-        if (owner && owner !== source) {
-          return response.status(409).json({ error: `Teksten kom fra #${source}, men denne tracker hører til #${owner}.` });
-        }
-      }
+      const owner = sourceMismatch(state, profileId, source);
+      if (owner) return response.status(409).json({ error: `Teksten kom fra #${source}, men denne tracker hører til #${owner}.` });
 
       const capturedNormalized = normalize(text);
       // Linear games: only the next few missions. Open-world games: any mission not ticked off yet.
@@ -379,6 +397,39 @@ export function createStoryTrackerApp(options) {
         matchedChapter: matched ? state.chapters[bestIndex] : null,
         progress: { completed: nonLinear ? doneCount(state) : Math.max(0, state.currentIndex), total: state.chapters.length }
       });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // A stream reader's guess from words on screen. Body: { id, keyword, source }. Shown in the panel only.
+  router.post("/api/hint", async (request, response, next) => {
+    try {
+      if (!authorizedTracker(request)) return response.status(401).json({ error: "Unauthorized" });
+      const profileId = profileFromRequest(request);
+      const state = await ensureProfile(profileId);
+      if (state.readerEnabled === false) return response.status(423).json({ error: "Automatisk læsning er slået fra i panelet.", disabled: true });
+      const source = typeof request.body?.source === "string" ? request.body.source.trim().toLowerCase().slice(0, 25) : "";
+      const owner = sourceMismatch(state, profileId, source);
+      if (owner) return response.status(409).json({ error: `Teksten kom fra #${source}, men denne tracker hører til #${owner}.` });
+      const id = typeof request.body?.id === "string" ? request.body.id : "";
+      const keyword = typeof request.body?.keyword === "string" ? request.body.keyword.trim().slice(0, 60) : "";
+      if (!state.chapters.some((c) => c.id === id) || !keyword) return response.status(400).json({ error: "id og keyword kræves." });
+      state.hint = { id, keyword, atISO: new Date().toISOString(), ...(source ? { source } : {}) };
+      broadcast(profileId, state);
+      response.json({ ok: true, hint: activeHint(state) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete("/api/hint", requireControlAuth, async (request, response, next) => {
+    try {
+      const profileId = profileFromRequest(request);
+      const state = await ensureProfile(profileId);
+      state.hint = null;
+      broadcast(profileId, state);
+      response.json(payload(state));
     } catch (error) {
       next(error);
     }

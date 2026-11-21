@@ -144,6 +144,17 @@
     </div>
   </section>
 
+  <section id="hint-section" hidden>
+    <p class="section-label">Læseren foreslår</p>
+    <div class="box now-box" style="border-color:var(--accent,#ff4fa3);">
+      <div><div class="now-name" id="hint-name">—</div><div class="now-sub" id="hint-sub"></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" id="hint-yes-btn">Sæt som spiller nu</button>
+        <button class="btn secondary" id="hint-no-btn">Afvis</button>
+      </div>
+    </div>
+  </section>
+
   <section>
     <p class="section-label">Spiller nu</p>
     <div class="box now-box">
@@ -296,8 +307,25 @@
       });
   });
 
+  // A guess from words the reader saw on screen (e.g. "Ajax Gym"). Nothing changes until it is confirmed here.
+  document.getElementById('hint-yes-btn').addEventListener('click', function(){
+    if (latest && latest.hint) jumpTo(latest.hint.index);
+  });
+  document.getElementById('hint-no-btn').addEventListener('click', function(){
+    apiCall('/gta6/api/hint' + qs, { method:'DELETE', headers: authHeaders() }).then(render);
+  });
+
+  function renderHint(state){
+    var hint = state.hint;
+    document.getElementById('hint-section').hidden = !hint;
+    if (!hint) return;
+    document.getElementById('hint-name').textContent = 'Måske: ' + hint.day;
+    document.getElementById('hint-sub').textContent = 'Så "' + hint.keyword + '" på skærmen' + (hint.source ? ' hos #' + hint.source : '') + ' kl. ' + new Date(hint.atISO).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) + '. Tjek streamen før du trykker.';
+  }
+
   function render(state){
     latest = state;
+    renderHint(state);
 
     var trackerHint = document.getElementById('tracker-hint');
     trackerHint.innerHTML = 'Mission-læseren ser streamen og sætter missionen fra titlen nederst til højre som "Spiller nu" (den forrige får flueben). Slå den fra her, hvis den laver fejl — så afviser serveren alt, den sender, også selvom den stadig kører.' +

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createStoryTrackerApp, makeDayLocationCleaner, dayLocationMatchText } from "../_lib/storyTracker.js";
-import { DEFAULT_MISSIONS, isPlaceholderList } from "./missions.js";
+import { DEFAULT_MISSIONS, isPlaceholderList, nameSpoilers } from "./missions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,6 +13,7 @@ export function createGta6App(extra = {}) {
     dbTable: "gta6_state",
     defaultChapters: DEFAULT_MISSIONS,
     isStaleList: isPlaceholderList,
+    migrateChapters: nameSpoilers,
     // GTA VI is open-world: story threads inside a chapter can be played in any order.
     nonLinear: true,
     cleanChapter: makeDayLocationCleaner(),
