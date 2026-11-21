@@ -30,6 +30,7 @@ import { createGaesterApp } from "./apps/gaester/app.js";
 import { createLiveTimerApp } from "./apps/livetimer/app.js";
 import { createGta6CountersApp } from "./apps/gta6counters/app.js";
 import { createTurneringApp } from "./apps/turnering/app.js";
+import { createGtaIrlApp } from "./apps/gtairl/app.js";
 import { injectHomeCard } from "./apps/walk/homeCard.js";
 import { collapseLeadingSlashes } from "./collapseLeadingSlashes.js";
 import { createChannelRegistry, createChannelsRouter, createTenantDispatcher } from "./apps/_lib/channels.js";
@@ -99,7 +100,7 @@ const COPY_LINK_SNIPPET = `<script>(function(){
 // Adds ?profile=<channel> to a channel page's own requests and sends its key along (public/_hub/channel.js).
 const CHANNEL_SHIM_TAG = '<script src="/_hub/channel.js"></script>';
 
-const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/gta6", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester", "/turnering", "/livetimer", "/gta6-counters"];
+const OVERLAY_PREFIXES = ["/brovsbro", "/brosvsbros", "/minecraft", "/gear", "/gear-bf", "/gauntlet", "/tlou2", "/gta5", "/gta6", "/cyberpunk", "/mafia1", "/mafia2", "/mafia3", "/perfektmatch", "/pokemon", "/rdr2-deaths", "/rdr2", "/subathon", "/london", "/gaester", "/turnering", "/livetimer", "/gta6-counters", "/gta-irl"];
 
 app.use((req, res, next) => {
   if (req.method !== "GET") return next();
@@ -177,6 +178,12 @@ app.use("/turnering", createTenantDispatcher({
   registry: channels, pool,
   legacy: createTurneringApp({ pool }),
   factory: (context) => createTurneringApp(context)
+}));
+// GTA IRL: places to go and things to do on a real-life stream (made for Anker), ticked off as they are done. One list per channel.
+app.use("/gta-irl", createTenantDispatcher({
+  registry: channels, pool,
+  legacy: createGtaIrlApp({ pool }),
+  factory: (context) => createGtaIrlApp(context)
 }));
 app.use("/tlou2", createTlou2App({ channels, pool }));
 app.use("/gta5", createGta5App({ channels, pool }));

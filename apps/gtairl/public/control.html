@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA IRL — Kontrolpanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --display: "Oswald", "Arial Narrow", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --r: 3px;
+    --bg: #0b0b0d;
+    --paper: #151518;
+    --raised: #1d1d21;
+    --ink: #ededed;
+    --muted: #9b9ba4;
+    --line: #2b2b31;
+    --pink: #ff5fa2;
+    --soft: #2a1520;
+    --danger: #e0707a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px 16px 72px; background: var(--bg); color: var(--ink); font: 400 15px/1.4 "Schibsted Grotesk", system-ui, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  a { color: var(--pink); }
+  [hidden] { display: none !important; }
+
+  .label { margin: 0 0 10px; font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0 0 8px; font: 700 clamp(40px, 9vw, 56px)/.95 var(--display); text-transform: uppercase; letter-spacing: -.01em; }
+  h1 em { font-style: normal; color: var(--pink); }
+  .lede { margin: 0 0 26px; color: var(--muted); font-size: 14px; }
+  section { margin-bottom: 26px; }
+
+  input[type="text"], input[type="password"], textarea {
+    width: 100%; min-width: 0; padding: 10px 12px; font: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); outline: none;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus, textarea:focus { border-color: var(--pink); }
+  button {
+    font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+    padding: 10px 12px; color: var(--ink); background: var(--raised); border: 1px solid var(--line); border-radius: var(--r);
+  }
+  button:hover { border-color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--pink); border-color: var(--pink); color: var(--bg); }
+  button.primary:hover { filter: brightness(1.06); }
+  button.danger:hover { color: var(--danger); border-color: var(--danger); }
+  button[aria-pressed="true"] { background: var(--soft); border-color: var(--pink); color: var(--pink); }
+
+  .box { padding: 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
+  .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .line > input { flex: 1 1 200px; }
+  .stack { display: grid; gap: 8px; }
+  .hint { margin: 0; font-size: 13px; color: var(--muted); }
+
+  /* The big "now" box with the one button that is pressed most. */
+  .now { padding: 16px; background: var(--soft); border: 1px solid var(--pink); border-radius: 4px; display: grid; gap: 10px; }
+  .now .what { font: 700 26px/1.05 var(--display); text-transform: uppercase; }
+  .now .after { color: var(--muted); font-size: 14px; }
+  .now .line button.primary { padding: 16px 18px; font-size: 13px; }
+  .bar { height: 8px; border: 1px solid var(--ink); border-radius: 2px; padding: 1px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--pink); transition: width .4s ease; }
+
+  .goals { display: grid; gap: 6px; }
+  .goal { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 8px; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 4px; }
+  .goal.current { border-left-color: var(--pink); }
+  .goal.done { opacity: .6; }
+  .goal.done .text-input { text-decoration: line-through; }
+  .goal .tick { min-width: 44px; padding: 12px 10px; font-size: 14px; }
+  .goal input { padding: 8px 10px; }
+  .goal .tools { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .goal .tools button { padding: 8px 9px; }
+  .goal .kind { min-width: 92px; }
+  @media (max-width: 560px) {
+    .goal { grid-template-columns: auto 1fr; }
+    .goal .tools { grid-column: 1 / -1; justify-content: flex-start; }
+  }
+
+  input[type="range"] { accent-color: var(--pink); height: 28px; cursor: pointer; }
+  .status { min-height: 1.2em; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .status.error { color: var(--danger); }
+  .empty { padding: 18px; color: var(--muted); text-align: center; border: 1px dashed var(--line); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="label">Dreamglow · Overlay</p>
+    <h1>GTA <em>IRL</em></h1>
+    <p class="lede">Skriv Ankers liste ind (steder og aktiviteter), og tryk <b>Klaret</b>, når et mål er nået. <a href="/gta-irl/" target="_blank">Overlayet</a> viser det nuværende og det næste mål — eller hele listen, hvis du slår den til nedenfor. Adressen skal i OBS som browser source (1920 × 1080).</p>
+  </header>
+
+  <section id="auth" hidden>
+    <p class="label">Adgangskode</p>
+    <div class="box">
+      <div class="line">
+        <input type="password" id="token" placeholder="Adgangskode" autocomplete="off">
+        <button class="primary" id="save-token">Gem</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label" id="now-label">Lige nu</p>
+    <div class="now">
+      <div class="bar"><i id="bar"></i></div>
+      <div class="what" id="now-what">—</div>
+      <div class="after" id="now-next"></div>
+      <div class="line">
+        <button type="button" class="primary" id="complete">Klaret ✓</button>
+        <button type="button" id="undo">Fortryd sidste</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">På overlayet</p>
+    <div class="line">
+      <button type="button" id="view-focus" aria-pressed="true">Nuværende + næste</button>
+      <button type="button" id="view-all" aria-pressed="false">Hele listen</button>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Tilføj til listen</p>
+    <form class="box stack" id="quick" autocomplete="off">
+      <textarea id="q-text" placeholder="Ét mål pr. linje — du kan sætte hele Ankers liste ind på én gang" maxlength="4000"></textarea>
+      <div class="line">
+        <button type="submit" class="primary" data-kind="place">Tilføj som steder</button>
+        <button type="button" id="add-activity" data-kind="activity">Tilføj som aktiviteter</button>
+      </div>
+      <p class="hint">Overlayet viser teksten præcis, som du skriver den, så skriv den på engelsk. Du kan skifte mellem Sted og Aktivitet på hver linje bagefter.</p>
+    </form>
+  </section>
+
+  <section>
+    <p class="label" id="goals-label">Listen</p>
+    <div class="goals" id="goals"></div>
+    <div class="line" style="margin-top:10px">
+      <button type="button" id="reset">Fjern alle flueben</button>
+      <button type="button" class="danger" id="clear">Slet hele listen</button>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Størrelse på overlayet · <span id="scale-label">100 %</span></p>
+    <div class="box">
+      <div class="line">
+        <input type="range" id="scale" min="60" max="200" step="5" value="100" aria-label="Størrelse på overlayet">
+        <button type="button" id="scale-reset">100 %</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="label">Overskrift på overlayet</p>
+    <div class="box">
+      <div class="line">
+        <input type="text" id="plan-title" placeholder="Fx GTA IRL" maxlength="30">
+        <button id="save-plan">Gem</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="status" id="status" role="status"></div>
+</div>
+
+<script>
+(function () {
+  var API = '/gta-irl/api';
+  var TOKEN_KEY = 'gtairl-control-token';
+  var KIND = { place: 'Sted', activity: 'Aktivitet' };
+  var state = null;
+  var pending = null; // a state that arrived while a field was being edited or a button pressed
+  var holding = false; // a pointer is down: rebuilding the list now would swallow the click
+  var rejected = false;
+  var $ = function (id) { return document.getElementById(id); };
+  var goalsEl = $('goals');
+  var statusEl = $('status');
+
+  function getToken() { try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } }
+  function setToken(value) { try { localStorage.setItem(TOKEN_KEY, value); } catch (e) {} }
+
+  function say(message, isError) {
+    statusEl.textContent = message;
+    statusEl.className = 'status' + (isError ? ' error' : '');
+    if (message && !isError) setTimeout(function () { if (statusEl.textContent === message) statusEl.textContent = ''; }, 2500);
+  }
+
+  function call(path, method, body) {
+    var headers = { 'x-gtairl-key': getToken() };
+    if (body !== undefined) headers['Content-Type'] = 'application/json';
+    return fetch(API + path, { method: method, headers: headers, body: body === undefined ? undefined : JSON.stringify(body) }).then(function (r) {
+      if (r.status === 401) { rejected = true; $('auth').hidden = false; say('Forkert eller manglende adgangskode.', true); throw new Error('unauthorized'); }
+      return r.json().then(function (data) {
+        if (!r.ok) { say(data.error || 'Noget gik galt — prøv igen.', true); throw new Error('failed'); }
+        rejected = false;
+        return data;
+      });
+    });
+  }
+  function act(path, method, body) { return call(path, method, body).then(render).catch(function () {}); }
+
+  function el(tag, props, children) {
+    var node = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (key) {
+      if (key === 'text') node.textContent = props[key];
+      else if (key === 'on') Object.keys(props.on).forEach(function (type) { node.addEventListener(type, props.on[type]); });
+      else if (key in node) node[key] = props[key];
+      else node.setAttribute(key, props[key]);
+    });
+    (children || []).forEach(function (child) { node.appendChild(child); });
+    return node;
+  }
+
+  function moveGoal(id, by) {
+    var ids = state.goals.map(function (goal) { return goal.id; });
+    var at = ids.indexOf(id), to = at + by;
+    if (at === -1 || to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(at, 1)[0]);
+    act('/order', 'PUT', { ids: ids });
+  }
+
+  function goalRow(goal, index, count, currentId) {
+    var patch = function (data) { return act('/goals/' + encodeURIComponent(goal.id), 'PATCH', data); };
+    var textInput = el('input', { type: 'text', className: 'text-input', value: goal.text, maxLength: 60, 'aria-label': 'Mål', on: { change: function () { if (textInput.value.trim()) patch({ text: textInput.value }); else textInput.value = goal.text; } } });
+    var tick = el('button', { type: 'button', className: 'tick', text: goal.done ? '✓' : '', 'aria-pressed': String(goal.done), title: goal.done ? 'Klaret — tryk for at fortryde' : 'Sæt flueben', 'aria-label': goal.done ? 'Klaret' : 'Ikke klaret', on: { click: function () { patch({ done: !goal.done }); } } });
+    return el('div', { className: 'goal' + (goal.done ? ' done' : '') + (goal.id === currentId ? ' current' : '') }, [
+      tick,
+      textInput,
+      el('div', { className: 'tools' }, [
+        el('button', { type: 'button', className: 'kind', text: KIND[goal.kind], title: 'Skift mellem Sted og Aktivitet', on: { click: function () { patch({ kind: goal.kind === 'place' ? 'activity' : 'place' }); } } }),
+        el('button', { type: 'button', text: '↑', title: 'Op', disabled: index === 0, on: { click: function () { moveGoal(goal.id, -1); } } }),
+        el('button', { type: 'button', text: '↓', title: 'Ned', disabled: index === count - 1, on: { click: function () { moveGoal(goal.id, 1); } } }),
+        el('button', { type: 'button', className: 'danger', text: 'Slet', on: { click: function () { if (confirm('Fjern "' + goal.text + '" fra listen?')) act('/goals/' + encodeURIComponent(goal.id), 'DELETE'); } } })
+      ])
+    ]);
+  }
+
+  function render(next) {
+    if (!next) return;
+    if (holding || (goalsEl.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) { pending = next; return; }
+    pending = null;
+    state = next;
+    var p = state.progress;
+    $('auth').hidden = !state.passwordRequired || (Boolean(getToken()) && !rejected);
+    $('now-label').textContent = 'Lige nu · ' + p.done + ' af ' + p.total + ' klaret';
+    $('bar').style.width = p.percent + '%';
+    $('now-what').textContent = p.finished ? 'Alle mål er klaret' : p.current ? KIND[p.current.kind] + ': ' + p.current.text : 'Listen er tom';
+    $('now-next').textContent = p.next ? 'Næste: ' + p.next.text : (p.current ? 'Det er det sidste mål' : '');
+    $('complete').disabled = !p.current;
+    $('undo').disabled = !p.done;
+    $('view-focus').setAttribute('aria-pressed', String(!state.plan.showAll));
+    $('view-all').setAttribute('aria-pressed', String(state.plan.showAll));
+    $('goals-label').textContent = 'Listen · ' + state.goals.length + ' mål';
+    goalsEl.textContent = '';
+    if (!state.goals.length) goalsEl.appendChild(el('div', { className: 'empty', text: 'Ingen mål endnu. Sæt Ankers liste ind ovenfor.' }));
+    var currentId = p.current ? p.current.id : null;
+    state.goals.forEach(function (goal, index) { goalsEl.appendChild(goalRow(goal, index, state.goals.length, currentId)); });
+    if (document.activeElement !== $('plan-title')) $('plan-title').value = state.plan.title;
+    var percent = Math.round(state.plan.scale * 100);
+    if (document.activeElement !== $('scale')) $('scale').value = percent;
+    $('scale-label').textContent = percent + ' %';
+  }
+
+  goalsEl.addEventListener('focusout', function () { setTimeout(function () { if (pending) render(pending); }, 0); });
+  document.addEventListener('pointerdown', function () { holding = true; });
+  ['pointerup', 'pointercancel'].forEach(function (type) {
+    document.addEventListener(type, function () { setTimeout(function () { holding = false; if (pending) render(pending); }, 60); });
+  });
+
+  function add(kind) {
+    var text = $('q-text').value;
+    if (!text.trim()) { $('q-text').focus(); return; }
+    call('/goals', 'POST', { text: text, kind: kind }).then(function (data) {
+      $('q-text').value = '';
+      render(data);
+      say('Tilføjet.');
+    }).catch(function () {});
+  }
+  $('quick').addEventListener('submit', function (event) { event.preventDefault(); add('place'); });
+  $('add-activity').addEventListener('click', function () { add('activity'); });
+
+  $('complete').addEventListener('click', function () { act('/complete', 'POST'); });
+  $('undo').addEventListener('click', function () { act('/undo', 'POST'); });
+  $('view-focus').addEventListener('click', function () { act('/plan', 'PATCH', { showAll: false }); });
+  $('view-all').addEventListener('click', function () { act('/plan', 'PATCH', { showAll: true }); });
+  $('reset').addEventListener('click', function () { if (confirm('Fjern alle flueben? Listen bliver stående.')) act('/reset', 'POST'); });
+  $('clear').addEventListener('click', function () { if (confirm('Slet hele listen? Det kan ikke fortrydes.')) act('/clear', 'POST'); });
+
+  var scaleTimer = null;
+  $('scale').addEventListener('input', function () {
+    var value = Number($('scale').value);
+    $('scale-label').textContent = value + ' %';
+    clearTimeout(scaleTimer);
+    scaleTimer = setTimeout(function () { act('/plan', 'PATCH', { scale: value / 100 }); }, 120);
+  });
+  $('scale-reset').addEventListener('click', function () { clearTimeout(scaleTimer); act('/plan', 'PATCH', { scale: 1 }); });
+  $('save-plan').addEventListener('click', function () { act('/plan', 'PATCH', { title: $('plan-title').value }); });
+
+  $('token').value = getToken();
+  $('save-token').addEventListener('click', function () {
+    setToken($('token').value.trim());
+    call('/login', 'POST', {}).then(function () { say('Koden virker og er gemt på denne enhed.'); $('auth').hidden = true; }).catch(function () {});
+  });
+  $('token').addEventListener('keydown', function (event) { if (event.key === 'Enter') $('save-token').click(); });
+
+  fetch(API + '/state').then(function (r) { return r.json(); }).then(render).catch(function () { say('Kunne ikke hente listen.', true); });
+  var events = new EventSource(API + '/events');
+  events.onmessage = function (event) { try { render(JSON.parse(event.data)); } catch (e) {} };
+})();
+</script>
+</body>
+</html>
